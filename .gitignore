@@ -1,1 +1,8 @@
 /src/main.o
+*.cmake
+CMakeCache.txt
+Makefile
+lib/
+CMakeFiles/
+VideoGame
+*.swp
