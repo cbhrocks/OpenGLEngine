@@ -18,6 +18,7 @@
 #include "renderer.h"
 #include "scene.h"
 #include "counter.h"
+//#include "textBufferManager2D.h"
 
 bool keys[1024];
 bool modKeys[4];
@@ -149,9 +150,8 @@ public:
 		
 		printf("entering loop!\n");
 		
-//		render.renderCylinderMap(scene);
-        //render.renderCubeMap(scene);
-        render.render(scene);
+        //render.render(scene);
+        render.render2D(scene);
 		
 		glfwSetWindowUserPointer(window, &scene);
 		
@@ -171,16 +171,13 @@ public:
 			doMovement(&scene);
 			
 			scene.timeStep(currentTime);
-            render.render(scene);
-            //render.renderCubeMap(scene);
-            //render.renderCubeDisc(scene);
-            //render.displayCubeMap(scene);
-            //render.formRays(scene);
-
+            render.render2D(scene);
+            render.display2D(scene);
+            //render.render(scene);
 
 			glfwSwapBuffers(window);
 			lastTime = currentTime;
-            break;
+            //break;
 		}
 		
 		glfwDestroyWindow(window);

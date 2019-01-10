@@ -34,5 +34,5 @@ void main()
     vec3 tp = (pos + vec3(1, 1, 1))/2;
     gl_Position = vec4(pos, 1.0);
 
-    TexCoords =  tp;
+    TexCoords = tp;
 }

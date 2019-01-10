@@ -44,20 +44,10 @@ float LinearizeDepth(float depth){
     return (2.0 * near * far) / (far + near - z * (far - near)); 
 }
 
-//float deLinearizeDepth(float depth){
-    //unNDC coordinates
-    //float z = (depth+1)/2; 
-
-    //makes depth a non linear function
-    //return (1/z - 1/near)/(1/far - 1/near);
-//}
-
 void main()
 {
     float depth = LinearizeDepth(gl_FragCoord.z);///far;
-//    //float depth = gl_FragCoord.z;
-//    fragColor = vec4(vec3(depth), 1.0f);
-//
+
 	fragColor = vec4(vec3(distance), 1.0);
 	if(toIntRange != 0)
 		fragColor = vec4(vec3(distance / 50), 1.0);
