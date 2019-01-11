@@ -66,8 +66,8 @@ class Renderer
         }
 
         void render2D(Scene &scene){
-            glViewport(0, 0, textureMap.width, textureMap.height);
             glBindFramebuffer(GL_FRAMEBUFFER, textureMap.framebuffer);
+            glViewport(0, 0, textureMap.width, textureMap.height);
 
             this->sid = 0;
             glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -91,9 +91,11 @@ class Renderer
         }
 
         void display2D(Scene &scene){
+            toIntRange = 1;
+
             glViewport(0, 0, textureMap.width, textureMap.height);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             //get old camera data
             glm::vec3 oldUp = scene.cameraUp;
@@ -102,7 +104,7 @@ class Renderer
 
             //set camera position to in front of 2D texture
             scene.cameraPos = glm::vec3(0,0,0);
-            scene.setCamView(lookVecs[face], upVecs[face]);
+            //scene.setCamView(lookVecs[face], upVecs[face]);
             C = scene.getCameraMatrix();
 
             //render using 2D renderer
@@ -120,8 +122,6 @@ class Renderer
             glBindTexture(GL_TEXTURE_2D, textureMap.texture);
 
             glBindVertexArray(squareVertexArray); //this one
-
-            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
             glBindVertexArray(0);
@@ -265,18 +265,18 @@ class Renderer
 
             checkGLError("setup render to texture");
 
+            glGenVertexArrays(1, &squareVertexArray);
+            glBindVertexArray(squareVertexArray);
+
             static const GLfloat squareVertexData[] = {
                 -1.0f, -1.0f, 0.0f,
                 1.0f, 1.0f, 0.0f,
                 -1.0f, 1.0f, 0.0f,
-
                 -1.0f, -1.0f, 0.0f,
                 1.0f, -1.0f, 0.0f,
                 1.0f, 1.0f, 0.0f
             };
 
-            glGenVertexArrays(1, &squareVertexArray);
-            glBindVertexArray(squareVertexArray);
             GLuint squareVertexBuffer;
             glGenBuffers(1, &squareVertexBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, squareVertexBuffer);
@@ -285,6 +285,7 @@ class Renderer
             glEnableVertexAttribArray(glGetAttribLocation(shaderProg[1], "pos"));
             glVertexAttribPointer(glGetAttribLocation(shaderProg[1], "pos"), 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             checkGLError("setupBuffers End");
         }
 
