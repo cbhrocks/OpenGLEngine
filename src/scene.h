@@ -14,9 +14,13 @@ class Scene{
     public:
         double currentTime;
 
+        glm::vec3 up;
+
         glm::vec3 cameraPos;
         glm::vec3 cameraLook;
         glm::vec3 cameraUp;
+        //GLfloat yaw;
+        //GLfloat pitch;
 
         glm::mat4 modelRotate;
         glm::mat4 modelIncrement;
@@ -26,7 +30,7 @@ class Scene{
         bool modelRotating;
 
         float center[3];
-        int currentRes[2];
+        //int currentRes[2];
 
         Scene(){
 
@@ -44,6 +48,8 @@ class Scene{
             printf("cen [%.2f %.2f %.2f]\n", center[0], center[1], center[2]);
             printf("dim [%.2f %.2f %.2f]\n", dim[0], dim[1], dim[2]);
             float camDistance = std::max(dim[0], dim[1]);
+
+            up = glm::vec3(0, 1, 0);
 
             cameraPos = glm::vec3(0,3,0);
             cameraLook = cameraPos + glm::vec3(-1,0,0);
@@ -88,6 +94,9 @@ class Scene{
 
         glm::vec4 getCameraPos() const
         { return glm::vec4(this->cameraPos, 1); }
+
+        glm::vec3 getCameraLook() const
+        { return glm::vec3(this->cameraLook); }
 
         void toggleModelRotate()
         { modelRotating = !modelRotating; }

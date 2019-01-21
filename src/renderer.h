@@ -20,17 +20,26 @@ class Renderer
         {
             initialized = false;
 
+            //view
+            this->width = 640;
+            this->height = 480;
+
             //camera
             this->P = glm::perspective(1.0f, 1.0f, 0.1f, 100.0f);
             this->C = glm::mat4(1);
             this->M = glm::mat4(1);
 
+            //shader
             this->sid = 0;
         }
 
-        Renderer(Scene &scene)
+        Renderer(Scene &scene, int width, int height)
         {
             initialized = false;
+
+            //view
+            this->width = width;
+            this->height = height;
 
             //camera
             this->P = glm::perspective(1.0f, 1.0f, 0.1f, 100.0f);
@@ -42,6 +51,12 @@ class Renderer
             initialize(scene);
         }
 
+        void setRes(int width, int height){
+            this->width = width;
+            this->height = height;
+            this->textureMap = TextBufferManager2D(this->width, this->height);
+        }
+
         void render(Scene &scene)
         {
             checkGLError("model0");
@@ -51,7 +66,7 @@ class Renderer
 
             C = scene.getCameraMatrix();
 
-            printf("using shader %d\n", this->sid);
+            //printf("using shader %d\n", this->sid);
 
             //use shader
             glUseProgram(shaderProg[this->sid]);
@@ -66,15 +81,16 @@ class Renderer
         }
 
         void render2D(Scene &scene){
-            glBindFramebuffer(GL_FRAMEBUFFER, textureMap.framebuffer);
-            glViewport(0, 0, textureMap.width, textureMap.height);
+            glBindFramebuffer(GL_FRAMEBUFFER, this->textureMap.framebuffer);
+            glViewport(0, 0, this->textureMap.width, this->textureMap.height);
+            //glViewport(0, 0, scene.currentRes[0], scene.currentRes[1]);
 
             this->sid = 0;
             glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                    GL_TEXTURE_2D, textureMap.texture, 0);
+                    GL_TEXTURE_2D, this->textureMap.texture, 0);
 
             glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -82,7 +98,7 @@ class Renderer
 
             render(scene);
 
-            glBindTexture(GL_TEXTURE_2D, textureMap.texture);
+            glBindTexture(GL_TEXTURE_2D, this->textureMap.texture);
             glGenerateMipmap(GL_TEXTURE_2D);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -93,7 +109,8 @@ class Renderer
         void display2D(Scene &scene){
             toIntRange = 1;
 
-            glViewport(0, 0, textureMap.width, textureMap.height);
+            glViewport(0, 0, this->textureMap.width, this->textureMap.height);
+            //glViewport(0, 0, scene.currentRes[0], scene.currentRes[1]);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -119,7 +136,7 @@ class Renderer
             GLuint texId = 0;
             glActiveTexture(GL_TEXTURE0+texId);
             glUniform1i(glGetUniformLocation(shaderProg[this->sid], "texId"), texId);
-            glBindTexture(GL_TEXTURE_2D, textureMap.texture);
+            glBindTexture(GL_TEXTURE_2D, this->textureMap.texture);
 
             glBindVertexArray(squareVertexArray); //this one
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -137,6 +154,7 @@ class Renderer
 
     private:
         bool initialized;
+
         GLuint shaderProg[5];
         GLuint vertexArray;
         GLuint squareVertexArray;
@@ -176,12 +194,9 @@ class Renderer
 
         glm::vec2 size;
 
-        float _near;
-        float _far;
-        float fov;
-        int totalLevel;
-        int face;
-
+        float _near, _far, fov;
+        int totalLevel, face;
+        int width, height;
 
         void initialize(Scene &scene)
         {
@@ -209,7 +224,8 @@ class Renderer
             setupShader();
             setupBuffers(scene.getModel());
 
-            textureMap = TextBufferManager2D(scene.currentRes[0], scene.currentRes[1]);
+            //textureMap = TextBufferManager2D(scene.currentRes[0], scene.currentRes[1]);
+            this->textureMap = TextBufferManager2D(this->width, this->height);
         }
 
         //loads different shaders from different files. this could be useful for loading a depth shader vs normal
