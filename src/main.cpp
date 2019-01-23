@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -217,6 +218,7 @@ static void monitor_callback(GLFWmonitor* monitor, int event)
 static void window_refresh_callback(GLFWwindow* window)//, int focused)
 {
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
+    //slot->render.renderBasic(slot->scene);
     slot->render.render2D(slot->scene);
     slot->render.display2D(slot->scene);
     glfwSwapBuffers(slot->window);
@@ -386,8 +388,6 @@ int main(int argc, char** argv)
     glfwSwapInterval(1);
 
     //initalize scene
-    //slot.scene.currentRes[0] = width;
-    //slot.scene.currentRes[1] = height;
     slot.render = Renderer(slot.scene, width, height);
     pitch = 0.0f;
     yaw = 0.0f;
@@ -410,9 +410,6 @@ int main(int argc, char** argv)
 
     printf("entering loop!\n");
 
-    //render.render(scene);
-    slot.render.render2D(slot.scene);
-
     while (!glfwWindowShouldClose(slot.window))
     {
         float currentTime = glfwGetTime();
@@ -426,6 +423,7 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
+        //slot.render.renderBasic(slot.scene);
         slot.render.render2D(slot.scene);
         slot.render.display2D(slot.scene);
         glfwSwapBuffers(slot.window);

@@ -14,6 +14,7 @@ class Model{
             objLoader loader;
 
             loader.load("objects/test/sibenik.obj");
+            //loader.load("objects/inanimate/tiles/hex-sides.obj");
 
             for(size_t i=0; i<loader.vertexCount; i++) {
                 positions.push_back(loader.vertexList[i]->e[0]);

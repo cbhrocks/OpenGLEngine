@@ -5,7 +5,7 @@ class TextBufferManager2D {
 public:
     GLuint texture;
     GLuint framebuffer;
-    GLuint depthbuffer;
+    GLuint renderbuffer;
     size_t width;
     size_t height;
 
@@ -27,13 +27,26 @@ public:
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->width, this->height, 0, GL_RGBA, GL_FLOAT, NULL);
 
-        glGenRenderbuffers(1, &depthbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+        glGenRenderbuffers(1, &renderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, xSize, ySize);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
 
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, this->texture, 0);
+
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         checkGLError("Initial textbuffermanager");
     }
+
+    //updateSize(size_t xSize, size_t ySize){
+    //    glBindTexture(GL_TEXTURE_2D, texture);
+    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->width, this->height, 0, GL_RGBA, GL_FLOAT, NULL);
+    //}
 
 };
 
