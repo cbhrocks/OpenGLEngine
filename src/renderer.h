@@ -8,6 +8,8 @@
 #include "glHelper.h"
 #include "scene.h"
 #include "textBufferManager2D.h"
+#include "shaderManager.h"
+#include "shader.h"
 
 #define CUBE_TEXTURE_SIZE 256
 
@@ -16,7 +18,7 @@ class Renderer
     public:
         int toIntRange = 0;
 
-        Renderer(): shaderProg(3)
+        Renderer(): shaderProg(3), shader(3)
         {
             initialized = false;
 
@@ -28,7 +30,7 @@ class Renderer
             this->sid = 0;
         }
 
-        Renderer(Scene &scene, int width, int height): shaderProg(3)
+        Renderer(Scene &scene, int width, int height): shaderProg(3), shader(3)
         {
             initialized = false;
 
@@ -51,33 +53,52 @@ class Renderer
 
         void render(Scene &scene)
         {
-            printf("using shader %d\n", this->sid);
+            //printf("using shader %d\n", this->sid);
 
             //use shader
-            glUseProgram(shaderProg[this->sid]);
-            uploadUniforms(shaderProg[this->sid], scene);
+            shader[this->sid].Use();
+            uploadUniforms(shader[this->sid].getId(), scene);
             checkGLError("render shader");
 
             //draw
             glBindVertexArray(this->vertexArray);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
-            glDrawElements(GL_TRIANGLES, scene.getModel().getElements().size(), GL_UNSIGNED_INT, 0);
+            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
+            glDrawElements(GL_TRIANGLES, scene.getModel().getPositions().size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
 
             checkGLError("render draw");
+        }
+
+        void renderNormals(Scene &scene)
+        {
+            //use shader
+            shader[this->sid].Use();
+            uploadUniforms(shader[this->sid].getId(), scene);
+            checkGLError("render normals shader");
+
+            //draw
+            glBindVertexArray(this->vertexArray);
+            //glBindBuffer(GL_ARRAY_BUFFER, this->vertexNormalbuffer);
+            glDrawArrays(GL_POINTS, 0, scene.getModel().getPositions().size());
+            glBindVertexArray(0);
+
+            checkGLError("render normals draw");
         }
 
         void renderBasic(Scene &scene)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            this->sid = 0;
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
 
+            this->sid = 0;
             render(scene);
+
+            this->sid = 2;
+            renderNormals(scene);
         }
 
         void render2D(Scene &scene){
@@ -104,10 +125,11 @@ class Renderer
             scene.cameraPos = glm::vec3(0,0,0);
 
             //render using 2D renderer
-            this->sid = 2;
-            glUseProgram(shaderProg[this->sid]);
-            uploadUniforms(shaderProg[this->sid], scene);
-            //glUniform1i(glGetUniformLocation(shaderProg[this->sid], "level"), 20);
+            this->sid = 3;
+            //glUseProgram(shaderProg[this->sid]);
+            //uploadUniforms(shaderProg[this->sid], scene);
+            shader[this->sid].Use();
+            uploadUniforms(shader[this->sid].getId(), scene);
 
             glViewport(0, 0, this->textureMap.width, this->textureMap.height);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -118,7 +140,7 @@ class Renderer
 
             GLuint texId = 0;
             glActiveTexture(GL_TEXTURE0+texId);
-            glUniform1i(glGetUniformLocation(shaderProg[this->sid], "texId"), texId);
+            glUniform1i(glGetUniformLocation(shader[this->sid].getId(), "texId"), texId);
 
             //draw a quad that fills the entire view
             glBindVertexArray(squareVertexArray); //this one
@@ -139,10 +161,13 @@ class Renderer
         bool initialized;
 
         std::vector<GLuint> shaderProg;
+        std::vector<Shader> shader;
         GLuint vertexArray;
+        GLuint vertexNormalArray;
         GLuint vertexBuffer;
         GLuint squareVertexArray;
         GLuint elementBuffer;
+        GLuint vertexNormalbuffer;
         size_t sid;
 
         TextBufferManager2D textureMap;
@@ -170,25 +195,33 @@ class Renderer
         //loads different shaders from different files. this could be useful for loading a depth shader vs normal
         void createShaderProgs()
         {
-            char const* basicVPath = "src/shaders/basic.vert";
-            char const* basicFPath = "src/shaders/basic.frag";
-            this->shaderProg[0] = ShaderManager::shaderFromFile(&basicVPath, &basicFPath, 1, 1);
+            GLchar const *basicVPath = "src/shaders/basic.vert";
+            GLchar const *basicFPath = "src/shaders/basic.frag";
+            //this->shaderProg[0] = ShaderManager::shaderFromFile(&basicVPath, &basicFPath, 1, 1);
+            this->shader[0] = Shader(basicVPath, basicFPath);
 
-            char const* depthVPath = "src/shaders/depth.vert";
-            char const* depthFPath = "src/shaders/depth.frag";
-            this->shaderProg[1] = ShaderManager::shaderFromFile(&depthVPath, &depthFPath, 1, 1);
+            GLchar const *depthVPath = "src/shaders/depth.vert";
+            GLchar const *depthFPath = "src/shaders/depth.frag";
+            //this->shaderProg[1] = ShaderManager::shaderFromFile(&depthVPath, &depthFPath, 1, 1);
+            this->shader[1] = Shader(depthVPath, depthFPath);
 
-            char const* texVPath = "src/shaders/texture2D.vert";
-            char const* texFPath = "src/shaders/texture2D.frag";
-            this->shaderProg[2] = ShaderManager::shaderFromFile(&texVPath, &texFPath, 1, 1);
+            GLchar const *normalVPath = "src/shaders/normal.vert";
+            GLchar const *normalFPath = "src/shaders/normal.frag";
+            GLchar const *normalGPath = "src/shaders/normal.geom";
+            //this->shaderProg[1] = ShaderManager::shaderFromFile(&depthVPath, &depthFPath, 1, 1);
+            this->shader[2] = Shader(normalVPath, normalFPath, normalGPath);
+
+            GLchar const *texVPath = "src/shaders/texture2D.vert";
+            GLchar const *texFPath = "src/shaders/texture2D.frag";
+            //this->shaderProg[2] = ShaderManager::shaderFromFile(&texVPath, &texFPath, 1, 1);
+            this->shader[3] = Shader(texVPath, texFPath);
 
             checkGLError("shader");
         }
 
-        void initializeShaderPos(){
-            GLint positionSlot = glGetAttribLocation(shaderProg[this->sid], "pos");
-            glEnableVertexAttribArray(positionSlot);
-            glVertexAttribPointer(positionSlot, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        void addShaderAttrib(const GLint location){
+            glEnableVertexAttribArray(location);
+            glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
         }
 
         void setupBuffers(Model &model)
@@ -197,33 +230,45 @@ class Renderer
 
             //gen buffers
             glGenVertexArrays(1, &(this->vertexArray));
+            glGenVertexArrays(1, &(this->vertexNormalArray));
             glGenBuffers(1, &(this->vertexBuffer));
+            glGenBuffers(1, &(this->elementBuffer));
+            //glGenBuffers(1, &(this->vertexNormalbuffer));
+
             glBindVertexArray(this->vertexArray);
 
-            //setup position buffer
-            glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
-            glBufferData(GL_ARRAY_BUFFER, model.getPositionBytes(), &model.getPosition()[0], GL_STATIC_DRAW);
-
-            for (size_t i = 0; i < this->shaderProg.size(); i++){
-                if (i != 2){
-                    this->sid = i;
-                    initializeShaderPos();
-                }
-            }
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-            checkGLError("setup position buffer");
+            checkGLError("gen buffers");
 
             // element buffer is the buffer that is used to designate which
             // vertices from the position buffer are used to make the triangles
-            glGenBuffers(1, &(this->elementBuffer));
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, model.getElementBytes(), &model.getElements()[0], GL_STATIC_DRAW);
             checkGLError("setup element buffer");
-            //leave the element buffer active
 
-            checkGLError("setup render to texture");
+            //setup position buffer and load into shaders
+            glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
+            glBufferData(GL_ARRAY_BUFFER, model.getPositionBytes(), &model.getPositions()[0], GL_STATIC_DRAW);
+            checkGLError("setup position buffer0");
+            for (size_t i = 0; i < this->shader.size(); i++){
+                if (i != 3){
+                    this->sid = i;
+                    addShaderAttrib(0);
+                }
+            }
+
+            checkGLError("setup position buffer");
+
+            glBindVertexArray(this->vertexArray);
+
+            //setup normal buffer and load into shaders
+            glBindBuffer(GL_ARRAY_BUFFER, this->vertexNormalbuffer);
+            glBufferData(GL_ARRAY_BUFFER, model.getVertexNormalBytes(), &model.getVertexNormals()[0], GL_STATIC_DRAW);
+            this->sid = 2;
+            addShaderAttrib(1);
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            checkGLError("setup normal buffer");
 
             glGenVertexArrays(1, &squareVertexArray);
             glBindVertexArray(squareVertexArray);
@@ -242,8 +287,8 @@ class Renderer
             glBindBuffer(GL_ARRAY_BUFFER, squareVertexBuffer);
             glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertexData), &squareVertexData, GL_STATIC_DRAW);
 
-            glEnableVertexAttribArray(glGetAttribLocation(shaderProg[1], "pos"));
-            glVertexAttribPointer(glGetAttribLocation(shaderProg[1], "pos"), 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+            this->sid = 3;
+            addShaderAttrib(0);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -262,7 +307,7 @@ class Renderer
             float fov = 1.5708f;
 
             glm::mat4 CameraMat = scene.getCameraMatrix();
-            glm::mat4 ModelMat = CameraMat;//*mR*mT; dont want to do anything to camera
+            glm::mat4 ModelMat = glm::mat4(1.0f);//CameraMat;//*mR*mT; dont want to do anything to camera
             glm::mat4 PerspectiveMat;
             //PerspectiveMat = glm::perspective(fov, 1.0f, _near, _far); // using aspect ratio
             PerspectiveMat = glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, _near, _far); // using width and height

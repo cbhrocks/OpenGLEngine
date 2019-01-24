@@ -2,7 +2,7 @@
 
 uniform mat4 P;  //projection matrix
 uniform mat4 C;  //camera matrix
-uniform mat4 M;  //modelview matrix: M = C// * mR * mT
+uniform mat4 M;  //modelview matrix: M = mat4(1.0);// * mR * mT
 uniform mat3 N;  //inverse transpose of upperleft 3x3 of M
 uniform mat4 L;  //light rotation matrix
 
@@ -24,7 +24,7 @@ uniform vec3 caeraUp;    //camera up vector
 uniform vec4 lightPos;    //light position
 uniform vec4 camPos;      //camera position
 
-in vec3 pos;
+layout (location = 0) in vec3 pos;
 in vec3 colorIn;
 
 out vec3 TexCoords;

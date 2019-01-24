@@ -15,7 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "shaderManager.h"
+//#include "shaderManager.h"
 #include "renderer.h"
 #include "scene.h"
 #include "counter.h"
@@ -218,9 +218,6 @@ static void monitor_callback(GLFWmonitor* monitor, int event)
 static void window_refresh_callback(GLFWwindow* window)//, int focused)
 {
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
-    //slot->render.renderBasic(slot->scene);
-    slot->render.render2D(slot->scene);
-    slot->render.display2D(slot->scene);
     glfwSwapBuffers(slot->window);
 }
 

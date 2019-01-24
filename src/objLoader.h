@@ -13,7 +13,7 @@ public:
 	}
 
 	obj_vector **vertexList;
-	obj_vector **normalList;
+	obj_vector **vertexNormalList;
 	obj_vector **textureList;
 	
 	obj_face **faceList;
@@ -27,7 +27,7 @@ public:
 	obj_material **materialList;
 	
 	int vertexCount;
-	int normalCount;
+	int vertexNormalCount;
 	int textureCount;
 
 	int faceCount;
@@ -49,7 +49,7 @@ public:
 		if(no_error)
 		{
 			this->vertexCount = data.vertex_count;
-			this->normalCount = data.vertex_normal_count;
+			this->vertexNormalCount = data.vertex_normal_count;
 			this->textureCount = data.vertex_texture_count;
 			
 			this->faceCount = data.face_count;
@@ -63,7 +63,7 @@ public:
 			this->materialCount = data.material_count;
 			
 			this->vertexList = data.vertex_list;
-			this->normalList = data.vertex_normal_list;
+			this->vertexNormalList = data.vertex_normal_list;
 			this->textureList = data.vertex_texture_list;
 			
 			this->faceList = data.face_list;

@@ -24,7 +24,7 @@ uniform vec3 cameraUp;    //camera up vector
 uniform vec4 lightPos;    //light position
 uniform vec4 camPos;      //camera position
 
-in vec3 pos;
+layout (location = 0) in vec3 pos;
 in vec3 colorIn;
 
 out vec3 TexCoords;
@@ -40,7 +40,7 @@ void main()
 	smoothNorm = colorIn*2 - 1;
 	float d = length(pos - camPos.xyz);
 	vec4 pos = vec4(pos, 1);
-	gl_Position = P*M*pos;
+	gl_Position = P*C*pos;
 
 	smoothColor = vec4(1,0,0,0);
 	distance = d;
