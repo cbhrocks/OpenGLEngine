@@ -19,7 +19,11 @@
 #include "renderer.h"
 #include "scene.h"
 #include "counter.h"
+#include "mesh.h"
+#include "model.h"
 //#include "textBufferManager2D.h"
+
+using namespace std;
 
 typedef struct
 {
@@ -323,10 +327,10 @@ int main(int argc, char** argv)
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     //scene.currentRes[0] = RESOLUTION;
     //scene.currentRes[1] = RESOLUTION;
@@ -379,9 +383,16 @@ int main(int argc, char** argv)
     printf("window created!\n");
 
     //load glad
-    glfwMakeContextCurrent(slot.window); // ?
-    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
-    printf("opengl version: %s\n", glGetString(GL_VERSION));
+    glfwMakeContextCurrent(slot.window);
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+    cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << endl;
+    cout << "opengl version: " << glGetString(GL_VERSION) << endl;
+
+
     glfwSwapInterval(1);
 
     //initalize scene
@@ -420,9 +431,9 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-        //slot.render.renderBasic(slot.scene);
-        slot.render.render2D(slot.scene);
-        slot.render.display2D(slot.scene);
+        slot.render.renderBasic(slot.scene);
+        //slot.render.render2D(slot.scene);
+        //slot.render.display2D(slot.scene);
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();

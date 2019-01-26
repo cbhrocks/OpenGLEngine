@@ -1,6 +1,7 @@
-#ifndef __RENDERER
-#define __RENDERER
+#ifndef RENDERER_H
+#define RENDERER_H
 
+#include <glad/glad.h>
 #include <sstream>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -18,7 +19,7 @@ class Renderer
     public:
         int toIntRange = 0;
 
-        Renderer(): shaderProg(3), shader(3)
+        Renderer(): shaderProg(4), shader(3)
         {
             initialized = false;
 
@@ -30,15 +31,28 @@ class Renderer
             this->sid = 0;
         }
 
-        Renderer(Scene &scene, int width, int height): shaderProg(3), shader(3)
+        Renderer(Scene &scene, int width, int height): shaderProg(4), shader(4)
         {
             initialized = false;
 
             //view
             this->width = width;
             this->height = height;
-
             this->sid = 0;
+
+            try{
+                GLFWwindow* window = glfwGetCurrentContext();
+                cout << "OpenGL Version: " << GLVersion.major << "." << GLVersion.minor << endl;
+            }
+            catch (const std::exception& e) {
+                cout << e.what();
+            }
+
+            //if (!glGetError())
+            //{
+            //    std::cout << "Failed to initialize GLAD in Renderer" << std::endl;
+            //}
+
 
             initialize(scene);
         }
@@ -50,7 +64,6 @@ class Renderer
             this->textureMap = TextBufferManager2D(this->width, this->height);
         }
 
-
         void render(Scene &scene)
         {
             //printf("using shader %d\n", this->sid);
@@ -58,32 +71,33 @@ class Renderer
             //use shader
             shader[this->sid].Use();
             uploadUniforms(shader[this->sid].getId(), scene);
-            checkGLError("render shader");
+            
+            scene.drawModels(shader[this->sid]);
 
             //draw
-            glBindVertexArray(this->vertexArray);
+            //glBindVertexArray(this->vertexArray);
             //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
-            glDrawElements(GL_TRIANGLES, scene.getModel().getPositions().size(), GL_UNSIGNED_INT, 0);
-            glBindVertexArray(0);
+            //glDrawElements(GL_TRIANGLES, scene.getModel().getPositions().size(), GL_UNSIGNED_INT, 0);
+            //glBindVertexArray(0);
 
             checkGLError("render draw");
         }
 
-        void renderNormals(Scene &scene)
-        {
-            //use shader
-            shader[this->sid].Use();
-            uploadUniforms(shader[this->sid].getId(), scene);
-            checkGLError("render normals shader");
+        //void renderNormals(Scene &scene)
+        //{
+        //    //use shader
+        //    shader[this->sid].Use();
+        //    uploadUniforms(shader[this->sid].getId(), scene);
+        //    checkGLError("render normals shader");
 
-            //draw
-            glBindVertexArray(this->vertexArray);
-            //glBindBuffer(GL_ARRAY_BUFFER, this->vertexNormalbuffer);
-            glDrawArrays(GL_POINTS, 0, scene.getModel().getPositions().size());
-            glBindVertexArray(0);
+        //    //draw
+        //    glBindVertexArray(this->vertexArray);
+        //    //glBindBuffer(GL_ARRAY_BUFFER, this->vertexNormalbuffer);
+        //    glDrawArrays(GL_POINTS, 0, scene.getModel().getPositions().size());
+        //    glBindVertexArray(0);
 
-            checkGLError("render normals draw");
-        }
+        //    checkGLError("render normals draw");
+        //}
 
         void renderBasic(Scene &scene)
         {
@@ -97,8 +111,11 @@ class Renderer
             this->sid = 0;
             render(scene);
 
-            this->sid = 2;
-            renderNormals(scene);
+            //this->sid = 2;
+            //renderNormals(scene);
+            
+            checkGLError("render basic");
+
         }
 
         void render2D(Scene &scene){
@@ -186,7 +203,7 @@ class Renderer
 
             printf("setting up shader\n");
             createShaderProgs();
-            setupBuffers(scene.getModel());
+            //setupBuffers();
 
             //textureMap = TextBufferManager2D(scene.currentRes[0], scene.currentRes[1]);
             this->textureMap = TextBufferManager2D(this->width, this->height);
@@ -224,51 +241,51 @@ class Renderer
             glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
         }
 
-        void setupBuffers(Model &model)
+        void setupBuffers()
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            //gen buffers
-            glGenVertexArrays(1, &(this->vertexArray));
-            glGenVertexArrays(1, &(this->vertexNormalArray));
-            glGenBuffers(1, &(this->vertexBuffer));
-            glGenBuffers(1, &(this->elementBuffer));
-            //glGenBuffers(1, &(this->vertexNormalbuffer));
+            ////gen buffers
+            //glGenVertexArrays(1, &(this->vertexArray));
+            //glGenVertexArrays(1, &(this->vertexNormalArray));
+            //glGenBuffers(1, &(this->vertexBuffer));
+            //glGenBuffers(1, &(this->elementBuffer));
+            ////glGenBuffers(1, &(this->vertexNormalbuffer));
 
-            glBindVertexArray(this->vertexArray);
+            //glBindVertexArray(this->vertexArray);
 
-            checkGLError("gen buffers");
+            //checkGLError("gen buffers");
 
-            // element buffer is the buffer that is used to designate which
-            // vertices from the position buffer are used to make the triangles
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, model.getElementBytes(), &model.getElements()[0], GL_STATIC_DRAW);
-            checkGLError("setup element buffer");
+            //// element buffer is the buffer that is used to designate which
+            //// vertices from the position buffer are used to make the triangles
+            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
+            //glBufferData(GL_ELEMENT_ARRAY_BUFFER, model.getElementBytes(), &model.getElements()[0], GL_STATIC_DRAW);
+            //checkGLError("setup element buffer");
 
-            //setup position buffer and load into shaders
-            glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
-            glBufferData(GL_ARRAY_BUFFER, model.getPositionBytes(), &model.getPositions()[0], GL_STATIC_DRAW);
-            checkGLError("setup position buffer0");
-            for (size_t i = 0; i < this->shader.size(); i++){
-                if (i != 3){
-                    this->sid = i;
-                    addShaderAttrib(0);
-                }
-            }
+            ////setup position buffer and load into shaders
+            //glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
+            //glBufferData(GL_ARRAY_BUFFER, model.getPositionBytes(), &model.getPositions()[0], GL_STATIC_DRAW);
+            //checkGLError("setup position buffer0");
+            //for (size_t i = 0; i < this->shader.size(); i++){
+            //    if (i != 3){
+            //        this->sid = i;
+            //        addShaderAttrib(0);
+            //    }
+            //}
 
-            checkGLError("setup position buffer");
+            //checkGLError("setup position buffer");
 
-            glBindVertexArray(this->vertexArray);
+            //glBindVertexArray(this->vertexArray);
 
-            //setup normal buffer and load into shaders
-            glBindBuffer(GL_ARRAY_BUFFER, this->vertexNormalbuffer);
-            glBufferData(GL_ARRAY_BUFFER, model.getVertexNormalBytes(), &model.getVertexNormals()[0], GL_STATIC_DRAW);
-            this->sid = 2;
-            addShaderAttrib(1);
+            ////setup normal buffer and load into shaders
+            //glBindBuffer(GL_ARRAY_BUFFER, this->vertexNormalbuffer);
+            //glBufferData(GL_ARRAY_BUFFER, model.getVertexNormalBytes(), &model.getVertexNormals()[0], GL_STATIC_DRAW);
+            //this->sid = 2;
+            //addShaderAttrib(1);
 
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            //glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            checkGLError("setup normal buffer");
+            //checkGLError("setup normal buffer");
 
             glGenVertexArrays(1, &squareVertexArray);
             glBindVertexArray(squareVertexArray);
@@ -298,36 +315,55 @@ class Renderer
 
         void uploadUniforms(GLuint shaderId, Scene const & scene)
         {
-            glm::vec3 dim = scene.getModel().getDimension();
-            float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
+            //glm::vec3 dim = scene.getModel().getDimension();
+            //float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
             float _near = 0.01f;
-            //_near = 1.0f;
-            float _far = maxDim*3;
-            //_far = 100.0f;
+            //float _far = maxDim*3;
+            float _far = 100.0f;
             float fov = 1.5708f;
+            checkGLError("upload uniforms");
 
             glm::mat4 CameraMat = scene.getCameraMatrix();
             glm::mat4 ModelMat = glm::mat4(1.0f);//CameraMat;//*mR*mT; dont want to do anything to camera
             glm::mat4 PerspectiveMat;
             //PerspectiveMat = glm::perspective(fov, 1.0f, _near, _far); // using aspect ratio
             PerspectiveMat = glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, _near, _far); // using width and height
-            glm::mat4 ModelMatTranslate = scene.getModelTranslate();
+            //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
             glm::mat4 ModelMatRotate = scene.getModelRotate();
             glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
             glm::vec4 camPos = scene.getCameraPos();
 
-            glUniform1f(glGetUniformLocation(shaderId, "near"), _near);
-            glUniform1f(glGetUniformLocation(shaderId, "far"), _far);
-            glUniform1f(glGetUniformLocation(shaderId, "fov"), fov);
-            glUniform1i(glGetUniformLocation(shaderId, "toIntRange"), toIntRange);
+            checkGLError("upload uniforms matrices");
 
-            glUniformMatrix4fv(glGetUniformLocation(shaderId, "P"), 1, GL_FALSE, &PerspectiveMat[0][0]);
-            glUniformMatrix4fv(glGetUniformLocation(shaderId, "C"), 1, GL_FALSE, &CameraMat[0][0]);
-            glUniformMatrix4fv(glGetUniformLocation(shaderId, "mR"), 1, GL_FALSE, &ModelMatRotate[0][0]);
-            glUniformMatrix4fv(glGetUniformLocation(shaderId, "mT"), 1, GL_FALSE, &ModelMatTranslate[0][0]);
-            glUniformMatrix4fv(glGetUniformLocation(shaderId, "M"), 1, GL_FALSE, &ModelMat[0][0]);
-            glUniformMatrix3fv(glGetUniformLocation(shaderId, "N"), 1, GL_FALSE, &N[0][0]);
-            glUniform4fv(glGetUniformLocation(shaderId, "camPos"), 1, &camPos[0]);
+            shader[this->sid].setFloat("near", _near);
+            shader[this->sid].setFloat("far", _far);
+            shader[this->sid].setFloat("fov", fov);
+            shader[this->sid].setInt("toIntRange", toIntRange);
+
+            //glUniform1f(glGetUniformLocation(shaderId, "near"), _near);
+            //glUniform1f(glGetUniformLocation(shaderId, "far"), _far);
+            //glUniform1f(glGetUniformLocation(shaderId, "fov"), fov);
+            //glUniform1i(glGetUniformLocation(shaderId, "toIntRange"), toIntRange);
+
+            checkGLError("upload uniforms set near far fov toIntRange");
+
+
+            shader[this->sid].setMat4("P", PerspectiveMat);
+            shader[this->sid].setMat4("C", CameraMat);
+            shader[this->sid].setMat4("M", ModelMat);
+            shader[this->sid].setMat4("mR", ModelMatRotate);
+            shader[this->sid].setMat3("N", N);
+            shader[this->sid].setVec4("camPos", camPos);
+
+            //glUniformMatrix4fv(glGetUniformLocation(shaderId, "P"), 1, GL_FALSE, &PerspectiveMat[0][0]);
+            //glUniformMatrix4fv(glGetUniformLocation(shaderId, "C"), 1, GL_FALSE, &CameraMat[0][0]);
+            //glUniformMatrix4fv(glGetUniformLocation(shaderId, "mR"), 1, GL_FALSE, &ModelMatRotate[0][0]);
+            ////glUniformMatrix4fv(glGetUniformLocation(shaderId, "mT"), 1, GL_FALSE, &ModelMatTranslate[0][0]);
+            //glUniformMatrix4fv(glGetUniformLocation(shaderId, "M"), 1, GL_FALSE, &ModelMat[0][0]);
+            //glUniformMatrix3fv(glGetUniformLocation(shaderId, "N"), 1, GL_FALSE, &N[0][0]);
+            //glUniform4fv(glGetUniformLocation(shaderId, "camPos"), 1, &camPos[0]);
+
+            checkGLError("upload uniforms general");
         }
 };
 

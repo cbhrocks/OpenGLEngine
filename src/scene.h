@@ -1,16 +1,11 @@
-#ifndef __SCENE
-#define __SCENE
+#ifndef SCENE_H
+#define SCENE_H
 
+#include <glad/glad.h>
+#include <iostream>
 #include "model.h"
 
 class Scene{
-    private:
-        Model model;
-        bool running;
-
-        glm::vec3 startPoint;
-        glm::vec3 endPoint;
-
     public:
         double currentTime;
 
@@ -32,22 +27,37 @@ class Scene{
         float center[3];
         //int currentRes[2];
 
-        Scene(){
+        Scene() {
 
             running = true;
-            model = Model();
-            model.init();
 
-            glm::vec3 center = model.getCentroid();
-            glm::vec3 max = model.getMaxBound();
-            glm::vec3 min = model.getMinBound();
-            glm::vec3 dim = model.getDimension();
-            printf("model loaded\n");
-            printf("min [%.2f %.2f %.2f]\n", min[0], min[1], min[2]);
-            printf("max [%.2f %.2f %.2f]\n", max[0], max[1], max[2]);
-            printf("cen [%.2f %.2f %.2f]\n", center[0], center[1], center[2]);
-            printf("dim [%.2f %.2f %.2f]\n", dim[0], dim[1], dim[2]);
-            float camDistance = std::max(dim[0], dim[1]);
+            try{
+                GLFWwindow* window = glfwGetCurrentContext();
+                cout << "OpenGL Version: " << GLVersion.major << "." << GLVersion.minor << endl;
+            }
+            catch (const exception& e) {
+                std::cout << e.what();
+            }
+
+            //if (!glGetError())
+            //{
+            //    std::cout << "Failed to initialize GLAD in scene" << std::endl;
+            //}
+
+            //model = Model(std::string("objects/test/sibenik.obj"));
+            model = Model(std::string("objects/inanimate/tiles/hex-sides.obj"));
+
+            //glm::vec3 center = model.getCentroid();
+            //glm::vec3 max = model.getMaxBound();
+            //glm::vec3 min = model.getMinBound();
+            //glm::vec3 dim = model.getDimension();
+            //printf("model loaded\n");
+            //printf("min [%.2f %.2f %.2f]\n", min[0], min[1], min[2]);
+            //printf("max [%.2f %.2f %.2f]\n", max[0], max[1], max[2]);
+            //printf("cen [%.2f %.2f %.2f]\n", center[0], center[1], center[2]);
+            //printf("dim [%.2f %.2f %.2f]\n", dim[0], dim[1], dim[2]);
+            //float camDistance = std::max(dim[0], dim[1]);
+            //float camDistance = std::max(dim[0], dim[1]);
 
             up = glm::vec3(0, 1, 0);
 
@@ -57,7 +67,7 @@ class Scene{
 
             modelRotate = glm::mat4(1);
             modelIncrement = glm::rotate(glm::mat4(1), 0.02f, glm::vec3(0,1,0));
-            modelTranslate = glm::translate(glm::mat4(1), -model.getCentroid());
+            //modelTranslate = glm::translate(glm::mat4(1), -model.getCentroid());
 
             modelRotating = false;
         }
@@ -65,14 +75,17 @@ class Scene{
         Model const & getModel() const
         { return model; }
 
-        void setRunning(bool r)
-        { running = r; }
+        void drawModels(Shader shader)
+        { this->model.Draw(shader);  }
 
-        bool isRunning() const
-        { return running; }
+        //void setRunning(bool r)
+        //{ running = r; }
+
+        //bool isRunning() const
+        //{ return running; }
 
         void timeStep(double t)
-		{
+        {
             //spin model
             if(modelRotating)
                 modelRotate = modelIncrement * modelRotate;
@@ -80,11 +93,11 @@ class Scene{
             this->currentTime = t;
         }
 
-        Model & getModel()
-        { return model; }
+        //Model & getModel()
+        //{ return model; }
 
-        glm::mat4 getModelTranslate() const
-        { return modelTranslate; }
+        //glm::mat4 getModelTranslate() const
+        //{ return modelTranslate; }
 
         glm::mat4 getModelRotate() const
         { return modelRotate; }
@@ -98,14 +111,22 @@ class Scene{
         glm::vec3 getCameraLook() const
         { return glm::vec3(this->cameraLook); }
 
-        void toggleModelRotate()
-        { modelRotating = !modelRotating; }
+        //void toggleModelRotate()
+        //{ modelRotating = !modelRotating; }
 
         void setCamView(glm::vec3 look, glm::vec3 up)
         {
             cameraLook = look;
             cameraUp = up;
         }
+
+    private:
+        Model model;
+        bool running;
+
+        glm::vec3 startPoint;
+        glm::vec3 endPoint;
+
 };
 
 #endif
