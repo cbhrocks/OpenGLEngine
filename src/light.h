@@ -1,5 +1,5 @@
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef LIGHT_H
+#define LIGHT_H
 
 #include <glad/glad.h> 
 
@@ -243,3 +243,4 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
     return textureID;
 }
 #endif
+

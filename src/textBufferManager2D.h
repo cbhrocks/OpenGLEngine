@@ -12,6 +12,8 @@ public:
     TextBufferManager2D(){}
 
     TextBufferManager2D(size_t xSize, size_t ySize) {
+        cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << endl;
+
         this->width = xSize;
         this->height = ySize;
         glGenFramebuffers(1, &framebuffer);
@@ -47,7 +49,7 @@ public:
     //    glBindTexture(GL_TEXTURE_2D, texture);
     //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->width, this->height, 0, GL_RGBA, GL_FLOAT, NULL);
     //}
-
+    //
 };
 
 

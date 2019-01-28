@@ -28,9 +28,9 @@ using namespace std;
 typedef struct
 {
 	GLFWwindow* window;
-    int id;
 	Renderer render;
 	Scene scene;
+    int id;
 } Slot;
 
 int keys[1024], mouseX, mouseY;
@@ -317,8 +317,6 @@ static void window_position_callback(GLFWwindow* window, int x, int y)
 
 int main(int argc, char** argv)
 {
-    Slot slot;// = new Slot;
-    slot.id = 0;
     GLFWmonitor* monitor = NULL;
     int ch, i, width, height;
 
@@ -372,18 +370,17 @@ int main(int argc, char** argv)
     }
 
     //Create the window
-    slot.window = glfwCreateWindow(width, height, "Simple example", NULL, NULL);
-    if (!slot.window)
+    GLFWwindow* window = glfwCreateWindow(width, height, "Simple example", NULL, NULL);
+    if (!window)
     {
         glfwTerminate();
         printf("window creation failed....\n");
         exit(EXIT_FAILURE);
     }
-    glfwSetWindowUserPointer(slot.window, &slot);
     printf("window created!\n");
 
     //load glad
-    glfwMakeContextCurrent(slot.window);
+    glfwMakeContextCurrent(window);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         cout << "Failed to initialize GLAD" << std::endl;
@@ -396,11 +393,18 @@ int main(int argc, char** argv)
     glfwSwapInterval(1);
 
     //initalize scene
+
+    Slot slot;// = new Slot;
+    slot.window = window;
     slot.render = Renderer(slot.scene, width, height);
+    slot.id = 0;
+
     pitch = 0.0f;
     yaw = 0.0f;
 
     //create callbacks
+    glfwSetWindowUserPointer(window, &slot);
+
     glfwSetKeyCallback(slot.window, key_callback);
     glfwSetWindowRefreshCallback(slot.window, window_refresh_callback);
     glfwSetWindowFocusCallback(slot.window, window_focus_callback);
@@ -431,9 +435,8 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-        slot.render.renderBasic(slot.scene);
+        slot.render.renderNormals(slot.scene);
         //slot.render.render2D(slot.scene);
-        //slot.render.display2D(slot.scene);
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();

@@ -53,18 +53,8 @@ class Mesh {
             this->indices = indices;
             this->textures = textures;
 
-            try{
-                GLFWwindow* window = glfwGetCurrentContext();
-                cout << "found context" << endl;
-                cout << "OpenGL Version: " << GLVersion.major << "." << GLVersion.minor << endl;
-            }
-            catch (const exception& e) {
-                std::cout << e.what();
-            }
-
             // now that we have all the required data, set the vertex buffers and its attribute pointers.
-            cout << "setting up mesh next" << endl;
-            //this->setupMesh();
+            this->setupMesh();
         }
 
         // render the mesh
@@ -115,7 +105,6 @@ class Mesh {
         // initializes all the buffer objects/arrays
         void setupMesh()
         {
-            cout << "setup mesh" << endl;
             // create buffers/arrays
             glGenVertexArrays(1, &vertexArray);
             glGenBuffers(1, &vertexbuffer);
@@ -152,8 +141,6 @@ class Mesh {
             checkGLError("setupMesh attribs");
 
             glBindVertexArray(0);
-
-            cout << "mesh setup" << endl;
         }
 };
 #endif
