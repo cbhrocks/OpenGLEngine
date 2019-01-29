@@ -307,9 +307,6 @@ class Renderer
 
             checkGLError("upload uniforms -- matrices");
 
-            glm::vec3 objectAmbient = glm::vec3(1.0f, 0.5f, 0.31f);
-            glm::vec3 objectDiffuse = glm::vec3(1.0f, 0.5f, 0.31f);
-            glm::vec3 objectSpecular = glm::vec3(0.5f, 0.5f, 0.31f);
             float objectShininess = 32.0f;
 
             glm::vec3 lightPosition = scene.getLightPos();
@@ -317,9 +314,8 @@ class Renderer
             glm::vec3 lightDiffuse = scene.getLightDiffuse();
             glm::vec3 lightSpecular = scene.getLightSpecular();
 
-            shader[this->sid].setVec3("material.ambient", objectAmbient);
-            shader[this->sid].setVec3("material.diffuse", objectDiffuse);
-            shader[this->sid].setVec3("material.specular", objectSpecular);
+            shader[this->sid].setInt("material.diffuse", 0);
+            shader[this->sid].setInt("material.specular", 1);
             shader[this->sid].setFloat("material.shininess", objectShininess);
             shader[this->sid].setVec3("light.position", lightPosition);
             shader[this->sid].setVec3("light.ambient", lightAmbient);
