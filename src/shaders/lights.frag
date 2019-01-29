@@ -14,7 +14,7 @@ struct Light {
 };
 
 //light data
-uniform Light light;
+uniform Light light1;
 
 //camera data
 uniform vec3 camPos;
@@ -28,22 +28,24 @@ in vec2 TexCoords;
 
 out vec4 FragColor;
 
-
-void main()
-{
-    vec3 ambient = light.diffuse * vec3(texture(material.diffuse, TexCoords));
+vec3 calculateLighting() {
+    vec3 ambient = light1.diffuse * vec3(texture(material.diffuse, TexCoords));
 
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(light.position - FragPos);
+    vec3 lightDir = normalize(light1.position - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse =  light.diffuse * (diff * vec3(texture(material.diffuse, TexCoords)));
+    vec3 diffuse =  light1.diffuse * (diff * vec3(texture(material.diffuse, TexCoords)));
 
     vec3 viewDir = normalize(camPos - norm);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * (spec * vec3(texture(material.specular, TexCoords)));
+    vec3 specular = light1.specular * (spec * vec3(texture(material.specular, TexCoords)));
 
     vec3 finalColor = ambient + diffuse + specular;
+    return finalColor;
+}
 
-    FragColor = vec4(finalColor, 1.0);
+void main()
+{
+    FragColor = vec4(calculateLighting(), 1.0);
 }

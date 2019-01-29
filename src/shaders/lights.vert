@@ -3,6 +3,7 @@
 uniform mat4 P;  //projection matrix
 uniform mat4 V;  //camera matrix
 uniform mat4 M;  //model matrix
+uniform mat3 N;  //normal matrix
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
@@ -17,6 +18,6 @@ void main()
     TexCoords = aTexCoords;
 	gl_Position = P*V*M*vec4(aPos, 1.0);
     FragPos = vec3(M * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(M))) * aNormal;
+    Normal = N * aNormal;
 }
 

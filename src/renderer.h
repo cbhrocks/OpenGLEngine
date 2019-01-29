@@ -38,8 +38,8 @@ class Renderer
             //view
             this->width = width;
             this->height = height;
-            this->sid = 0;
 
+            this->sid = 0;
             initialize(scene);
         }
 
@@ -56,7 +56,8 @@ class Renderer
 
             //use shader
             shader[this->sid].Use();
-            uploadUniforms(scene);
+            //uploadUniforms(scene);
+            scene.uploadUniforms(shader[this->sid]);
 
             scene.drawModels(shader[this->sid]);
 
@@ -85,6 +86,7 @@ class Renderer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
 
+            scene.drawLights();
             this->sid = 4;
             render(scene);
         }
@@ -126,12 +128,17 @@ class Renderer
             toIntRange = 1;
 
             //get old camera data
-            glm::vec3 oldUp = scene.cameraUp;
-            glm::vec3 oldPos = scene.cameraPos;
-            glm::vec3 oldLook = scene.cameraLook;
+            glm::vec3 oldPos = scene.getCameraPos();
+            glm::vec3 oldLook = scene.getCameraLook();
+            glm::vec3 oldUp = scene.getCameraUp();
+            glm::vec3 displayPos = glm::vec3(0.0f, 0.0f, 0.0f);
+            glm::vec3 displayLook = glm::vec3(0.0f, 0.0f, -1.0f);
+            glm::vec3 displayUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
             //set camera position to in front of 2D texture
-            scene.cameraPos = glm::vec3(0,0,0);
+
+            scene.setCameraPos(displayPos, displayLook, displayUp);
+            //scene.cameraPos = glm::vec3(0,0,0);
 
             //glViewport(0, 0, this->textureMap.width, this->textureMap.height);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -148,8 +155,9 @@ class Renderer
             //upload uniforms
             this->sid = 3;
             shader[this->sid].Use();
-            uploadUniforms(scene);
+            scene.uploadUniforms(shader[this->sid]);
             shader[this->sid].setInt("texId", 0);
+            shader[this->sid].setInt("toIntRange", toIntRange);
 
             checkGLError("display2D-2");
 
@@ -162,9 +170,10 @@ class Renderer
             checkGLError("display2D-3");
 
             //reset camera data
-            scene.cameraUp = oldUp;
-            scene.cameraPos = oldPos;
-            scene.cameraLook = oldLook;
+            scene.setCameraPos(oldPos, oldLook, oldUp);
+            //scene.cameraUp = oldUp;
+            //scene.cameraPos = oldPos;
+            //scene.cameraLook = oldLook;
 
             checkGLError("display2D-4");
         }
@@ -271,59 +280,53 @@ class Renderer
             checkGLError("setupBuffers End");
         }
 
-        void uploadUniforms(Scene const & scene)
-        {
-            //glm::vec3 dim = scene.getModel().getDimension();
-            //float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
-            float _near = 0.01f;
-            //float _far = maxDim*3;
-            float _far = 100.0f;
-            float fov = 1.5708f;
-            checkGLError("upload uniforms");
+        //void uploadUniforms(Scene const & scene)
+        //{
+        //    //glm::vec3 dim = scene.getModel().getDimension();
+        //    //float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
+        //    //float _far = maxDim*3;
+        //    checkGLError("upload uniforms");
 
-            glm::mat4 ViewMat = scene.getViewMatrix();
-            glm::mat4 ModelMat = glm::mat4(1.0f);
-            glm::mat4 PerspectiveMat;
-            //PerspectiveMat = glm::perspective(fov, 1.0f, _near, _far); // using aspect ratio
-            PerspectiveMat = glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, _near, _far); // using width and height
-            //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
-            glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
-            glm::vec3 camPos = scene.getCameraPos();
+        //    glm::mat4 ViewMat = scene.getViewMatrix();
+        //    glm::mat4 ModelMat = glm::mat4(1.0f);
+        //    //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
+        //    glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
+        //    glm::vec3 camPos = scene.getCameraPos();
 
-            checkGLError("upload uniforms -- create matrices");
+        //    checkGLError("upload uniforms -- create matrices");
 
-            shader[this->sid].setFloat("near", _near);
-            shader[this->sid].setFloat("far", _far);
-            shader[this->sid].setFloat("fov", fov);
-            shader[this->sid].setInt("toIntRange", toIntRange);
-            shader[this->sid].setVec3("camPos", camPos);
+        //    shader[this->sid].setFloat("near", this->near);
+        //    shader[this->sid].setFloat("far", this->far);
+        //    shader[this->sid].setFloat("fov", this->fov);
+        //    shader[this->sid].setInt("toIntRange", toIntRange);
+        //    shader[this->sid].setVec3("camPos", camPos);
 
-            checkGLError("upload uniforms -- set camera data");
+        //    checkGLError("upload uniforms -- set camera data");
 
-            shader[this->sid].setMat4("P", PerspectiveMat);
-            shader[this->sid].setMat4("V", ViewMat);
-            shader[this->sid].setMat4("M", ModelMat);
-            shader[this->sid].setMat3("N", N);
+        //    shader[this->sid].setMat4("P", this->ProjectionMat);
+        //    shader[this->sid].setMat4("V", ViewMat);
+        //    shader[this->sid].setMat4("M", ModelMat);
+        //    shader[this->sid].setMat3("N", N);
 
-            checkGLError("upload uniforms -- matrices");
+        //    checkGLError("upload uniforms -- matrices");
 
-            float objectShininess = 32.0f;
+        //    float objectShininess = 32.0f;
 
-            glm::vec3 lightPosition = scene.getLightPos();
-            glm::vec3 lightAmbient = scene.getLightAmbient();
-            glm::vec3 lightDiffuse = scene.getLightDiffuse();
-            glm::vec3 lightSpecular = scene.getLightSpecular();
+        //    glm::vec3 lightPosition = scene.getLightPos();
+        //    glm::vec3 lightAmbient = scene.getLightAmbient();
+        //    glm::vec3 lightDiffuse = scene.getLightDiffuse();
+        //    glm::vec3 lightSpecular = scene.getLightSpecular();
 
-            shader[this->sid].setInt("material.diffuse", 0);
-            shader[this->sid].setInt("material.specular", 1);
-            shader[this->sid].setFloat("material.shininess", objectShininess);
-            shader[this->sid].setVec3("light.position", lightPosition);
-            shader[this->sid].setVec3("light.ambient", lightAmbient);
-            shader[this->sid].setVec3("light.diffuse", lightDiffuse);
-            shader[this->sid].setVec3("light.specular", lightSpecular);
+        //    shader[this->sid].setInt("material.diffuse", 0);
+        //    shader[this->sid].setInt("material.specular", 1);
+        //    shader[this->sid].setFloat("material.shininess", objectShininess);
+        //    shader[this->sid].setVec3("light.position", lightPosition);
+        //    shader[this->sid].setVec3("light.ambient", lightAmbient);
+        //    shader[this->sid].setVec3("light.diffuse", lightDiffuse);
+        //    shader[this->sid].setVec3("light.specular", lightSpecular);
 
-            checkGLError("upload uniforms -- light colors");
-        }
+        //    checkGLError("upload uniforms -- light colors");
+        //}
 
 };
 

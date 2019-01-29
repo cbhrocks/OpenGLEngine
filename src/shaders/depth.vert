@@ -4,7 +4,7 @@ uniform mat4 P;  //projection matrix
 uniform mat4 V;  //camera matrix
 uniform mat4 M;  //modelview matrix: M = C// * mR * mT
 
-uniform vec4 camPos;      //camera position
+uniform vec3 camPos;      //camera position
 
 layout (location = 0) in vec3 pos;
 in vec3 colorIn;

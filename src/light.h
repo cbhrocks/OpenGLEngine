@@ -90,6 +90,10 @@ class Light
         // draws the model, and thus all its meshes
         void Draw(Shader shader)
         {
+            glm::mat4 ModelMat = glm::mat4(1.0f);
+            ModelMat = glm::translate(ModelMat, this->position);
+            shader.setMat4("M", ModelMat);
+
             shader.setVec3("light.ambient", this->ambient);
             shader.setVec3("light.diffuse", this->diffuse);
             shader.setVec3("light.specular", this->specular);
