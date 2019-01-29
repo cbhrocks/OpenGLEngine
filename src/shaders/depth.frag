@@ -10,6 +10,8 @@ smooth in float distance;
 vec4 toon_edges = vec4(0.1, 0.5, 0.8, 0.8);
 float outline_edge = 0.3;
 
+layout(location=0) out vec4 fragColor;
+
 float LinearizeDepth(float depth){
     //makes coordinates NDC
     float z = depth * 2.0 - 1.0;

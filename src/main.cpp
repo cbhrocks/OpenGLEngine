@@ -125,6 +125,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         else
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+        slot->render.toggleWireframeMode();
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -339,7 +341,7 @@ int main(int argc, char** argv)
 
     monitor = glfwGetPrimaryMonitor();
 
-    if (monitor)
+    if (false)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
@@ -347,9 +349,6 @@ int main(int argc, char** argv)
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
         glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-
-        width = mode->width-50;
-        height = mode->height-50;
     }
     else
     {
@@ -435,8 +434,9 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-        slot.render.renderNormals(slot.scene);
+        //slot.render.renderBasic(slot.scene);
         //slot.render.render2D(slot.scene);
+        slot.render.renderLight(slot.scene);
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();

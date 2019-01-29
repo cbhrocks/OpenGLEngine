@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <iostream>
 #include "model.h"
+#include "light.h"
+#include "shader.h"
 
 class Scene{
     public:
@@ -31,18 +33,35 @@ class Scene{
             //model = Model(std::string("objects/inanimate/tiles/hex-sides.obj"));
 
             up = glm::vec3(0, 1, 0);
-            cameraPos = glm::vec3(0,3,0);
-            cameraLook = cameraPos + glm::vec3(-1,0,0);
-            cameraUp = cameraPos + glm::vec3(0,1,0);
+            cameraPos = glm::vec3(0,0,3);
+            cameraLook = glm::vec3(0,0,-1);
+            cameraUp = glm::vec3(0,1,0);
 
-            modelRotating = false;
+            GLchar const *lightVPath = "src/shaders/light.vert";
+            GLchar const *lightFPath = "src/shaders/light.frag";
+            lightShader = Shader(lightVPath, lightFPath);
+            
+            Light light = Light(glm::vec3(1.0f, 1.0f, 1.0f));
+            this->lights.push_back(light);
         }
 
         Model const & getModel() const
         { return model; }
 
         void drawModels(Shader shader)
-        { this->model.Draw(shader);  }
+        { 
+            this->model.Draw(shader);  
+            lightShader.Use();
+            glm::mat4 ViewMat = getViewMatrix();
+            glm::mat4 ModelMat = glm::mat4(1.0f);
+            glm::mat4 ProjectionMat = glm::perspectiveFov(1.0f, 640.0f, 480.0f, 0.1f, 100.0f); // using width and height
+            lightShader.setMat4("V", ViewMat);
+            lightShader.setMat4("M", ModelMat);
+            lightShader.setMat4("P", ProjectionMat);
+            for(int i = 0; i < lights.size(); i++){
+                this->lights[i].Draw(lightShader);
+            }
+        }
 
         void timeStep(double t)
         {
@@ -67,9 +86,11 @@ class Scene{
     private:
         Model model;
         bool running;
+        Shader lightShader;
 
         glm::vec3 startPoint;
         glm::vec3 endPoint;
+        vector<Light> lights;
 
 };
 

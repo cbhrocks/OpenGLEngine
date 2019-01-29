@@ -19,7 +19,7 @@ class Renderer
     public:
         int toIntRange = 0;
 
-        Renderer(): shaderProg(4), shader(3)
+        Renderer(): shader(5)
         {
             initialized = false;
 
@@ -31,7 +31,7 @@ class Renderer
             this->sid = 0;
         }
 
-        Renderer(Scene &scene, int width, int height): shaderProg(4), shader(4)
+        Renderer(Scene &scene, int width, int height): shader(5)
         {
             initialized = false;
 
@@ -61,6 +61,32 @@ class Renderer
             scene.drawModels(shader[this->sid]);
 
             checkGLError("render draw");
+        }
+
+        void renderBasic(Scene &scene)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            this->sid = 0;
+            render(scene);
+        }
+
+        void renderLight(Scene &scene)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            this->sid = 4;
+            render(scene);
         }
 
         void renderNormals(Scene &scene)
@@ -121,13 +147,13 @@ class Renderer
 
             //upload uniforms
             this->sid = 3;
+            shader[this->sid].Use();
             uploadUniforms(scene);
             shader[this->sid].setInt("texId", 0);
 
             checkGLError("display2D-2");
 
             //draw a quad that fills the entire view
-            shader[this->sid].Use();
             glDisable(GL_DEPTH_TEST);
             glGenerateMipmap(GL_TEXTURE_2D);
             glBindVertexArray(squareVertexArray); //this one
@@ -143,17 +169,24 @@ class Renderer
             checkGLError("display2D-4");
         }
 
+        void toggleWireframeMode()
+        {
+            GLint polyMode;
+            glGetIntegerv(GL_POLYGON_MODE, &polyMode);
+
+            if ( polyMode == GL_LINE )
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            if ( polyMode == GL_FILL )
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            if ( polyMode == GL_POINTS )
+                ;//
+        }
+
     private:
         bool initialized;
 
-        std::vector<GLuint> shaderProg;
         std::vector<Shader> shader;
-        GLuint vertexArray;
-        GLuint vertexNormalArray;
-        GLuint vertexBuffer;
         GLuint squareVertexArray;
-        GLuint elementBuffer;
-        GLuint vertexNormalbuffer;
         size_t sid;
 
         TextBufferManager2D textureMap;
@@ -167,12 +200,12 @@ class Renderer
 
             glEnable(GL_DEPTH_TEST);
             glCullFace(GL_BACK);
-            glEnable(GL_CULL_FACE);
+            //glEnable(GL_CULL_FACE);
             checkGLError("enable depth test and stuff");
 
             printf("setting up shader\n");
             createShaderProgs();
-            setupBuffers();
+            createTexRender();
 
             this->textureMap = TextBufferManager2D(this->width, this->height);
         }
@@ -197,6 +230,10 @@ class Renderer
             GLchar const *texFPath = "src/shaders/texture2D.frag";
             this->shader[3] = Shader(texVPath, texFPath);
 
+            GLchar const *lightVPath = "src/shaders/lights.vert";
+            GLchar const *lightFPath = "src/shaders/lights.frag";
+            this->shader[4] = Shader(lightVPath, lightFPath);
+
             checkGLError("shader");
         }
 
@@ -205,7 +242,7 @@ class Renderer
             glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
         }
 
-        void setupBuffers()
+        void createTexRender()
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -226,7 +263,6 @@ class Renderer
             glBindBuffer(GL_ARRAY_BUFFER, squareVertexBuffer);
             glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertexData), &squareVertexData, GL_STATIC_DRAW);
 
-            this->sid = 3;
             addShaderAttrib(0);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -269,8 +305,17 @@ class Renderer
             shader[this->sid].setMat4("M", ModelMat);
             shader[this->sid].setMat3("N", N);
 
-            checkGLError("upload uniforms general");
+            checkGLError("upload uniforms -- matrices");
+
+            glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
+            glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+            shader[this->sid].setVec3("objectColor", objectColor);
+            shader[this->sid].setVec3("lightColor", lightColor);
+
+            checkGLError("upload uniforms -- light colors");
         }
+
 };
 
 #endif
