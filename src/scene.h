@@ -41,7 +41,7 @@ class Scene{
             GLchar const *lightFPath = "src/shaders/light.frag";
             lightShader = Shader(lightVPath, lightFPath);
             
-            Light light = Light(glm::vec3(1.0f, 1.0f, 1.0f));
+            Light light = Light(glm::vec3(0.2f, 0.2f, 0.2f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 1.0f, 1.0f));
             this->lights.push_back(light);
         }
 
@@ -76,6 +76,18 @@ class Scene{
 
         glm::vec3 getCameraLook() const
         { return glm::vec3(this->cameraLook); }
+
+        glm::vec3 getLightPos() const
+        { return this->lights[0].position; }
+
+        glm::vec3 getLightAmbient() const
+        { return this->lights[0].ambient; }
+
+        glm::vec3 getLightDiffuse() const
+        { return this->lights[0].diffuse; }
+
+        glm::vec3 getLightSpecular() const
+        { return this->lights[0].specular; }
 
         void setCamView(glm::vec3 look, glm::vec3 up)
         {

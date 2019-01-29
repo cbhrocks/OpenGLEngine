@@ -288,7 +288,7 @@ class Renderer
             PerspectiveMat = glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, _near, _far); // using width and height
             //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
             glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
-            glm::vec4 camPos = scene.getCameraPos();
+            glm::vec3 camPos = scene.getCameraPos();
 
             checkGLError("upload uniforms -- create matrices");
 
@@ -296,7 +296,7 @@ class Renderer
             shader[this->sid].setFloat("far", _far);
             shader[this->sid].setFloat("fov", fov);
             shader[this->sid].setInt("toIntRange", toIntRange);
-            shader[this->sid].setVec4("camPos", camPos);
+            shader[this->sid].setVec3("camPos", camPos);
 
             checkGLError("upload uniforms -- set camera data");
 
@@ -307,11 +307,24 @@ class Renderer
 
             checkGLError("upload uniforms -- matrices");
 
-            glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
-            glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+            glm::vec3 objectAmbient = glm::vec3(1.0f, 0.5f, 0.31f);
+            glm::vec3 objectDiffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+            glm::vec3 objectSpecular = glm::vec3(0.5f, 0.5f, 0.31f);
+            float objectShininess = 32.0f;
 
-            shader[this->sid].setVec3("objectColor", objectColor);
-            shader[this->sid].setVec3("lightColor", lightColor);
+            glm::vec3 lightPosition = scene.getLightPos();
+            glm::vec3 lightAmbient = scene.getLightAmbient();
+            glm::vec3 lightDiffuse = scene.getLightDiffuse();
+            glm::vec3 lightSpecular = scene.getLightSpecular();
+
+            shader[this->sid].setVec3("material.ambient", objectAmbient);
+            shader[this->sid].setVec3("material.diffuse", objectDiffuse);
+            shader[this->sid].setVec3("material.specular", objectSpecular);
+            shader[this->sid].setFloat("material.shininess", objectShininess);
+            shader[this->sid].setVec3("light.position", lightPosition);
+            shader[this->sid].setVec3("light.ambient", lightAmbient);
+            shader[this->sid].setVec3("light.diffuse", lightDiffuse);
+            shader[this->sid].setVec3("light.specular", lightSpecular);
 
             checkGLError("upload uniforms -- light colors");
         }
