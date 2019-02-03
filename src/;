@@ -71,9 +71,10 @@ class Scene{
 
         Scene() {}
 
-        Scene(float aspectRatio) //: 
-            //basicLights(1), directionLights(1), pointLights(1), spotLights(1)
+        Scene(float aspectRatio)// : 
+            //basicLights(1), directionLights(1), pointLights(5), spotLights(1)
         {
+
 
             running = true;
 
@@ -89,21 +90,21 @@ class Scene{
             GLchar const *lightFPath = "src/shaders/light.frag";
             lightShader = Shader(lightVPath, lightFPath);
             
-            BasicLight* basicLight = new BasicLight(
+            BasicLight* light = new BasicLight(
                     glm::vec3(0.2f, 0.2f, 0.2f), 
                     glm::vec3(0.5f, 0.5f, 0.5f), 
                     glm::vec3(1.0f, 1.0f, 1.0f), 
                     glm::vec3(0.0f, 5.0f, 5.0f)
                     );
-            this->basicLights.push_back(basicLight);
-            DirectionLight* directionLight = new DirectionLight(
+            this->basicLights.push_back(light);
+            DirectionLight* light2 = new DirectionLight(
                     glm::vec3(0.2f, 0.2f, 0.2f), 
                     glm::vec3(0.5f, 0.5f, 0.5f), 
                     glm::vec3(1.0f, 1.0f, 1.0f), 
                     glm::vec3(0.0f, -1.0f, 0.0f)
                     );
-            this->directionLights.push_back(directionLight);
-            PointLight* pointLight = new PointLight(
+            this->directionLights.push_back(light2);
+            PointLight* light3 = new PointLight(
                     glm::vec3(0.2f, 0.2f, 0.2f), 
                     glm::vec3(0.5f, 0.5f, 0.5f), 
                     glm::vec3(1.0f, 1.0f, 1.0f), 
@@ -112,26 +113,27 @@ class Scene{
                     0.09f,
                     0.032f
                     );
-            this->pointLights.push_back(pointLight);
-            SpotLight* spotLight = new SpotLight(
+            this->pointLights.push_back(light3);
+            SpotLight* light4 = new SpotLight(
                     glm::vec3(0.2f, 0.2f, 0.2f), 
                     glm::vec3(0.5f, 0.5f, 0.5f), 
                     glm::vec3(1.0f, 1.0f, 1.0f), 
                     //glm::vec3(0.0f, 10.0f, 5.0f),
                     this->camera.position,
-                    glm::vec3(0.0f, 0.0f, -1.0f),
+                    //glm::vec3(0.0f, 0.0f, -1.0f),
+                    this->camera.look,
                     1.0f,
                     0.14f,
                     0.07f,
                     glm::cos(glm::radians(12.5f)),
                     glm::cos(glm::radians(17.5f))
                     );
-            this->spotLights.push_back(spotLight);
+            this->spotLights.push_back(light4);
 
-            this->lights.push_back(basicLight);
-            this->lights.push_back(directionLight);
-            this->lights.push_back(pointLight);
-            this->lights.push_back(spotLight);
+            lights.push_back(this->basicLights);
+            lights.push_back(this->directionLights);
+            lights.push_back(this->pointLights);
+            lights.push_back(this->spotLights);
         }
 
         void uploadUniforms(Shader shader) {
@@ -160,21 +162,11 @@ class Scene{
             shader.setInt("material.specular", 1);
             shader.setFloat("material.shininess", objectShininess);
 
-            for (int i = 0; i < this->pointLights.size(); i++){
-                string lightNum = std::to_string(i);
-                this->pointLights[i]->uploadUniforms(shader, lightNum);
-            }
-            for (int i = 0; i < this->basicLights.size(); i++){
-                string lightNum = std::to_string(i);
-                this->basicLights[i]->uploadUniforms(shader, lightNum);
-            }
-            for (int i = 0; i < this->directionLights.size(); i++){
-                string lightNum = std::to_string(i);
-                this->directionLights[i]->uploadUniforms(shader, lightNum);
-            }
-            for (int i = 0; i < this->spotLights.size(); i++){
-                string lightNum = std::to_string(i);
-                this->spotLights[i]->uploadUniforms(shader, lightNum);
+            for (int i = 0; i < this->lights.size(); i++){
+                for (int j = 0; j < this->lights[i].size(); j++){
+                    string lightNum = std::to_string(j);
+                    this->lights[i][j]->uploadUniforms(shader, lightNum);
+                }
             }
 
             checkGLError("upload uniforms -- light colors");
@@ -184,8 +176,11 @@ class Scene{
         {
             lightShader.Use();
             uploadUniforms(lightShader);
-            for(int i = 0; i < this->lights.size(); i++){
-                this->lights[i]->Draw(lightShader);
+            for(int i = 0; i < lights.size(); i++){
+                for(int j = 0; j < lights[i].size(); j++){
+                    if (lights[i][j]->getShouldDraw())
+                        this->lights[i][j]->Draw(lightShader);
+                }
             }
         }
 
@@ -217,7 +212,6 @@ class Scene{
         void setCameraPos(glm::vec3 pos)
         {
             this->camera.setPos(pos);
-            //this->spotLights[0]->setPos(pos);
         }
 
         void setCameraPos(glm::vec3 pos, glm::vec3 look, glm::vec3 up)
@@ -229,7 +223,6 @@ class Scene{
         {
             this->camera.look = look;
             this->camera.up = up;
-            this->spotLights[0]->setDirection(look);
         }
 
     private:
@@ -239,11 +232,11 @@ class Scene{
 
         glm::vec3 startPoint;
         glm::vec3 endPoint;
-        vector<Light*> lights;
-        vector<BasicLight*> basicLights;
-        vector<PointLight*> pointLights;
-        vector<DirectionLight*> directionLights;
-        vector<SpotLight*> spotLights;
+        vector<vector<Light*>> lights;
+        vector<Light*> basicLights;
+        vector<Light*> pointLights;
+        vector<Light*> directionLights;
+        vector<Light*> spotLights;
 
 };
 
