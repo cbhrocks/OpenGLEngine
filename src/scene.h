@@ -179,7 +179,7 @@ class Scene{
 		{
             this->spotLights[0]->setPos(this->camera.position);
             this->spotLights[0]->setDirection(this->camera.look);
-			this->pointLights[0]->setPos(glm::vec4(pointLights[0]->GetPos(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+			this->pointLights[0]->setPos(glm::vec4(pointLights[0]->GetPos(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
 		}
 
         void drawLights()
