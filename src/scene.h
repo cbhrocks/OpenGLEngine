@@ -12,28 +12,28 @@ class Camera{
         glm::vec3 position;
         glm::vec3 look;
         glm::vec3 up;
-        float far;
-        float near;
+        float farBound;
+        float nearBound;
         float aspectRatio;
         float fov;
 
         Camera() {
         }
 
-        Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float far, float near, float aspectRatio, float fov)
+        Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float aspectRatio, float fov)
         {
             this->position = pos;
             this->look = look;
             this->up = up;
-            this->far = far;
-            this->near = near;
+            this->farBound = farBound;
+            this->nearBound = nearBound;
             this->aspectRatio = aspectRatio;
             this->fov = fov;
         }
 
         glm::mat4 getProjectionMatrix() 
         {
-            return glm::perspective(this->fov, this->aspectRatio, this->near, this->far); // using aspect ratio
+            return glm::perspective(this->fov, this->aspectRatio, this->nearBound, this->farBound); // using aspect ratio
             //return glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, this->near, this->far); // using width and height
         }
 
@@ -107,7 +107,7 @@ class Scene{
                     glm::vec3(0.2f, 0.2f, 0.2f), 
                     glm::vec3(0.5f, 0.5f, 0.5f), 
                     glm::vec3(1.0f, 1.0f, 1.0f), 
-                    glm::vec3(0.0f, 5.0f, 5.0f),
+                    glm::vec3(0.0f, 8.0f, 5.0f),
                     1.0f,
                     0.09f,
                     0.032f
@@ -127,16 +127,11 @@ class Scene{
                     glm::cos(glm::radians(17.5f))
                     );
             this->spotLights.push_back(spotLight);
-
-            this->lights.push_back(basicLight);
-            this->lights.push_back(directionLight);
-            this->lights.push_back(pointLight);
-            this->lights.push_back(spotLight);
         }
 
         void uploadUniforms(Shader shader) {
-            shader.setFloat("near", this->camera.near);
-            shader.setFloat("far", this->camera.far);
+            shader.setFloat("near", this->camera.nearBound);
+            shader.setFloat("far", this->camera.farBound);
             shader.setFloat("fov", this->camera.fov);
             shader.setVec3("camPos", this->camera.position);
 
@@ -180,13 +175,29 @@ class Scene{
             checkGLError("upload uniforms -- light colors");
         }
 
+		void onFrame()
+		{
+            this->spotLights[0]->setPos(this->camera.position);
+            this->spotLights[0]->setDirection(this->camera.look);
+			this->pointLights[0]->setPos(glm::vec4(pointLights[0]->GetPos(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+		}
+
         void drawLights()
         {
             lightShader.Use();
             uploadUniforms(lightShader);
-            for(int i = 0; i < this->lights.size(); i++){
-                this->lights[i]->Draw(lightShader);
+            for(int i = 0; i < this->pointLights.size(); i++){
+                this->pointLights[i]->Draw(lightShader);
             }
+            //for(int i = 0; i < this->basicLights.size(); i++){
+            //    this->basicLights[i]->Draw(lightShader);
+            //}
+            //for(int i = 0; i < this->directionLights.size(); i++){
+            //    this->directionLights[i]->Draw(lightShader);
+            //}
+            //for(int i = 0; i < this->spotLights.size(); i++){
+            //    this->spotLights[i]->Draw(lightShader);
+            //}
         }
 
         void drawModels(Shader shader)
@@ -197,6 +208,7 @@ class Scene{
         void timeStep(double t)
         {
             this->currentTime = t;
+			this->onFrame();
         }
 
         Model const & getModel() const
@@ -217,7 +229,6 @@ class Scene{
         void setCameraPos(glm::vec3 pos)
         {
             this->camera.setPos(pos);
-            //this->spotLights[0]->setPos(pos);
         }
 
         void setCameraPos(glm::vec3 pos, glm::vec3 look, glm::vec3 up)
@@ -229,7 +240,6 @@ class Scene{
         {
             this->camera.look = look;
             this->camera.up = up;
-            this->spotLights[0]->setDirection(look);
         }
 
     private:
@@ -239,7 +249,6 @@ class Scene{
 
         glm::vec3 startPoint;
         glm::vec3 endPoint;
-        vector<Light*> lights;
         vector<BasicLight*> basicLights;
         vector<PointLight*> pointLights;
         vector<DirectionLight*> directionLights;

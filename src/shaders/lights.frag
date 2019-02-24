@@ -80,8 +80,8 @@ void main()
     //    color += calculateBasicLight(blight[i], norm, FragPos, viewDir);
     //for(int i = 0; i < NR_DIRECTION_LIGHTS; i++)
     //    color += calculateDirectionLight(dlight[i], norm, FragPos, viewDir);
-    //for(int i = 0; i < NR_POINT_LIGHTS; i++)
-    //    color += calculatePointLight(plight[i], norm, FragPos, viewDir);
+    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+        color += calculatePointLight(plight[i], norm, FragPos, viewDir);
     for(int i = 0; i < NR_SPOT_LIGHTS; i++)
         color += calculateSpotLight(slight[i], norm, FragPos, viewDir);
     FragColor = vec4(color, 1.0f);
