@@ -5,5 +5,7 @@ Makefile
 lib/
 bin/
 CMakeFiles/
+Debug/
+.vs/
 VideoGame
 *.swp
