@@ -125,6 +125,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         else
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+        slot->render.toggleWireframeMode();
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -147,51 +149,51 @@ static void scroll_callback(GLFWwindow* window, double x, double y)
 static void doMovement(Scene* scene) {
     GLfloat cameraSpeed = 0.1f;
     if(keys[GLFW_KEY_W]){
-        scene->cameraPos += cameraSpeed * scene->cameraLook;
+        scene->setCameraPos(scene->getCameraPos() + cameraSpeed * scene->getCameraLook());
         //printf("forward\n");
     }
     if(keys[GLFW_KEY_S]){
-        scene->cameraPos -= cameraSpeed * scene->cameraLook;
+        scene->setCameraPos(scene->getCameraPos() - cameraSpeed * scene->getCameraLook());
         //printf("backward\n");
     }
     if(keys[GLFW_KEY_A]){
-        scene->cameraPos -= glm::normalize(glm::cross(scene->cameraLook, scene->cameraUp)) * cameraSpeed;
+        scene->setCameraPos(scene->getCameraPos() - glm::normalize(glm::cross(scene->getCameraLook(), scene->getCameraUp())) * cameraSpeed);
         //printf("left\n");
     }
     if(keys[GLFW_KEY_D]){
-        scene->cameraPos += glm::normalize(glm::cross(scene->cameraLook, scene->cameraUp)) * cameraSpeed;
+        scene->setCameraPos(scene->getCameraPos() + glm::normalize(glm::cross(scene->getCameraLook(), scene->getCameraUp())) * cameraSpeed);
         //printf("right\n");
     }
-    if (keys[GLFW_KEY_X] && modKeys[GLFW_MOD_ALT]){
-        scene->cameraLook = glm::vec3(-1,0,0);
-        scene->cameraUp = glm::vec3(0,1,0);
-        printf("-X\n");
-    }
-    else if (keys[GLFW_KEY_X]){
-        scene->cameraLook = glm::vec3(1,0,0);
-        scene->cameraUp = glm::vec3(0,1,0);
-        printf("X\n");
-    }
-    if (keys[GLFW_KEY_Y] && modKeys[GLFW_MOD_ALT]){
-        scene->cameraLook = glm::vec3(0,-1,0);
-        scene->cameraUp = glm::vec3(0,0,-1);
-        printf("-Y\n");
-    }
-    else if (keys[GLFW_KEY_Y]){
-        scene->cameraLook = glm::vec3(0,1,0);
-        scene->cameraUp = glm::vec3(0,0,1);
-        printf("Y\n");
-    }
-    if (keys[GLFW_KEY_Z] && modKeys[GLFW_MOD_ALT]){
-        scene->cameraLook = glm::vec3(0,0,1);
-        scene->cameraUp = glm::vec3(0,1,0);
-        printf("-Z\n");
-    }
-    else if (keys[GLFW_KEY_Z]){
-        scene->cameraLook = glm::vec3(0,0,-1);
-        scene->cameraUp = glm::vec3(0,1,0);
-        printf("Z\n");
-    }
+    //if (keys[GLFW_KEY_X] && modKeys[GLFW_MOD_ALT]){
+    //    scene->cameraLook = glm::vec3(-1,0,0);
+    //    scene->cameraUp = glm::vec3(0,1,0);
+    //    printf("-X\n");
+    //}
+    //else if (keys[GLFW_KEY_X]){
+    //    scene->cameraLook = glm::vec3(1,0,0);
+    //    scene->cameraUp = glm::vec3(0,1,0);
+    //    printf("X\n");
+    //}
+    //if (keys[GLFW_KEY_Y] && modKeys[GLFW_MOD_ALT]){
+    //    scene->cameraLook = glm::vec3(0,-1,0);
+    //    scene->cameraUp = glm::vec3(0,0,-1);
+    //    printf("-Y\n");
+    //}
+    //else if (keys[GLFW_KEY_Y]){
+    //    scene->cameraLook = glm::vec3(0,1,0);
+    //    scene->cameraUp = glm::vec3(0,0,1);
+    //    printf("Y\n");
+    //}
+    //if (keys[GLFW_KEY_Z] && modKeys[GLFW_MOD_ALT]){
+    //    scene->cameraLook = glm::vec3(0,0,1);
+    //    scene->cameraUp = glm::vec3(0,1,0);
+    //    printf("-Z\n");
+    //}
+    //else if (keys[GLFW_KEY_Z]){
+    //    scene->cameraLook = glm::vec3(0,0,-1);
+    //    scene->cameraUp = glm::vec3(0,1,0);
+    //    printf("Z\n");
+    //}
 }
 
 static void monitor_callback(GLFWmonitor* monitor, int event)
@@ -339,7 +341,7 @@ int main(int argc, char** argv)
 
     monitor = glfwGetPrimaryMonitor();
 
-    if (monitor)
+    if (false)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
@@ -347,9 +349,6 @@ int main(int argc, char** argv)
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
         glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-
-        width = mode->width-50;
-        height = mode->height-50;
     }
     else
     {
@@ -395,6 +394,7 @@ int main(int argc, char** argv)
     //initalize scene
 
     Slot slot;// = new Slot;
+    slot.scene = Scene(width/height);
     slot.window = window;
     slot.render = Renderer(slot.scene, width, height);
     slot.id = 0;
@@ -435,8 +435,9 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-        slot.render.renderNormals(slot.scene);
+        //slot.render.renderBasic(slot.scene);
         //slot.render.render2D(slot.scene);
+        slot.render.renderLight(slot.scene);
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();

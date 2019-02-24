@@ -3,7 +3,7 @@
 uniform sampler2D texId;
 
 in vec3 TexCoords;
-layout(location = 0) out vec4 fragColor;
+out vec4 fragColor;
 
 void main()
 {

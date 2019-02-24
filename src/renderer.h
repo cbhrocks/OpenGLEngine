@@ -19,7 +19,7 @@ class Renderer
     public:
         int toIntRange = 0;
 
-        Renderer(): shaderProg(4), shader(3)
+        Renderer(): shader(5)
         {
             initialized = false;
 
@@ -31,15 +31,15 @@ class Renderer
             this->sid = 0;
         }
 
-        Renderer(Scene &scene, int width, int height): shaderProg(4), shader(4)
+        Renderer(Scene &scene, int width, int height): shader(5)
         {
             initialized = false;
 
             //view
             this->width = width;
             this->height = height;
-            this->sid = 0;
 
+            this->sid = 0;
             initialize(scene);
         }
 
@@ -56,11 +56,39 @@ class Renderer
 
             //use shader
             shader[this->sid].Use();
-            uploadUniforms(scene);
+            //uploadUniforms(scene);
+            scene.uploadUniforms(shader[this->sid]);
 
             scene.drawModels(shader[this->sid]);
 
             checkGLError("render draw");
+        }
+
+        void renderBasic(Scene &scene)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            this->sid = 0;
+            render(scene);
+        }
+
+        void renderLight(Scene &scene)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            scene.drawLights();
+            this->sid = 4;
+            render(scene);
         }
 
         void renderNormals(Scene &scene)
@@ -100,12 +128,17 @@ class Renderer
             toIntRange = 1;
 
             //get old camera data
-            glm::vec3 oldUp = scene.cameraUp;
-            glm::vec3 oldPos = scene.cameraPos;
-            glm::vec3 oldLook = scene.cameraLook;
+            glm::vec3 oldPos = scene.getCameraPos();
+            glm::vec3 oldLook = scene.getCameraLook();
+            glm::vec3 oldUp = scene.getCameraUp();
+            glm::vec3 displayPos = glm::vec3(0.0f, 0.0f, 0.0f);
+            glm::vec3 displayLook = glm::vec3(0.0f, 0.0f, -1.0f);
+            glm::vec3 displayUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
             //set camera position to in front of 2D texture
-            scene.cameraPos = glm::vec3(0,0,0);
+
+            scene.setCameraPos(displayPos, displayLook, displayUp);
+            //scene.cameraPos = glm::vec3(0,0,0);
 
             //glViewport(0, 0, this->textureMap.width, this->textureMap.height);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -121,13 +154,14 @@ class Renderer
 
             //upload uniforms
             this->sid = 3;
-            uploadUniforms(scene);
+            shader[this->sid].Use();
+            scene.uploadUniforms(shader[this->sid]);
             shader[this->sid].setInt("texId", 0);
+            shader[this->sid].setInt("toIntRange", toIntRange);
 
             checkGLError("display2D-2");
 
             //draw a quad that fills the entire view
-            shader[this->sid].Use();
             glDisable(GL_DEPTH_TEST);
             glGenerateMipmap(GL_TEXTURE_2D);
             glBindVertexArray(squareVertexArray); //this one
@@ -136,24 +170,32 @@ class Renderer
             checkGLError("display2D-3");
 
             //reset camera data
-            scene.cameraUp = oldUp;
-            scene.cameraPos = oldPos;
-            scene.cameraLook = oldLook;
+            scene.setCameraPos(oldPos, oldLook, oldUp);
+            //scene.cameraUp = oldUp;
+            //scene.cameraPos = oldPos;
+            //scene.cameraLook = oldLook;
 
             checkGLError("display2D-4");
+        }
+
+        void toggleWireframeMode()
+        {
+            GLint polyMode;
+            glGetIntegerv(GL_POLYGON_MODE, &polyMode);
+
+            if ( polyMode == GL_LINE )
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            if ( polyMode == GL_FILL )
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            if ( polyMode == GL_POINTS )
+                ;//
         }
 
     private:
         bool initialized;
 
-        std::vector<GLuint> shaderProg;
         std::vector<Shader> shader;
-        GLuint vertexArray;
-        GLuint vertexNormalArray;
-        GLuint vertexBuffer;
         GLuint squareVertexArray;
-        GLuint elementBuffer;
-        GLuint vertexNormalbuffer;
         size_t sid;
 
         TextBufferManager2D textureMap;
@@ -167,12 +209,12 @@ class Renderer
 
             glEnable(GL_DEPTH_TEST);
             glCullFace(GL_BACK);
-            glEnable(GL_CULL_FACE);
+            //glEnable(GL_CULL_FACE);
             checkGLError("enable depth test and stuff");
 
             printf("setting up shader\n");
             createShaderProgs();
-            setupBuffers();
+            createTexRender();
 
             this->textureMap = TextBufferManager2D(this->width, this->height);
         }
@@ -197,6 +239,10 @@ class Renderer
             GLchar const *texFPath = "src/shaders/texture2D.frag";
             this->shader[3] = Shader(texVPath, texFPath);
 
+            GLchar const *lightVPath = "src/shaders/lights.vert";
+            GLchar const *lightFPath = "src/shaders/lights.frag";
+            this->shader[4] = Shader(lightVPath, lightFPath);
+
             checkGLError("shader");
         }
 
@@ -205,7 +251,7 @@ class Renderer
             glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
         }
 
-        void setupBuffers()
+        void createTexRender()
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -226,7 +272,6 @@ class Renderer
             glBindBuffer(GL_ARRAY_BUFFER, squareVertexBuffer);
             glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertexData), &squareVertexData, GL_STATIC_DRAW);
 
-            this->sid = 3;
             addShaderAttrib(0);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -235,42 +280,54 @@ class Renderer
             checkGLError("setupBuffers End");
         }
 
-        void uploadUniforms(Scene const & scene)
-        {
-            //glm::vec3 dim = scene.getModel().getDimension();
-            //float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
-            float _near = 0.01f;
-            //float _far = maxDim*3;
-            float _far = 100.0f;
-            float fov = 1.5708f;
-            checkGLError("upload uniforms");
+        //void uploadUniforms(Scene const & scene)
+        //{
+        //    //glm::vec3 dim = scene.getModel().getDimension();
+        //    //float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
+        //    //float _far = maxDim*3;
+        //    checkGLError("upload uniforms");
 
-            glm::mat4 ViewMat = scene.getViewMatrix();
-            glm::mat4 ModelMat = glm::mat4(1.0f);
-            glm::mat4 PerspectiveMat;
-            //PerspectiveMat = glm::perspective(fov, 1.0f, _near, _far); // using aspect ratio
-            PerspectiveMat = glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, _near, _far); // using width and height
-            //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
-            glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
-            glm::vec4 camPos = scene.getCameraPos();
+        //    glm::mat4 ViewMat = scene.getViewMatrix();
+        //    glm::mat4 ModelMat = glm::mat4(1.0f);
+        //    //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
+        //    glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
+        //    glm::vec3 camPos = scene.getCameraPos();
 
-            checkGLError("upload uniforms -- create matrices");
+        //    checkGLError("upload uniforms -- create matrices");
 
-            shader[this->sid].setFloat("near", _near);
-            shader[this->sid].setFloat("far", _far);
-            shader[this->sid].setFloat("fov", fov);
-            shader[this->sid].setInt("toIntRange", toIntRange);
-            shader[this->sid].setVec4("camPos", camPos);
+        //    shader[this->sid].setFloat("near", this->near);
+        //    shader[this->sid].setFloat("far", this->far);
+        //    shader[this->sid].setFloat("fov", this->fov);
+        //    shader[this->sid].setInt("toIntRange", toIntRange);
+        //    shader[this->sid].setVec3("camPos", camPos);
 
-            checkGLError("upload uniforms -- set camera data");
+        //    checkGLError("upload uniforms -- set camera data");
 
-            shader[this->sid].setMat4("P", PerspectiveMat);
-            shader[this->sid].setMat4("V", ViewMat);
-            shader[this->sid].setMat4("M", ModelMat);
-            shader[this->sid].setMat3("N", N);
+        //    shader[this->sid].setMat4("P", this->ProjectionMat);
+        //    shader[this->sid].setMat4("V", ViewMat);
+        //    shader[this->sid].setMat4("M", ModelMat);
+        //    shader[this->sid].setMat3("N", N);
 
-            checkGLError("upload uniforms general");
-        }
+        //    checkGLError("upload uniforms -- matrices");
+
+        //    float objectShininess = 32.0f;
+
+        //    glm::vec3 lightPosition = scene.getLightPos();
+        //    glm::vec3 lightAmbient = scene.getLightAmbient();
+        //    glm::vec3 lightDiffuse = scene.getLightDiffuse();
+        //    glm::vec3 lightSpecular = scene.getLightSpecular();
+
+        //    shader[this->sid].setInt("material.diffuse", 0);
+        //    shader[this->sid].setInt("material.specular", 1);
+        //    shader[this->sid].setFloat("material.shininess", objectShininess);
+        //    shader[this->sid].setVec3("light.position", lightPosition);
+        //    shader[this->sid].setVec3("light.ambient", lightAmbient);
+        //    shader[this->sid].setVec3("light.diffuse", lightDiffuse);
+        //    shader[this->sid].setVec3("light.specular", lightSpecular);
+
+        //    checkGLError("upload uniforms -- light colors");
+        //}
+
 };
 
 #endif

@@ -16,7 +16,7 @@
 #include <map>
 #include <vector>
 
-#include "stb_image.cpp"
+#include "stb_image.h"
 #include "mesh.h"
 #include "shader.h"
 
@@ -33,7 +33,7 @@ class Model
 
         /*  Functions   */
         // constructor, expects a filepath to a 3D model.
-        Model() : gammaCorrection(gamma) {}
+        Model() : gammaCorrection(false) {}
         Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
         {
             loadModel(path);
