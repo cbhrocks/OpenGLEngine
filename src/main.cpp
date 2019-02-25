@@ -438,6 +438,7 @@ int main(int argc, char** argv)
         //slot.render.renderBasic(slot.scene);
         //slot.render.render2D(slot.scene);
         slot.render.renderLight(slot.scene);
+        slot.render.renderHighlight(slot.scene);
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();

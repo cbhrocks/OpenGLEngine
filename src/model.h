@@ -30,11 +30,13 @@ class Model
         vector<Mesh> meshes;
         string directory;
         bool gammaCorrection;
+		glm::vec3 position, scale;
 
         /*  Functions   */
         // constructor, expects a filepath to a 3D model.
-        Model() : gammaCorrection(false) {}
-        Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
+        Model() : gammaCorrection(false), position(0.0f) {}
+		Model(string const &path, bool gamma = false) :
+			gammaCorrection(gamma), scale(1.0f), position(0.0f)
         {
             loadModel(path);
         }
@@ -45,6 +47,28 @@ class Model
             for(unsigned int i = 0; i < meshes.size(); i++)
                 meshes[i].Draw(shader);
         }
+
+		void setPosition(glm::vec3 position)
+		{
+			this->position = position;
+		}
+
+		void setScale(glm::vec3 scale)
+		{
+			this->scale = scale;
+		}
+
+		void uploadUniforms(Shader shader)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, this->position);
+			model = glm::scale(model, this->scale);
+            glm::mat3 normal = glm::inverseTranspose(glm::mat3(model));
+
+			shader.setMat4("M", model);
+			shader.setMat3("N", normal);
+            checkGLError("upload uniforms -- matrices");
+		}
 
     private:
         /*  Functions   */
@@ -71,7 +95,6 @@ class Model
         void processNode(aiNode *node, const aiScene *scene)
         {
             // process each mesh located at the current node
-            cout << "num meshes " << node->mNumMeshes << endl;
             for(unsigned int i = 0; i < node->mNumMeshes; i++)
             {
                 // the node object only contains indices to index the actual objects in the scene. 
@@ -80,7 +103,6 @@ class Model
                 meshes.push_back(processMesh(mesh, scene));
             }
             // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-            cout << "num children " << node->mNumChildren << endl;
             for(unsigned int i = 0; i < node->mNumChildren; i++)
             {
                 processNode(node->mChildren[i], scene);
@@ -207,6 +229,8 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
 {
     string filename = string(path);
     filename = directory + '/' + filename;
+
+	std::cout << "filename: " << filename << endl;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);

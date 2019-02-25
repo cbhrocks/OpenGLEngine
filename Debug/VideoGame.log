@@ -1,15 +1,16 @@
 ﻿  main.cpp
 c:\users\charles horton\projects\videogame\src\shader.h(67): warning C4101: 'infoLog': unreferenced local variable
 c:\users\charles horton\projects\videogame\src\shader.h(66): warning C4101: 'success': unreferenced local variable
-c:\users\charles horton\projects\videogame\src\scene.h(158): warning C4018: '<': signed/unsigned mismatch
-c:\users\charles horton\projects\videogame\src\scene.h(162): warning C4018: '<': signed/unsigned mismatch
-c:\users\charles horton\projects\videogame\src\scene.h(166): warning C4018: '<': signed/unsigned mismatch
-c:\users\charles horton\projects\videogame\src\scene.h(170): warning C4018: '<': signed/unsigned mismatch
-c:\users\charles horton\projects\videogame\src\scene.h(189): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.h(164): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.h(168): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.h(172): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.h(176): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.h(194): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.h(197): warning C4018: '<': signed/unsigned mismatch
 c:\users\charles horton\projects\videogame\src\shadermanager.h(151): warning C4018: '<': signed/unsigned mismatch
 c:\users\charles horton\projects\videogame\src\shadermanager.h(181): warning C4018: '<': signed/unsigned mismatch
 c:\users\charles horton\projects\videogame\src\shadermanager.h(183): warning C4018: '<': signed/unsigned mismatch
-c:\users\charles horton\projects\videogame\src\renderer.h(191): warning C4390: ';': empty controlled statement found; is this the intent?
+c:\users\charles horton\projects\videogame\src\renderer.h(224): warning C4390: ';': empty controlled statement found; is this the intent?
 c:\users\charles horton\projects\videogame\src\main.cpp(209): warning C4477: 'printf' : format string '%08x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'double'
 c:\users\charles horton\projects\videogame\src\main.cpp(209): warning C4477: 'printf' : format string '%0.3f' requires an argument of type 'double', but variadic argument 2 has type 'const char *'
 c:\users\charles horton\projects\videogame\src\main.cpp(218): warning C4477: 'printf' : format string '%08x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'double'

@@ -119,5 +119,8 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include=".gitignore" />
+    <None Include="src\shaders\highlight.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

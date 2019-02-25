@@ -133,6 +133,7 @@
     <None Include="src\shaders\basic.vert" />
     <None Include="src\shaders\depth.frag" />
     <None Include="src\shaders\depth.vert" />
+    <None Include="src\shaders\highlight.frag" />
     <None Include="src\shaders\light.frag" />
     <None Include="src\shaders\light.vert" />
     <None Include="src\shaders\lights.frag" />

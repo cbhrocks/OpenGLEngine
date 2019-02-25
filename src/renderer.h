@@ -19,7 +19,7 @@ class Renderer
     public:
         int toIntRange = 0;
 
-        Renderer(): shader(5)
+        Renderer(): shader(6)
         {
             initialized = false;
 
@@ -31,7 +31,7 @@ class Renderer
             this->sid = 0;
         }
 
-        Renderer(Scene &scene, int width, int height): shader(5)
+        Renderer(Scene &scene, int width, int height): shader(6)
         {
             initialized = false;
 
@@ -68,28 +68,56 @@ class Renderer
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			glStencilMask(0xff);
 
             this->sid = 0;
-            render(scene);
+
+            shaders["basic"].Use();
+            scene.uploadUniforms(shaders["basic"]);
+            scene.drawModels(shaders["basic"]);
         }
 
         void renderLight(Scene &scene)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			glStencilMask(0xff);
 
             scene.drawLights();
             this->sid = 4;
-            render(scene);
+
+            shaders["light"].Use();
+            scene.uploadUniforms(shaders["light"]);
+            scene.drawModels(shaders["light"]);
         }
+
+		void renderHighlight(Scene &scene)
+		{
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilMask(0x00);
+			glDisable(GL_DEPTH_TEST);
+
+			scene.scaleModels(glm::vec3(1.1f));
+
+			this->shaders["highlight"].Use();
+			scene.uploadCameraUniforms(this->shaders["highlight"]);
+			scene.uploadModelUniforms(this->shaders["highlight"]);
+			scene.drawModels(this->shaders["highlight"]);
+			scene.scaleModels(glm::vec3(1.0f));
+
+            checkGLError("render highlight");
+
+			glStencilMask(0xff);
+			glEnable(GL_DEPTH_TEST);
+		}
 
         void renderNormals(Scene &scene)
         {
@@ -97,14 +125,18 @@ class Renderer
 
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             this->sid = 0;
-            render(scene);
+            shaders["basic"].Use();
+            scene.uploadUniforms(shaders["basic"]);
+            scene.drawModels(shaders["basic"]);
 
             this->sid = 2;
-            render(scene);
+
+            shaders["normal"].Use();
+            scene.uploadUniforms(shaders["normal"]);
+            scene.drawModels(shaders["normal"]);
             
             checkGLError("render basic");
 
@@ -116,10 +148,12 @@ class Renderer
 
             this->sid = 1;
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
 
-            render(scene);
+            shaders["depth"].Use();
+            scene.uploadUniforms(shaders["depth"]);
+            scene.drawModels(shaders["depth"]);
 
             display2D(scene);
         }
@@ -153,11 +187,10 @@ class Renderer
             checkGLError("display2D-1");
 
             //upload uniforms
-            this->sid = 3;
-            shader[this->sid].Use();
-            scene.uploadUniforms(shader[this->sid]);
-            shader[this->sid].setInt("texId", 0);
-            shader[this->sid].setInt("toIntRange", toIntRange);
+            shaders["texture2D"].Use();
+            scene.uploadUniforms(shaders["texture2D"]);
+            shaders["texture2D"].setInt("texId", 0);
+            shaders["texture2D"].setInt("toIntRange", toIntRange);
 
             checkGLError("display2D-2");
 
@@ -195,6 +228,7 @@ class Renderer
         bool initialized;
 
         std::vector<Shader> shader;
+		std::map<std::string, Shader> shaders;
         GLuint squareVertexArray;
         size_t sid;
 
@@ -208,8 +242,15 @@ class Renderer
             initialized = true;
 
             glEnable(GL_DEPTH_TEST);
+			glEnable(GL_STENCIL_TEST);
             glCullFace(GL_BACK);
+			glDepthFunc(GL_LESS);
             //glEnable(GL_CULL_FACE);
+
+			//stencil test defaults
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
             checkGLError("enable depth test and stuff");
 
             printf("setting up shader\n");
@@ -224,24 +265,28 @@ class Renderer
         {
             GLchar const *basicVPath = "src/shaders/basic.vert";
             GLchar const *basicFPath = "src/shaders/basic.frag";
-            this->shader[0] = Shader(basicVPath, basicFPath);
+			this->shaders["basic"] = Shader(basicVPath, basicFPath);
 
             GLchar const *depthVPath = "src/shaders/depth.vert";
             GLchar const *depthFPath = "src/shaders/depth.frag";
-            this->shader[1] = Shader(depthVPath, depthFPath);
+			this->shaders["depth"] = Shader(depthVPath, depthFPath);
 
             GLchar const *normalVPath = "src/shaders/normal.vert";
             GLchar const *normalFPath = "src/shaders/normal.frag";
             GLchar const *normalGPath = "src/shaders/normal.geom";
-            this->shader[2] = Shader(normalVPath, normalFPath, normalGPath);
+			this->shaders["normal"] = Shader(normalVPath, normalFPath, normalGPath);
 
             GLchar const *texVPath = "src/shaders/texture2D.vert";
             GLchar const *texFPath = "src/shaders/texture2D.frag";
-            this->shader[3] = Shader(texVPath, texFPath);
+			this->shaders["texture2D"] = Shader(texVPath, texFPath);
 
             GLchar const *lightVPath = "src/shaders/lights.vert";
             GLchar const *lightFPath = "src/shaders/lights.frag";
-            this->shader[4] = Shader(lightVPath, lightFPath);
+			this->shaders["light"] = Shader(lightVPath, lightFPath);
+
+            GLchar const *highlightVPath = "src/shaders/basic.vert";
+            GLchar const *highlightFPath = "src/shaders/highlight.frag";
+			this->shaders["highlight"] = Shader(highlightVPath, highlightFPath);
 
             checkGLError("shader");
         }
@@ -279,55 +324,6 @@ class Renderer
             glBindVertexArray(0);
             checkGLError("setupBuffers End");
         }
-
-        //void uploadUniforms(Scene const & scene)
-        //{
-        //    //glm::vec3 dim = scene.getModel().getDimension();
-        //    //float maxDim = std::max(dim[0], std::max(dim[1], dim[2]));
-        //    //float _far = maxDim*3;
-        //    checkGLError("upload uniforms");
-
-        //    glm::mat4 ViewMat = scene.getViewMatrix();
-        //    glm::mat4 ModelMat = glm::mat4(1.0f);
-        //    //glm::mat4 ModelMatTranslate = scene.getModelTranslate();
-        //    glm::mat3 N = glm::inverseTranspose(glm::mat3(ModelMat));
-        //    glm::vec3 camPos = scene.getCameraPos();
-
-        //    checkGLError("upload uniforms -- create matrices");
-
-        //    shader[this->sid].setFloat("near", this->near);
-        //    shader[this->sid].setFloat("far", this->far);
-        //    shader[this->sid].setFloat("fov", this->fov);
-        //    shader[this->sid].setInt("toIntRange", toIntRange);
-        //    shader[this->sid].setVec3("camPos", camPos);
-
-        //    checkGLError("upload uniforms -- set camera data");
-
-        //    shader[this->sid].setMat4("P", this->ProjectionMat);
-        //    shader[this->sid].setMat4("V", ViewMat);
-        //    shader[this->sid].setMat4("M", ModelMat);
-        //    shader[this->sid].setMat3("N", N);
-
-        //    checkGLError("upload uniforms -- matrices");
-
-        //    float objectShininess = 32.0f;
-
-        //    glm::vec3 lightPosition = scene.getLightPos();
-        //    glm::vec3 lightAmbient = scene.getLightAmbient();
-        //    glm::vec3 lightDiffuse = scene.getLightDiffuse();
-        //    glm::vec3 lightSpecular = scene.getLightSpecular();
-
-        //    shader[this->sid].setInt("material.diffuse", 0);
-        //    shader[this->sid].setInt("material.specular", 1);
-        //    shader[this->sid].setFloat("material.shininess", objectShininess);
-        //    shader[this->sid].setVec3("light.position", lightPosition);
-        //    shader[this->sid].setVec3("light.ambient", lightAmbient);
-        //    shader[this->sid].setVec3("light.diffuse", lightDiffuse);
-        //    shader[this->sid].setVec3("light.specular", lightSpecular);
-
-        //    checkGLError("upload uniforms -- light colors");
-        //}
-
 };
 
 #endif

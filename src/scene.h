@@ -95,7 +95,7 @@ class Scene{
                     glm::vec3(1.0f, 1.0f, 1.0f), 
                     glm::vec3(0.0f, 5.0f, 5.0f)
                     );
-            this->basicLights.push_back(basicLight);
+            //this->basicLights.push_back(basicLight);
             DirectionLight* directionLight = new DirectionLight(
                     glm::vec3(0.2f, 0.2f, 0.2f), 
                     glm::vec3(0.5f, 0.5f, 0.5f), 
@@ -130,6 +130,12 @@ class Scene{
         }
 
         void uploadUniforms(Shader shader) {
+			this->uploadCameraUniforms(shader);
+			this->uploadLightUniforms(shader);
+			this->uploadModelUniforms(shader);
+        }
+
+		void uploadCameraUniforms(Shader shader) {
             shader.setFloat("near", this->camera.nearBound);
             shader.setFloat("far", this->camera.farBound);
             shader.setFloat("fov", this->camera.fov);
@@ -139,22 +145,22 @@ class Scene{
 
             glm::mat4 projection = this->camera.getProjectionMatrix();
             glm::mat4 view = this->camera.getViewMatrix();
-            glm::mat4 model = glm::mat4(1.0f);
-            glm::mat3 normal = glm::inverseTranspose(glm::mat3(model));
 
             shader.setMat4("P", projection);
             shader.setMat4("V", view);
-            shader.setMat4("M", model);
-            shader.setMat3("N", normal);
 
             checkGLError("upload uniforms -- matrices");
 
-            float objectShininess = 32.0f;
+			this->model.uploadUniforms(shader);
 
-            shader.setInt("material.diffuse", 0);
-            shader.setInt("material.specular", 1);
-            shader.setFloat("material.shininess", objectShininess);
+            checkGLError("upload uniforms -- light colors");
+		}
 
+		void uploadModelUniforms(Shader shader) {
+			this->model.uploadUniforms(shader);
+		}
+
+		void uploadLightUniforms(Shader shader) {
             for (int i = 0; i < this->pointLights.size(); i++){
                 string lightNum = std::to_string(i);
                 this->pointLights[i]->uploadUniforms(shader, lightNum);
@@ -171,9 +177,7 @@ class Scene{
                 string lightNum = std::to_string(i);
                 this->spotLights[i]->uploadUniforms(shader, lightNum);
             }
-
-            checkGLError("upload uniforms -- light colors");
-        }
+		}
 
 		void onFrame()
 		{
@@ -185,13 +189,14 @@ class Scene{
         void drawLights()
         {
             lightShader.Use();
-            uploadUniforms(lightShader);
+			uploadCameraUniforms(lightShader);
+            uploadLightUniforms(lightShader);
             for(int i = 0; i < this->pointLights.size(); i++){
                 this->pointLights[i]->Draw(lightShader);
             }
-            //for(int i = 0; i < this->basicLights.size(); i++){
-            //    this->basicLights[i]->Draw(lightShader);
-            //}
+            for(int i = 0; i < this->basicLights.size(); i++){
+                this->basicLights[i]->Draw(lightShader);
+            }
             //for(int i = 0; i < this->directionLights.size(); i++){
             //    this->directionLights[i]->Draw(lightShader);
             //}
@@ -225,6 +230,11 @@ class Scene{
 
         glm::vec3 getCameraLook() const
         { return this->camera.look; }
+
+		void scaleModels(glm::vec3 scale)
+		{
+			this->model.setScale(scale);
+		}
 
         void setCameraPos(glm::vec3 pos)
         {
