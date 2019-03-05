@@ -435,10 +435,13 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
+		slot.scene.onFrame();
         //slot.render.renderBasic(slot.scene);
-        //slot.render.render2D(slot.scene);
-        slot.render.renderLight(slot.scene);
-        slot.render.renderHighlight(slot.scene);
+		//slot.render.renderTexture(slot.scene);
+        slot.render.render2D(slot.scene);
+		//slot.render.renderDepth(slot.scene);
+        //slot.render.renderLight(slot.scene);
+        //slot.render.renderHighlight(slot.scene);
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();
@@ -460,4 +463,3 @@ int main(int argc, char** argv)
 
 	return EXIT_SUCCESS;
 }
-

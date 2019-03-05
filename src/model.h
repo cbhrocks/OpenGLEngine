@@ -20,7 +20,7 @@
 #include "mesh.h"
 #include "shader.h"
 
-unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
+unsigned int TextureFromFile(const char *path, const string &directory);
 
 class Model 
 {
@@ -29,14 +29,13 @@ class Model
         vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
         vector<Mesh> meshes;
         string directory;
-        bool gammaCorrection;
 		glm::vec3 position, scale;
 
         /*  Functions   */
         // constructor, expects a filepath to a 3D model.
-        Model() : gammaCorrection(false), position(0.0f) {}
-		Model(string const &path, bool gamma = false) :
-			gammaCorrection(gamma), scale(1.0f), position(0.0f)
+        Model() : position(0.0f) {}
+		Model(string const &path) :
+			scale(1.0f), position(0.0f)
         {
             loadModel(path);
         }
@@ -225,7 +224,7 @@ class Model
 };
 
 
-unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
+unsigned int TextureFromFile(const char *path, const string &directory)
 {
     string filename = string(path);
     filename = directory + '/' + filename;

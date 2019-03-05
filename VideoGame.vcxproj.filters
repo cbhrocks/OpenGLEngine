@@ -77,6 +77,27 @@
     <ClInclude Include="src\textBufferManager2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\plane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vertexData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\textureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\basic.frag">
@@ -112,14 +133,47 @@
     <None Include="src\shaders\normal.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="src\shaders\texture2D.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\texture2D.vert">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include=".gitignore" />
     <None Include="src\shaders\highlight.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\texture.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\basic2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\basic2D.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\grey2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\sharpen2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\blur2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\edge2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\inverse2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\skybox.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\skybox.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\reflection.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\reflection.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\trans.frag">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

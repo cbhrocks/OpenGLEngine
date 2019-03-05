@@ -109,7 +109,11 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ShaderFactory.h" />
     <ClInclude Include="src\counter.h" />
+    <ClInclude Include="src\cube.h" />
+    <ClInclude Include="src\Object.h" />
+    <ClInclude Include="src\plane.h" />
     <ClInclude Include="src\glHelper.h" />
     <ClInclude Include="src\light.h" />
     <ClInclude Include="src\linmath.h" />
@@ -124,16 +128,23 @@
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\shaderManager.h" />
     <ClInclude Include="src\simplePNG.h" />
+    <ClInclude Include="src\skybox.h" />
     <ClInclude Include="src\stb_image.h" />
     <ClInclude Include="src\textBufferManager2D.h" />
+    <ClInclude Include="src\textureLoader.h" />
+    <ClInclude Include="src\vertexData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="src\shaders\basic.frag" />
     <None Include="src\shaders\basic.vert" />
+    <None Include="src\shaders\blur2D.frag" />
     <None Include="src\shaders\depth.frag" />
     <None Include="src\shaders\depth.vert" />
+    <None Include="src\shaders\edge2D.frag" />
+    <None Include="src\shaders\grey2D.frag" />
     <None Include="src\shaders\highlight.frag" />
+    <None Include="src\shaders\inverse2D.frag" />
     <None Include="src\shaders\light.frag" />
     <None Include="src\shaders\light.vert" />
     <None Include="src\shaders\lights.frag" />
@@ -141,8 +152,15 @@
     <None Include="src\shaders\normal.frag" />
     <None Include="src\shaders\normal.geom" />
     <None Include="src\shaders\normal.vert" />
-    <None Include="src\shaders\texture2D.frag" />
-    <None Include="src\shaders\texture2D.vert" />
+    <None Include="src\shaders\reflection.frag" />
+    <None Include="src\shaders\reflection.vert" />
+    <None Include="src\shaders\sharpen2D.frag" />
+    <None Include="src\shaders\skybox.frag" />
+    <None Include="src\shaders\skybox.vert" />
+    <None Include="src\shaders\texture.frag" />
+    <None Include="src\shaders\basic2D.frag" />
+    <None Include="src\shaders\basic2D.vert" />
+    <None Include="src\shaders\trans.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
