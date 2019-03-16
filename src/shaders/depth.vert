@@ -1,10 +1,12 @@
 #version 330
 
-uniform mat4 P;  //projection matrix
-uniform mat4 V;  //camera matrix
+layout (std140) uniform Camera
+{
+	mat4 projection;
+	mat4 view;
+	vec3 camPos;
+};
 uniform mat4 M;  //modelview matrix: M = C// * mR * mT
-
-uniform vec3 camPos;      //camera position
 
 layout (location = 0) in vec3 pos;
 in vec3 colorIn;
@@ -20,7 +22,7 @@ void main()
 	//smoothNorm = colorIn*2 - 1;
 	float d = length(pos - camPos.xyz);
 	vec4 pos = vec4(pos, 1);
-	gl_Position = P*V*M*pos;
+	gl_Position = projection*view*M*pos;
 
 	//smoothColor = vec4(1,0,0,0);
 	distance = d;

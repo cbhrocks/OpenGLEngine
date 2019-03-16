@@ -15,13 +15,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//#include "shaderManager.h"
 #include "renderer.h"
-#include "scene.h"
+#include "Scene.h"
 #include "counter.h"
-#include "mesh.h"
-#include "model.h"
-//#include "textBufferManager2D.h"
 
 using namespace std;
 
@@ -29,7 +25,7 @@ typedef struct
 {
 	GLFWwindow* window;
 	Renderer render;
-	Scene scene;
+	Scene* scene;
     int id;
 } Slot;
 
@@ -127,6 +123,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
         slot->render.toggleWireframeMode();
+    if (key == GLFW_KEY_G && action == GLFW_PRESS)
+        slot->scene->setGammaCorrection(!slot->scene->getGammaCorrection());
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -148,20 +146,21 @@ static void scroll_callback(GLFWwindow* window, double x, double y)
 
 static void doMovement(Scene* scene) {
     GLfloat cameraSpeed = 0.1f;
+	Camera* camera = scene->getActiveCamera();
     if(keys[GLFW_KEY_W]){
-        scene->setCameraPos(scene->getCameraPos() + cameraSpeed * scene->getCameraLook());
+		camera->setPosition(camera->getPosition() + cameraSpeed * camera->getLook());
         //printf("forward\n");
     }
     if(keys[GLFW_KEY_S]){
-        scene->setCameraPos(scene->getCameraPos() - cameraSpeed * scene->getCameraLook());
+		camera->setPosition(camera->getPosition() - cameraSpeed * camera->getLook());
         //printf("backward\n");
     }
     if(keys[GLFW_KEY_A]){
-        scene->setCameraPos(scene->getCameraPos() - glm::normalize(glm::cross(scene->getCameraLook(), scene->getCameraUp())) * cameraSpeed);
+		camera->setPosition(camera->getPosition() - glm::normalize(glm::cross(camera->getLook(), camera->getUp())) * cameraSpeed);
         //printf("left\n");
     }
     if(keys[GLFW_KEY_D]){
-        scene->setCameraPos(scene->getCameraPos() + glm::normalize(glm::cross(scene->getCameraLook(), scene->getCameraUp())) * cameraSpeed);
+		camera->setPosition(camera->getPosition() + glm::normalize(glm::cross(camera->getLook(), camera->getUp())) * cameraSpeed);
         //printf("right\n");
     }
     //if (keys[GLFW_KEY_X] && modKeys[GLFW_MOD_ALT]){
@@ -275,10 +274,11 @@ static void cursor_position_callback(GLFWwindow* window, double x, double y)
     newLook.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     // Also re-calculate the Right and Up vector
     // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-    glm::vec3 right = glm::normalize(glm::cross(newLook, slot->scene.up));  
+    glm::vec3 right = glm::normalize(glm::cross(newLook, slot->scene->getUp()));  
     glm::vec3 camUp = glm::normalize(glm::cross(right, newLook));
 
-    slot->scene.setCamView(glm::normalize(newLook), camUp);
+	slot->scene->getActiveCamera()->setLook(glm::normalize(newLook));
+    slot->scene->getActiveCamera()->setUp(camUp);
 
     printf("new look: %f, %f, %f\n", newLook.x, newLook.y, newLook.z);
 }
@@ -320,7 +320,7 @@ static void window_position_callback(GLFWwindow* window, int x, int y)
 int main(int argc, char** argv)
 {
     GLFWmonitor* monitor = NULL;
-    int ch, i, width, height;
+    int width, height;
 
     glfwSetErrorCallback(error_callback);
 
@@ -394,9 +394,9 @@ int main(int argc, char** argv)
     //initalize scene
 
     Slot slot;// = new Slot;
-    slot.scene = Scene(width/height);
+    slot.scene = new Scene();
     slot.window = window;
-    slot.render = Renderer(slot.scene, width, height);
+    slot.render = Renderer(width, height);
     slot.id = 0;
 
     pitch = 0.0f;
@@ -435,21 +435,20 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-		slot.scene.onFrame();
-        //slot.render.renderBasic(slot.scene);
-		//slot.render.renderTexture(slot.scene);
-        slot.render.render2D(slot.scene);
-		//slot.render.renderDepth(slot.scene);
-        //slot.render.renderLight(slot.scene);
+		slot.scene->onFrame();
+		slot.render.preRender(slot.scene);
+		slot.render.renderTexture(slot.scene);
         //slot.render.renderHighlight(slot.scene);
+		slot.render.postRender(slot.scene);
+
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();
-        doMovement(&slot.scene);
+        doMovement(slot.scene);
         //glfwWaitEvents();
         //render.render(scene);
         
-        slot.scene.timeStep(currentTime);
+        slot.scene->timeStep(currentTime);
 
         lastTime = currentTime;
         //break;

@@ -1,15 +1,6 @@
-#ifndef PATHFINDER_TEXTBUFFERMANAGER2D_H
-#define PATHFINDER_TEXTBUFFERMANAGER2D_H
+#pragma once
 
-static const GLfloat quadVertexData[] = {
-	-1.0f,  1.0f,  0.0f, 1.0f,
-	-1.0f, -1.0f,  0.0f, 0.0f,
-	 1.0f, -1.0f,  1.0f, 0.0f,
-
-	-1.0f,  1.0f,  0.0f, 1.0f,
-	 1.0f, -1.0f,  1.0f, 0.0f,
-	 1.0f,  1.0f,  1.0f, 1.0f
-};
+#include "vertexData.h"
 
 class TextBufferManager2D {
 public:
@@ -27,7 +18,7 @@ public:
 	TextBufferManager2D(size_t width, size_t height, Shader shader) :
 		width(width), height(height), shader(shader)
 	{
-		cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << endl;
+		std::cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << std::endl;
 
 		glGenFramebuffers(1, &FBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -106,22 +97,50 @@ public:
 		checkGLError("create vao textbuffermanager");
 	}
 
+	void setActive() 
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, this->FBO);
+
+		glStencilMask(0xFF);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
+
 	void UploadUniforms()
 	{
-		this->shader.setInt("texId", 0);
+		this->UploadUniforms(this->shader);
 	}
 
-	void Draw()
+	void UploadUniforms(Shader shader)
 	{
-		this->shader.Use();
-		this->UploadUniforms();
-		glBindVertexArray(this->VAO);
+		shader.setInt("texId", 0);
+	}
+
+	void Draw() {
+		this->Draw(this->shader);
+	}
+
+	void Draw(Shader shader)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDisable(GL_DEPTH_TEST);
+
+		shader.Use();
+		this->UploadUniforms(shader);
+
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, this->texture);
+
+		glBindVertexArray(this->VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
-		checkGLError("draw textbuffermanager");
+		checkGLError("TextBufferManager::Draw");
+
+		glEnable(GL_DEPTH_TEST);
+
+		checkGLError("TextBufferManager::Draw");
 	}
 };
-
-
-#endif //PATHFINDER_TEXTBUFFERMANAGER2D_H

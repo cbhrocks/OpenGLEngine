@@ -1,6 +1,8 @@
 #ifndef __GLHELPER
 #define __GLHELPER
 
+#include <iostream>
+
 static void checkGLError(char const * ident = "")
 {
 	GLenum errCode;

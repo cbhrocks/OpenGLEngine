@@ -17,79 +17,58 @@
 #include "glHelper.h"
 #include "vertexData.h"
 
-GLuint loadSkyboxTexture(const std::vector<std::string> faces)
-{
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-	int width, height, nrComponents;
-	for (GLuint i = 0; i < faces.size(); i++) {
-
-		unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrComponents, 0);
-		if (data)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-			stbi_image_free(data);
-		}
-		else
-		{
-			std::cout << "Texture failed to load at path: " << faces[i] << std::endl;
-			stbi_image_free(data);
-		}
-	}
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    return textureID;
-}
-
 class Skybox 
 {
     public:
         /*  Model Data */
         GLuint VAO;
-		GLuint texture;
+		Texture texture;
 		glm::vec3 rotation;
+		Shader shader;
 
 		Skybox()
 		{}
 
-        Skybox(const std::vector<std::string> faces) : 
-			texture(loadSkyboxTexture(faces)),
+		Skybox(const Texture& ptexture, const Shader& shader) :
+			shader(shader),
+			texture(ptexture),
 			rotation(0.0)
         {
 			setup();
         }
 
-        // draws the model, and thus all its meshes
-        virtual void Draw(const Shader& shader) const
+        virtual void uploadUniforms()
         {
-			glDepthMask(GL_FALSE);
+			this->uploadUniforms(this->shader);
+        }
+
+        virtual void uploadUniforms(Shader& shader) const
+        {
+			shader.Use();
+			this->shader.setInt("texture", 0);
+        }
+
+		virtual void Draw()
+		{
+			this->Draw(this->shader);
+		}
+
+        // draws the model, and thus all its meshes
+        virtual void Draw(Shader& shader) const
+        {
+			shader.Use();
+
+			glDepthFunc(GL_LEQUAL);
             glBindVertexArray(VAO);
 
-			glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture.id);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
 			glBindVertexArray(0);
-			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
         }
-
-        //virtual void uploadUniforms(const Shader& shader) const
-        //{
-		//	shader.setInt("texture1", 0);
-
-        //    glm::mat3 normal = glm::inverseTranspose(glm::mat3(model));
-
-		//	shader.setMat4("M", model);
-		//	shader.setMat3("N", normal);
-        //    checkGLError("upload uniforms -- matrices");
-        //}
 
 		void setRotation(glm::vec3 rotation)
 		{
@@ -101,9 +80,19 @@ class Skybox
 			this->rotation += rotation;
 		}
 
-		GLuint getTexture()
+		Texture getTexture()
 		{
 			return this->texture;
+		}
+
+		Shader getShader()
+		{
+			return this->shader;
+		}
+
+		void setShader(const Shader& shader)
+		{
+			this->shader = shader;
 		}
 
     private:
@@ -124,6 +113,7 @@ class Skybox
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
             glBindVertexArray(0);
+			checkGLError("Skybox::setup");
         }
 };
 

@@ -2,7 +2,7 @@
 
 out vec4 FragColor;
 
-in vec2 TexCoords;
+vec2 TexCoords;
 
 void main()
 {

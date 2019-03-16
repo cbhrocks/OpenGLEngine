@@ -14,8 +14,7 @@
 
 #include "shader.h"
 #include "glHelper.h"
-
-using namespace std;
+#include "TextureManager.h"
 
 struct VertexData {
     // position
@@ -30,24 +29,18 @@ struct VertexData {
     glm::vec3 Bitangent;
 };
 
-struct Texture {
-    GLuint id;
-    string type;
-    string path;
-};
-
 class Mesh {
     public:
         /*  Mesh Data  */
-        vector<VertexData> vertices;
-        vector<GLuint> indices;
-        vector<Texture> textures;
+        std::vector<VertexData> vertices;
+        std::vector<GLuint> indices;
+        std::vector<Texture> textures;
         GLuint VAO;
 
         /*  Functions  */
         // constructor
         Mesh() {}
-        Mesh(vector<VertexData> vertices, vector<GLuint> indices, vector<Texture> textures)
+        Mesh(std::vector<VertexData> vertices, std::vector<GLuint> indices, std::vector<Texture> textures)
         {
             this->vertices = vertices;
             this->indices = indices;
@@ -69,8 +62,8 @@ class Mesh {
             {
                 glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
                 // retrieve texture number (the N in diffuse_textureN)
-                string number;
-                string name = textures[i].type;
+                std::string number;
+                std::string name = textures[i].type;
                 if(name == "texture_diffuse")
                     number = std::to_string(diffuseNr++);
                 else if(name == "texture_specular")
@@ -91,7 +84,7 @@ class Mesh {
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
-            checkGLError("Draw draw mesh");
+            checkGLError("Mesh::Draw draw VAO");
 
             // always good practice to set everything back to defaults once configured.
             glActiveTexture(GL_TEXTURE0);

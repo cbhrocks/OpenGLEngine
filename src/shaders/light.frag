@@ -13,5 +13,5 @@ out vec4 FragColor;
 
 void main()
 {
-    FragColor = vec4(255 * (light.ambient), 1.0);
+    FragColor = vec4(light.ambient, 1.0);
 }
