@@ -11,12 +11,12 @@ layout (std140) uniform Camera
 	vec3 camPos;
 };
 
-uniform mat4 M;  //model matrix
+uniform mat4 Model;  //model matrix
 
 out vec2 TexCoords;
 
 void main()
 {
 	TexCoords = aTexCoords;
-	gl_Position = projection*view*M*vec4(aPos, 1.0);
+	gl_Position = projection*view*Model*vec4(aPos, 1.0);
 }

@@ -7,7 +7,7 @@
 
 #include "glHelper.h"
 #include "shader.h"
-#include "textBufferManager2D.h"
+#include "FBOManager.h"
 
 class Camera
 {
@@ -20,7 +20,7 @@ public:
 	float nearBound;
 	float aspectRatio;
 	float fov;
-	TextBufferManager2D* tbm;
+	FBOManagerI* tbm;
 
 	Camera();
 	Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float aspectRatio, float fov);
@@ -38,8 +38,8 @@ public:
 	glm::vec3 getLook() const;
 	void setLook(const glm::vec3& look);
 
-	TextBufferManager2D* getTBM() const;
-	void setTBM(TextBufferManager2D* tbm);
+	FBOManagerI* getTBM() const;
+	void setTBM(FBOManagerI* tbm);
 
 	void uploadUniforms(Shader& shader);
 	void updateUniformBlock();

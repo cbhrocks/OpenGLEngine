@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h> // holds all OpenGL type declarations
+#include <glm/glm.hpp>
 #include <vector>
 #include <algorithm>
 
@@ -317,13 +318,13 @@ std::vector<glm::vec2> const cubeTexCoords{
 	glm::vec2(0.0f, 0.0f),
 };
 
-std::vector<glm::vec3> const planePostions{
-	glm::vec3(0.5f,  0.5f,  0.0f),
-	glm::vec3(-0.5f,  0.5f,  0.0f),
-	glm::vec3(-0.5f, -0.5f,  0.0f),
-	glm::vec3(0.5f,  0.5f,  0.0f),
-	glm::vec3(-0.5f, -0.5f,  0.0f),
-	glm::vec3(0.5f, -0.5f,  0.0f)
+std::vector<glm::vec3> const planePositions{
+	glm::vec3(-1.0f,  1.0f,  0.0f),
+	glm::vec3(-1.0f,  -1.0f,  0.0f),
+	glm::vec3(1.0f, -1.0f,  0.0f),
+	glm::vec3(-1.0f,  1.0f,  0.0f),
+	glm::vec3(1.0f, -1.0f,  0.0f),
+	glm::vec3(1.0f, 1.0f,  0.0f)
 };
 
 std::vector<glm::vec3> const planeNormals{
@@ -336,14 +337,13 @@ std::vector<glm::vec3> const planeNormals{
 };
 
 std::vector<glm::vec2> const planeTexCoords{
-	glm::vec2(1.0f,  0.0f),
+	glm::vec2(0.0f,  1.0f),
 	glm::vec2(0.0f,  0.0f),
-	glm::vec2(0.0f,  1.0f),
 	glm::vec2(1.0f,  0.0f),
 	glm::vec2(0.0f,  1.0f),
+	glm::vec2(1.0f,  0.0f),
 	glm::vec2(1.0f,  1.0),
 };
-
 
 GLfloat const planeVertexData[]{
 	 0.5f,  0.5f,  0.0f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f,

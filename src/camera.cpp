@@ -24,12 +24,12 @@ glm::mat4 Camera::getViewMatrix() const
 }
 
 
-TextBufferManager2D* Camera::getTBM() const
+FBOManagerI* Camera::getTBM() const
 {
 	return this->tbm;
 }
 
-void Camera::setTBM(TextBufferManager2D* tbm)
+void Camera::setTBM(FBOManagerI* tbm)
 {
 	this->tbm = tbm;
 }

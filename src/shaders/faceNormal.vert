@@ -10,9 +10,9 @@ layout (std140) uniform Camera
 	vec3 camPos;
 };
 
-uniform mat4 M; //model matrix
+uniform mat4 Model; //model matrix
 
 void main()
 {
-	gl_Position = projection*view*M*vec4(aPos, 1.0);
+	gl_Position = projection*view*Model*vec4(aPos, 1.0);
 }

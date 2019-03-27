@@ -8,7 +8,6 @@
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glHelper.h"
 #include "scene.h"
-#include "textBufferManager2D.h"
 #include "shader.h"
 
 #define CUBE_TEXTURE_SIZE 256
@@ -91,8 +90,6 @@ class Renderer
         bool initialized;
 
         GLuint squareVertexArray;
-
-        TextBufferManager2D textureMgr;
 
         int width, height;
 

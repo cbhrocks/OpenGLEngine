@@ -150,7 +150,7 @@ void BasicLight::Draw(Shader shader) const
 
 	glm::mat4 ModelMat = glm::mat4(1.0f);
 	ModelMat = glm::scale(glm::translate(ModelMat, this->position), glm::vec3(0.25, 0.25, 0.25));
-	shader.setMat4("M", ModelMat);
+	shader.setMat4("Model", ModelMat);
 
 	shader.setVec3("light.ambient", this->ambient);
 	shader.setVec3("light.diffuse", this->diffuse);

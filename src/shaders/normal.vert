@@ -10,7 +10,7 @@ layout (std140) uniform Camera
 	vec3 camPos;
 };
 
-uniform mat4 M; //model matrix
+uniform mat4 Model; //model matrix
 
 out VS_OUT {
     vec3 normal;
@@ -18,7 +18,7 @@ out VS_OUT {
 
 void main()
 {
-	gl_Position = projection*view*M*vec4(aPos, 1.0);
-    mat3 normalMatrix = mat3(transpose(inverse(view*M)));
+	gl_Position = projection*view*Model*vec4(aPos, 1.0);
+    mat3 normalMatrix = mat3(transpose(inverse(view*Model)));
     vs_out.normal = normalize(vec3(projection * vec4(normalMatrix * aNormal, 0.0)));
 }

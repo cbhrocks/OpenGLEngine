@@ -2,6 +2,12 @@
 
 uniform sampler2D texId;
 
+layout (std140) uniform Scene
+{
+	float time;
+	bool gamma;
+};
+
 in vec2 TexCoords;
 
 out vec4 FragColor;

@@ -352,8 +352,8 @@ int main(int argc, char** argv)
     }
     else
     {
-        width  = 640;
-        height = 480;
+        width  = 1024;
+        height = 1024;
     }
 
     if (monitor)

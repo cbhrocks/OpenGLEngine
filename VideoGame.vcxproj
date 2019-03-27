@@ -113,6 +113,7 @@
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
+    <ClCompile Include="src\FBOManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera.h" />
@@ -128,7 +129,7 @@
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\skybox.h" />
     <ClInclude Include="src\stb_image.h" />
-    <ClInclude Include="src\textBufferManager2D.h" />
+    <ClInclude Include="src\FBOManager.h" />
     <ClInclude Include="src\TextureManager.h" />
     <ClInclude Include="src\vertexData.h" />
   </ItemGroup>
@@ -137,7 +138,11 @@
     <None Include="src\shaders\basic.frag" />
     <None Include="src\shaders\basic.vert" />
     <None Include="src\shaders\blinnPhongLighting.frag" />
+    <None Include="src\shaders\bloom2D.frag" />
+    <None Include="src\shaders\bloom2D.vert" />
     <None Include="src\shaders\blur2D.frag" />
+    <None Include="src\shaders\BPLightingNorm.frag" />
+    <None Include="src\shaders\BPLightingNorm.vert" />
     <None Include="src\shaders\depth.frag" />
     <None Include="src\shaders\depth.vert" />
     <None Include="src\shaders\edge2D.frag" />
@@ -146,7 +151,10 @@
     <None Include="src\shaders\faceNormal.frag" />
     <None Include="src\shaders\faceNormal.geom" />
     <None Include="src\shaders\faceNormal.vert" />
+    <None Include="src\shaders\gaussianBlur2D.frag" />
+    <None Include="src\shaders\gaussianBlur2D.vert" />
     <None Include="src\shaders\grey2D.frag" />
+    <None Include="src\shaders\hdr2D.frag" />
     <None Include="src\shaders\highlight.frag" />
     <None Include="src\shaders\inverse2D.frag" />
     <None Include="src\shaders\light.frag" />
@@ -170,6 +178,9 @@
     <None Include="src\shaders\sharpen2D.frag" />
     <None Include="src\shaders\skybox.frag" />
     <None Include="src\shaders\skybox.vert" />
+    <None Include="src\shaders\tbn.frag" />
+    <None Include="src\shaders\tbn.geom" />
+    <None Include="src\shaders\tbn.vert" />
     <None Include="src\shaders\texture.frag" />
     <None Include="src\shaders\basic2D.frag" />
     <None Include="src\shaders\basic2D.vert" />

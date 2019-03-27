@@ -45,8 +45,8 @@ void Model::uploadUniforms(Shader& shader)
 	model = glm::scale(model, this->scale);
 	glm::mat3 normal = glm::inverseTranspose(glm::mat3(model));
 
-	shader.setMat4("M", model);
-	shader.setMat3("N", normal);
+	shader.setMat4("Model", model);
+	shader.setMat3("Normal", normal);
 	checkGLError("upload uniforms -- matrices");
 }
 

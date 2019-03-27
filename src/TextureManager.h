@@ -54,6 +54,7 @@ GLuint static loadSkyboxTexture(const std::vector<std::string> faces)
 
 GLuint static TextureFromFile(const std::string &path, const std::string &directory, const bool &gammaCorrection = false)
 {
+	stbi_set_flip_vertically_on_load(false);
     std::string filename = path;
     filename = directory + '/' + filename;
 
@@ -103,6 +104,7 @@ GLuint static TextureFromFile(const std::string &path, const std::string &direct
 
 GLuint static loadTexture(const std::string &path, const bool &gammaCorrection = false)
 {
+	stbi_set_flip_vertically_on_load(true);
     GLuint textureID;
     glGenTextures(1, &textureID);
 
@@ -165,7 +167,7 @@ public:
 
 		glBindVertexArray(0);
 
-		checkGLError("create vao textbuffermanager");
+		checkGLError("create vao FBOManager");
 	}
 
 	void Draw(Shader shader, GLuint texture) {
@@ -185,11 +187,11 @@ public:
 		glBindVertexArray(this->VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
-		checkGLError("TextBufferManager::Draw");
+		checkGLError("FBOManager::Draw");
 
 		glEnable(GL_DEPTH_TEST);
 
-		checkGLError("TextBufferManager::Draw");
+		checkGLError("FBOManager::Draw");
 	}
 };
 

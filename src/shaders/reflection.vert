@@ -7,21 +7,23 @@ layout (std140) uniform Camera
 	vec3 camPos;
 };
 
-uniform mat4 M;  //model matrix
-uniform mat3 N;  //normal matrix
+uniform mat4 Model;  //model matrix
+uniform mat3 Normal;  //normal matrix
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
 
-out vec3 Normal;
-out vec3 FragPos;
-out vec2 TexCoords;
+out VS_OUT {
+	vec3 Normal;
+	vec3 FragPos;
+	vec2 TexCoords;
+} vs_out;
 
 void main()
 {
-    TexCoords = aTexCoords;
-	gl_Position = projection*view*M*vec4(aPos, 1.0);
-    FragPos = vec3(M * vec4(aPos, 1.0));
-    Normal = N * aNormal;
+    vs_out.TexCoords = aTexCoords;
+	gl_Position = projection*view*Model*vec4(aPos, 1.0);
+    vs_out.FragPos = vec3(Model * vec4(aPos, 1.0));
+    vs_out.Normal = Normal * aNormal;
 }

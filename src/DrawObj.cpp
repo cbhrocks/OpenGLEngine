@@ -61,8 +61,8 @@ void DrawObject::UploadUniforms(Shader& shader)
 	model = glm::scale(model, this->scale);
 	glm::mat3 normal = glm::inverseTranspose(glm::mat3(model));
 
-	shader.setMat4("M", model);
-	shader.setMat3("N", normal);
+	shader.setMat4("Model", model);
+	shader.setMat3("Normal", normal);
 	checkGLError("DrawObject::UploadUniforms");
 }
 
@@ -153,10 +153,48 @@ void DrawObject::setRotation(glm::vec3 rotation) { this->rotation = rotation; }
 glm::vec3 DrawObject::getRotation() const { return this->rotation; }
 void DrawObject::addRotation(glm::vec3 rotation) { this->rotation += rotation; }
 
+void DrawObject::calculateTanAndBitan()
+{
+	std::vector<glm::vec3> tangents;
+	std::vector<glm::vec3> bitangents;
+	for (int i = 0; i < this->Positions.size(); i+=3) {
+		glm::vec3 edge1 = this->Positions.at(i + 1) - this->Positions.at(i);
+		glm::vec3 edge2 = this->Positions.at(i + 2) - this->Positions.at(i);
+		glm::vec2 deltaUV1 = this->TexCoords.at(i + 1) - this->TexCoords.at(i);
+		glm::vec2 deltaUV2 = this->TexCoords.at(i + 2) - this->TexCoords.at(i);
+
+		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		glm::vec3 tangent;
+		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+		tangent = glm::normalize(tangent);
+		tangents.push_back(tangent);
+		tangents.push_back(tangent);
+		tangents.push_back(tangent);
+
+		glm::vec3 bitangent;
+		bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+		bitangent = glm::normalize(bitangent);
+		bitangents.push_back(bitangent);
+		bitangents.push_back(bitangent);
+		bitangents.push_back(bitangent);
+	}
+	this->Tangents = tangents;
+	this->Bitangents = bitangents;
+}
+
 /*  Functions    */
 // initializes all the buffer objects/arrays
 void DrawObject::setup()
 {
+	if (this->Positions.size() > 0 && this->TexCoords.size() > 0) {
+		this->calculateTanAndBitan();
+	}
+
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 

@@ -1,1 +1,33 @@
-﻿  VideoGame.vcxproj -> C:\Users\Charles Horton\Projects\VideoGame\Debug\VideoGame.exe
+﻿  DrawObj.cpp
+c:\users\charles horton\projects\videogame\src\drawobj.cpp(160): warning C4018: '<': signed/unsigned mismatch
+  Scene.cpp
+c:\users\charles horton\projects\videogame\src\scene.cpp(18): warning C4244: 'argument': conversion from 'size_t' to 'float', possible loss of data
+c:\users\charles horton\projects\videogame\src\scene.cpp(104): warning C4305: 'argument': truncation from 'double' to 'T'
+          with
+          [
+              T=float
+          ]
+c:\users\charles horton\projects\videogame\src\scene.cpp(287): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.cpp(296): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.cpp(318): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.cpp(327): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.cpp(371): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.cpp(453): warning C4018: '<': signed/unsigned mismatch
+c:\users\charles horton\projects\videogame\src\scene.cpp(592): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  main.cpp
+c:\users\charles horton\projects\videogame\src\renderer.h(86): warning C4390: ';': empty controlled statement found; is this the intent?
+c:\users\charles horton\projects\videogame\src\main.cpp(208): warning C4477: 'printf' : format string '%08x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'double'
+c:\users\charles horton\projects\videogame\src\main.cpp(208): warning C4477: 'printf' : format string '%0.3f' requires an argument of type 'double', but variadic argument 2 has type 'const char *'
+c:\users\charles horton\projects\videogame\src\main.cpp(217): warning C4477: 'printf' : format string '%08x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'double'
+c:\users\charles horton\projects\videogame\src\main.cpp(217): warning C4477: 'printf' : format string '%0.3f' requires an argument of type 'double', but variadic argument 2 has type 'const char *'
+c:\users\charles horton\projects\videogame\src\main.cpp(243): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(244): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(251): warning C4244: '+=': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(252): warning C4244: '+=': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(257): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(258): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(419): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\charles horton\projects\videogame\src\main.cpp(427): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  model.cpp
+  Generating Code...
+  VideoGame.vcxproj -> C:\Users\Charles Horton\Projects\VideoGame\Debug\VideoGame.exe

@@ -42,6 +42,9 @@
     <ClCompile Include="src\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\FBOManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\counter.h">
@@ -71,9 +74,6 @@
     <ClInclude Include="src\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\textBufferManager2D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\vertexData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FBOManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -213,6 +216,36 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="src\shaders\shadowCubeDebug.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\BPLightingNorm.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\BPLightingNorm.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\hdr2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\tbn.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\tbn.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\tbn.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\gaussianBlur2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\gaussianBlur2D.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\bloom2D.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\bloom2D.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

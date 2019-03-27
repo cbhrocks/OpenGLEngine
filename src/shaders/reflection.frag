@@ -18,16 +18,18 @@ uniform Material material;
 uniform samplerCube skybox;
 uniform float reflection;
 
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 FragPos;
+in VS_OUT {
+	vec3 Normal;
+	vec3 FragPos;
+	vec2 TexCoords;
+} fs_in;
 
 out vec4 FragColor;
 
 void main()
 {
-	vec3 I = normalize(FragPos - camPos);
-	vec3 R = reflect(I, normalize(Normal));
+	vec3 I = normalize(fs_in.FragPos - camPos);
+	vec3 R = reflect(I, normalize(fs_in.Normal));
 	//FragColor = texture(texture1, TexCoords);
-	FragColor = mix(vec4(texture(skybox, R).rgb, 1.0), texture(material.texture_diffuse1, TexCoords), reflection);
+	FragColor = mix(vec4(texture(skybox, R).rgb, 1.0), texture(material.texture_diffuse1, fs_in.TexCoords), reflection);
 }

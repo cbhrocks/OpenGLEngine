@@ -85,6 +85,8 @@ class DrawObject {
 		glm::vec3 getRotation() const;
 		void addRotation(glm::vec3 rotation);
 
+		void calculateTanAndBitan();
+
     private:
         /*  Render data  */
         GLuint VBO;

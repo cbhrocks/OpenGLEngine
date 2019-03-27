@@ -6,7 +6,7 @@ layout (std140) uniform Camera
 	mat4 view;
 	vec3 camPos;
 };
-uniform mat4 M;  //modelview matrix: M = C// * mR * mT
+uniform mat4 Model;  //modelview matrix: M = C// * mR * mT
 
 layout (location = 0) in vec3 pos;
 in vec3 colorIn;
@@ -22,7 +22,7 @@ void main()
 	//smoothNorm = colorIn*2 - 1;
 	float d = length(pos - camPos.xyz);
 	vec4 pos = vec4(pos, 1);
-	gl_Position = projection*view*M*pos;
+	gl_Position = projection*view*Model*pos;
 
 	//smoothColor = vec4(1,0,0,0);
 	distance = d;

@@ -8,6 +8,7 @@
 #include "skybox.h"
 #include "DrawObj.h"
 #include "TextureManager.h"
+#include "FBOManager.h"
 #include "camera.h"
 
 class Scene {
@@ -17,6 +18,7 @@ public:
 	double currentTime;
 	std::map<std::string, Shader> shaders;
 	bool gammaCorrection;
+	float exposure;
 	Tex2DRenderer tex2DR;
 
 	Scene();
@@ -50,6 +52,9 @@ public:
 
 	void setGammaCorrection(bool gamma);
 	bool getGammaCorrection() const;
+
+	void setExposure(float exposure);
+	float getExposure() const;
 
 	void scaleModels(const glm::vec3& scale);
 
