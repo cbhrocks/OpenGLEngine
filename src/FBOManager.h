@@ -4,18 +4,10 @@
 #include "vertexData.h"
 #include "shader.h"
 #include "glHelper.h"
+#include "DrawObj.h"
 
 class FBOManagerI {
 public:
-	GLuint textures[1];
-	GLuint FBO;
-	GLuint RBO;
-	GLuint VAO;
-	GLuint VBO;
-	size_t width;
-	size_t height;
-	Shader shader;
-
 	virtual void setup() = 0;
 
 	virtual void setShader(Shader shader) = 0;
@@ -87,4 +79,33 @@ public:
 	void Draw(Shader shader);
 	using FBOManager::UploadUniforms;
 	void BloomBuffer::UploadUniforms(Shader shader);
+};
+
+class GBuffer {
+public:
+	GLuint gPosition, gNormal, gAlbedoSpec; // textures
+	GLuint gBuffer; // fbo
+	GLuint depthBuffer; // rbo
+	GLuint VAO;
+	GLuint VBO;
+	size_t width;
+	size_t height;
+	Shader shader;
+
+	GBuffer();
+	GBuffer(size_t width, size_t height, Shader shader);
+
+	void setup();
+
+	virtual void setShader(Shader shader);
+	virtual void setDimensions(size_t width, size_t height);
+	virtual void createVAO();
+
+	virtual void DrawToBuffer(std::vector<DrawObject*> objs)
+	{ this->DrawToBuffer(this->shader, objs); }
+	virtual void DrawToBuffer(Shader shader, std::vector<DrawObject*> objs);
+
+	//virtual void UploadUniforms()
+	//{ this->UploadUniforms(this->shader); }
+	//virtual void UploadUniforms(Shader shader);
 };

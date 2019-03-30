@@ -1,5 +1,5 @@
-﻿  DrawObj.cpp
-c:\users\charles horton\projects\videogame\src\drawobj.cpp(160): warning C4018: '<': signed/unsigned mismatch
+﻿  FBOManager.cpp
+c:\users\charles horton\projects\videogame\src\fbomanager.cpp(212): warning C4018: '<': signed/unsigned mismatch
   Scene.cpp
 c:\users\charles horton\projects\videogame\src\scene.cpp(18): warning C4244: 'argument': conversion from 'size_t' to 'float', possible loss of data
 c:\users\charles horton\projects\videogame\src\scene.cpp(104): warning C4305: 'argument': truncation from 'double' to 'T'
@@ -14,6 +14,7 @@ c:\users\charles horton\projects\videogame\src\scene.cpp(327): warning C4018: '<
 c:\users\charles horton\projects\videogame\src\scene.cpp(371): warning C4018: '<': signed/unsigned mismatch
 c:\users\charles horton\projects\videogame\src\scene.cpp(453): warning C4018: '<': signed/unsigned mismatch
 c:\users\charles horton\projects\videogame\src\scene.cpp(592): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  camera.cpp
   main.cpp
 c:\users\charles horton\projects\videogame\src\renderer.h(86): warning C4390: ';': empty controlled statement found; is this the intent?
 c:\users\charles horton\projects\videogame\src\main.cpp(208): warning C4477: 'printf' : format string '%08x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'double'
@@ -28,6 +29,9 @@ c:\users\charles horton\projects\videogame\src\main.cpp(257): warning C4244: '='
 c:\users\charles horton\projects\videogame\src\main.cpp(258): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
 c:\users\charles horton\projects\videogame\src\main.cpp(419): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 c:\users\charles horton\projects\videogame\src\main.cpp(427): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  model.cpp
   Generating Code...
-  VideoGame.vcxproj -> C:\Users\Charles Horton\Projects\VideoGame\Debug\VideoGame.exe
+FBOManager.obj : error LNK2001: unresolved external symbol "public: virtual void __thiscall GBuffer::setShader(class Shader)" (?setShader@GBuffer@@UAEXVShader@@@Z)
+FBOManager.obj : error LNK2001: unresolved external symbol "public: virtual void __thiscall GBuffer::setDimensions(unsigned int,unsigned int)" (?setDimensions@GBuffer@@UAEXII@Z)
+FBOManager.obj : error LNK2001: unresolved external symbol "public: virtual void __thiscall GBuffer::createVAO(void)" (?createVAO@GBuffer@@UAEXXZ)
+FBOManager.obj : error LNK2001: unresolved external symbol "public: virtual void __thiscall GBuffer::setActive(void)" (?setActive@GBuffer@@UAEXXZ)
+C:\Users\Charles Horton\Projects\VideoGame\Debug\VideoGame.exe : fatal error LNK1120: 4 unresolved externals
