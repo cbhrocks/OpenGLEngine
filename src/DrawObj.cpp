@@ -1,12 +1,7 @@
 #include "DrawObj.h"
 
-DrawObject::DrawObject() :
-	Shader(0)
-{
-}
-
 DrawObject::DrawObject(
-	Shader& shader,
+	Shader* shader,
 	std::vector<glm::vec3> positions,
 	std::vector<glm::vec3> normals,
 	std::vector<glm::vec2> texCoords,
@@ -42,10 +37,10 @@ DrawObject::DrawObject(
 // render the mesh
 void DrawObject::UploadUniforms()
 {
-	this->UploadUniforms(this->shader);
+	this->UploadUniforms(&this->shader);
 }
 
-void DrawObject::UploadUniforms(Shader& shader)
+void DrawObject::UploadUniforms(const Shader& shader)
 {
 	shader.Use();
 
@@ -72,9 +67,9 @@ void DrawObject::Draw()
 	this->Draw(this->shader);
 };
 
-void DrawObject::Draw(Shader& shader)
+void DrawObject::Draw(const Shader* shader)
 {
-	shader.Use();
+	shader->Use();
 
 	// bind appropriate textures
 	GLuint diffuseNr = 1;
@@ -107,7 +102,7 @@ void DrawObject::Draw(Shader& shader)
 			number = std::to_string(shadowOmniNr++);
 
 		// now set the sampler to the correct texture unit
-		shader.setInt(("material." + name + number).c_str(), i);
+		shader->setInt(("material." + name + number).c_str(), i);
 		// and finally bind the texture
 		glBindTexture(name == "texture_shadow_cube" ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, Textures[i].id);
 		checkGLError("DrawObject::Draw -- bind textures");
@@ -115,7 +110,7 @@ void DrawObject::Draw(Shader& shader)
 
 	if (Skybox != nullptr) {
 		glActiveTexture(GL_TEXTURE0 + ++i);
-		shader.setInt("skybox", i);
+		shader->setInt("skybox", i);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, this->Skybox->id);
 	}
 
@@ -131,8 +126,8 @@ void DrawObject::Draw(Shader& shader)
 	checkGLError("DrawObj::Draw -- draw vao");
 }
 
-Shader& DrawObject::getShader() const { return this->shader; }
-void DrawObject::setShader(Shader& shader) { this->shader = shader; }
+const Shader* DrawObject::getShader() const { return this->shader; }
+void DrawObject::setShader(const Shader* shader) { this->shader = shader; }
 
 bool DrawObject::isTransparent() const { return this->transparent; }
 void DrawObject::setTransparent(bool transparent) { this->transparent = transparent; }
