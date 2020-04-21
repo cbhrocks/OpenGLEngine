@@ -1,11 +1,12 @@
 #include "DrawObj.h"
 
-DrawObject::DrawObject()
+DrawObject::DrawObject() :
+	Shader(0)
 {
 }
 
 DrawObject::DrawObject(
-	Shader shader,
+	Shader& shader,
 	std::vector<glm::vec3> positions,
 	std::vector<glm::vec3> normals,
 	std::vector<glm::vec2> texCoords,
@@ -130,7 +131,7 @@ void DrawObject::Draw(Shader& shader)
 	checkGLError("DrawObj::Draw -- draw vao");
 }
 
-Shader DrawObject::getShader() const { return this->shader; }
+Shader& DrawObject::getShader() const { return this->shader; }
 void DrawObject::setShader(Shader& shader) { this->shader = shader; }
 
 bool DrawObject::isTransparent() const { return this->transparent; }
@@ -268,7 +269,7 @@ void DrawObject::setup()
 	DrawObject::builder& DrawObject::builder::setTransparent(bool transparent) { this->transparent = transparent; return *this; }
 	DrawObject::builder& DrawObject::builder::setHighlight(bool highlight) { this->highlight = highlight; return *this; }
 
-	DrawObject* DrawObject::builder::build(Shader shader) const
+	DrawObject* DrawObject::builder::build(Shader& shader) const
 	{
 		return new DrawObject(
 			shader, 

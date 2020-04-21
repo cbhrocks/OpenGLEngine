@@ -1,26 +1,30 @@
 #include "light.h"
 
 Light::Light(
-	const glm::vec3& ambient,
-	const glm::vec3& diffuse,
-	const glm::vec3& specular,
-	const Shader& shader,
-	const std::string& prefix
+	glm::vec3& ambient,
+	glm::vec3& diffuse,
+	glm::vec3& specular,
+	const Shader* shader,
+	const std::string& prefix,
+	const Shader& shadowDepth,
+	const Shader& shadowCubeDepth
 ) :
 	ambient(ambient),
 	diffuse(diffuse),
 	specular(specular),
 	shader(shader),
-	prefix(prefix)
+	prefix(prefix),
+	shadowDepth(shadowDepth),
+	shadowCubeDepth(shadowCubeDepth)
 {
 }
 
-const Shader Light::getShader() const
+const Shader* Light::getShader() const
 {
 	return this->shader;
 }
 
-void Light::setShader(Shader& shader)
+void Light::setShader(Shader* shader)
 {
 	this->shader = shader;
 }
@@ -103,11 +107,11 @@ GLuint Light::updateUniformBlock(GLuint ubo, GLuint start)
 
 
 BasicLight::BasicLight(
-	const glm::vec3& ambient,
-	const glm::vec3& diffuse,
-	const glm::vec3& specular,
-	const glm::vec3& position,
-	const Shader& shader,
+	glm::vec3& ambient,
+	glm::vec3& diffuse,
+	glm::vec3& specular,
+	glm::vec3& position,
+	const Shader* shader,
 	const std::string& prefix
 ) :
 	Light(ambient, diffuse, specular, shader, prefix),
@@ -140,10 +144,10 @@ void BasicLight::runUpdateFuncs()
 
 void BasicLight::Draw()
 {
-	this->Draw(this->shader);
+	this->Draw(*this->shader);
 }
 
-void BasicLight::Draw(Shader shader) const
+void BasicLight::Draw(const Shader& shader) const
 {
 	shader.Use();
 	//Light::Draw(shader);
@@ -245,7 +249,7 @@ const bool BasicLight::hasShadowMap() const
 	return this->definedShadowMap;
 }
 
-void BasicLight::drawShadowMap(std::function<void(Shader shader)> draw)
+void BasicLight::drawShadowMap(std::function<void(const Shader& shader)> draw)
 {
 	glViewport(0, 0, this->shadowWidth, this->shadowHeight);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFBO);
@@ -287,14 +291,14 @@ std::vector<glm::mat4> BasicLight::getShadowTransforms()
 }
 
 PointLight::PointLight(
-	const glm::vec3& ambient,
-	const glm::vec3& diffuse,
-	const glm::vec3& specular,
-	const glm::vec3& position,
+	glm::vec3& ambient,
+	glm::vec3& diffuse,
+	glm::vec3& specular,
+	glm::vec3& position,
 	float constant,
 	float linear,
 	float quadratic,
-	const Shader& shader,
+	const Shader* shader,
 	const std::string& prefix
 ) :
 	BasicLight(ambient, diffuse, specular, position, shader, prefix),
@@ -373,12 +377,12 @@ GLuint PointLight::updateUniformBlock(GLuint ubo, GLuint start)
 }
 
 DirectionLight::DirectionLight(
-	const glm::vec3& ambient,
-	const glm::vec3& diffuse,
-	const glm::vec3& specular,
-	const glm::vec3& position,
-	const glm::vec3& direction,
-	const Shader& shader,
+	glm::vec3& ambient,
+	glm::vec3& diffuse,
+	glm::vec3& specular,
+	glm::vec3& position,
+	glm::vec3& direction,
+	const Shader* shader,
 	const std::string& prefix
 ) :
 	BasicLight(ambient, diffuse, specular, position, shader, prefix),
@@ -464,7 +468,7 @@ void DirectionLight::genShadowMap()
 	checkGLError("DirectionLight::genShadowMap");
 }
 
-void DirectionLight::drawShadowMap(std::function<void(Shader shader)> draw)
+void DirectionLight::drawShadowMap(std::function<void(const Shader& shader)> draw)
 {
 	glViewport(0, 0, 1024, 1024);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFBO);
@@ -485,17 +489,17 @@ glm::mat4 DirectionLight::getShadowTransform()
 }
 
 SpotLight::SpotLight(
-	const glm::vec3& ambient,
-	const glm::vec3& diffuse,
-	const glm::vec3& specular,
-	const glm::vec3& position,
-	const glm::vec3& direction,
-	const float& constant,
-	const float& linear,
-	const float& quadratic,
-	const float& cutOff,
-	const float& outerCutOff,
-	const Shader& shader,
+	glm::vec3& ambient,
+	glm::vec3& diffuse,
+	glm::vec3& specular,
+	glm::vec3& position,
+	glm::vec3& direction,
+	float& constant,
+	float& linear,
+	float& quadratic,
+	float& cutOff,
+	float& outerCutOff,
+	const Shader* shader,
 	const std::string& prefix
 ) :
 	PointLight(ambient, diffuse, specular, position, constant, linear, quadratic, shader, prefix),
@@ -711,7 +715,7 @@ void LightManager::runUpdateFuncs()
 	}
 }
 
-void LightManager::drawShadowMaps(std::function<void (Shader shader)> draw)
+void LightManager::drawShadowMaps(std::function<void (const Shader& shader)> draw)
 {
 	//create depth mat if none exists
 	for (int i = 0; i < this->basicLights.size(); i++) {

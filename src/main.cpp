@@ -320,7 +320,7 @@ static void window_position_callback(GLFWwindow* window, int x, int y)
 int main(int argc, char** argv)
 {
     GLFWmonitor* monitor = NULL;
-    int width, height;
+    size_t width, height;
 
     glfwSetErrorCallback(error_callback);
 
@@ -395,6 +395,20 @@ int main(int argc, char** argv)
 
     Slot slot;// = new Slot;
     slot.scene = new Scene();
+	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
+
+	Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), slot.scene->getUp(), 100.0f, 0.1f, width, height, 45.0f);
+
+	Shader shader2D = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0);
+	//checkGLError("Scene::initializeShaders -- basic2D");
+	FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
+	//tbm->setup();
+	tbm->createVAO();
+	camera->setTBM(tbm);
+	slot.scene->addCamera(camera);
+	slot.scene->loadObjects();
+
+	//slot.scene.setFBOManager(fbom)
     slot.window = window;
     slot.render = Renderer(width, height);
     slot.id = 0;

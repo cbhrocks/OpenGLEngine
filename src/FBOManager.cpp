@@ -2,11 +2,12 @@
 
 #include "FBOManager.h"
 
-FBOManager::FBOManager() {}
+FBOManager::FBOManager() { }
 
-FBOManager::FBOManager(size_t width, size_t height, Shader shader) :
+FBOManager::FBOManager(size_t width, size_t height, Shader* shader) :
 	width(width), height(height), shader(shader)
 {
+	this->setup();
 }
 
 void FBOManager::setup() 
@@ -24,7 +25,7 @@ void FBOManager::setup()
 	checkGLError("Initial FBOManager");
 }
 
-void FBOManager::setShader(Shader shader)
+void FBOManager::setShader(Shader* shader)
 {
 	this->shader = shader;
 }
@@ -95,13 +96,13 @@ void FBOManager::setActive()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void FBOManager::UploadUniforms(Shader shader)
+void FBOManager::UploadUniforms(Shader* shader)
 {
-	shader.setInt("texId", 0);
+	shader->setInt("texId", 0);
 	checkGLError("FBOManager::UploadUniforms");
 }
 
-void FBOManager::Draw(Shader shader)
+void FBOManager::Draw(Shader* shader)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -110,7 +111,7 @@ void FBOManager::Draw(Shader shader)
 	glDisable(GL_DEPTH_TEST);
 	checkGLError("FBOManager::Draw -- prep opengl");
 
-	shader.Use();
+	shader->Use();
 	this->UploadUniforms(shader);
 	checkGLError("FBOManager::Draw -- upload uniforms");
 
@@ -132,7 +133,7 @@ HDRBuffer::HDRBuffer()
 {
 }
 
-HDRBuffer::HDRBuffer(size_t width, size_t height, Shader shader) :
+HDRBuffer::HDRBuffer(size_t width, size_t height, Shader* shader) :
 	FBOManager(width, height, shader)
 {
 }
@@ -158,7 +159,7 @@ BloomBuffer::BloomBuffer()
 {
 }
 
-BloomBuffer::BloomBuffer(size_t width, size_t height, Shader shader, Shader blurShader) :
+BloomBuffer::BloomBuffer(size_t width, size_t height, Shader* shader, Shader* blurShader) :
 	HDRBuffer(width, height, shader), blurShader(blurShader)
 {
 }
@@ -196,23 +197,23 @@ void BloomBuffer::createRBO()
 	checkGLError("BloomBuffer::createRBO");
 }
 
-void BloomBuffer::UploadUniforms(Shader shader)
+void BloomBuffer::UploadUniforms(Shader* shader)
 {
-	shader.setInt("sceneTex", 0);
-	shader.setInt("bloomTex", 1);
+	shader->setInt("sceneTex", 0);
+	shader->setInt("bloomTex", 1);
 	checkGLError("FBOManager::UploadUniforms");
 }
 
-void BloomBuffer::Draw(Shader shader)
+void BloomBuffer::Draw(Shader* shader)
 {
 	bool horizontal = true, first_iteration = true;
 	int amount = 10;
-	blurShader.Use();
-	blurShader.setInt("image", 0);
+	blurShader->Use();
+	blurShader->setInt("image", 0);
 	for (unsigned int i = 0; i < amount; i++)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBOs[horizontal ? 1 : 0]);
-		blurShader.setInt("horizontal", horizontal);
+		blurShader->setInt("horizontal", horizontal);
 		glBindTexture(GL_TEXTURE_2D, first_iteration ? this->textures[1] : this->pingpongTextures[horizontal ? 0 : 1]);
 
 		glBindVertexArray(this->VAO);
@@ -230,7 +231,7 @@ void BloomBuffer::Draw(Shader shader)
 	glDisable(GL_DEPTH_TEST);
 	checkGLError("BloomBuffer::Draw -- prep opengl");
 
-	shader.Use();
+	shader->Use();
 	this->UploadUniforms(shader);
 	checkGLError("BloomBuffer::Draw -- upload uniforms");
 
@@ -275,12 +276,12 @@ GBuffer::GBuffer()
 {
 }
 
-GBuffer::GBuffer(size_t width, size_t height, Shader shader) :
+GBuffer::GBuffer(size_t width, size_t height, Shader* shader) :
 	width(width), height(height), shader(shader)
 {
 }
 
-void GBuffer::setShader(Shader shader) {
+void GBuffer::setShader(Shader* shader) {
 	this->shader = shader;
 }
 
@@ -315,6 +316,7 @@ void GBuffer::setup()
 	glGenFramebuffers(1, &this->gBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
 
+	// position color buffer
 	glGenTextures(1, &this->gPosition);
 	glBindTexture(GL_TEXTURE_2D, gPosition);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL);
@@ -322,6 +324,7 @@ void GBuffer::setup()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
 
+	// normal color buffer
 	glGenTextures(1, &this->gNormal);
 	glBindTexture(GL_TEXTURE_2D, gNormal);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL);
@@ -329,6 +332,7 @@ void GBuffer::setup()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
 
+	// albedo + spec intensity color buffer
 	glGenTextures(1, &this->gAlbedoSpec);
 	glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -349,15 +353,15 @@ void GBuffer::setup()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GBuffer::DrawToBuffer(Shader shader, std::vector<DrawObject*> objs)
+void GBuffer::DrawToBuffer(Shader* shader, std::vector<DrawObject*> objs)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
 
-	shader.Use();
+	shader->Use();
 
-	shader.setInt("gPosition", 0);
-	shader.setInt("gNormal", 1);
-	shader.setInt("gAlbedoSpec", 2);
+	shader->setInt("gPosition", 0);
+	shader->setInt("gNormal", 1);
+	shader->setInt("gAlbedoSpec", 2);
 
 	for (int i = 0; i < objs.size(); i++) {
 		objs.at(i)->UploadUniforms(shader);

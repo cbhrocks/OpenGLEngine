@@ -10,16 +10,16 @@ class FBOManagerI {
 public:
 	virtual void setup() = 0;
 
-	virtual void setShader(Shader shader) = 0;
+	virtual void setShader(Shader* shader) = 0;
 	virtual void setDimensions(size_t width, size_t height) = 0;
 	virtual void createTextures() = 0;
 	virtual void createRBO() = 0;
 	virtual void createVAO() = 0;
 	virtual void setActive() = 0;
 	virtual void UploadUniforms() = 0;
-	virtual void UploadUniforms(Shader shader) = 0;
+	virtual void UploadUniforms(Shader* shader) = 0;
 	virtual void Draw() = 0;
-	virtual void Draw(Shader shader) = 0;
+	virtual void Draw(Shader* shader) = 0;
 };
 
 class FBOManager : public FBOManagerI{
@@ -31,14 +31,14 @@ public:
 	GLuint VBO;
 	size_t width;
 	size_t height;
-	Shader shader;
+	Shader* shader;
 
 	FBOManager();
-	FBOManager(size_t width, size_t height, Shader shader);
+	FBOManager(size_t width, size_t height, Shader* shader);
 
 	void setup();
 
-	virtual void setShader(Shader shader);
+	virtual void setShader(Shader* shader);
 	virtual void setDimensions(size_t width, size_t height);
 	virtual void createTextures();
 	virtual void createRBO();
@@ -48,14 +48,14 @@ public:
 	{ this->Draw(this->shader); }
 	virtual void UploadUniforms()
 	{ this->UploadUniforms(this->shader); }
-	virtual void UploadUniforms(Shader shader);
-	virtual void Draw(Shader shader);
+	virtual void UploadUniforms(Shader* shader);
+	virtual void Draw(Shader* shader);
 };
 
 class HDRBuffer : public FBOManager{
 public:
 	HDRBuffer();
-	HDRBuffer(size_t width, size_t height, Shader shader);
+	HDRBuffer(size_t width, size_t height, Shader* shader);
 
 	void createTextures();
 };
@@ -63,47 +63,47 @@ public:
 
 class BloomBuffer : public HDRBuffer{
 public:
-	Shader blurShader;
+	Shader* blurShader;
 	GLuint textures[2];
 	GLuint pingpongFBOs[2];
 	GLuint pingpongTextures[2];
 
 	BloomBuffer();
-	BloomBuffer(size_t width, size_t height, Shader shader, Shader blurShader);
+	BloomBuffer(size_t width, size_t height, Shader* shader, Shader* blurShader);
 
 	void setup();
 
 	void createTextures();
 	void createRBO();
 	using FBOManager::Draw;
-	void Draw(Shader shader);
+	void Draw(Shader* shader);
 	using FBOManager::UploadUniforms;
-	void BloomBuffer::UploadUniforms(Shader shader);
+	void BloomBuffer::UploadUniforms(Shader* shader);
 };
 
 class GBuffer {
 public:
-	GLuint gPosition, gNormal, gAlbedoSpec; // textures
+	GLuint gPosition, gNormal, gAlbedoSpec; // world space position, surface normal, albedo base color 
 	GLuint gBuffer; // fbo
 	GLuint depthBuffer; // rbo
 	GLuint VAO;
 	GLuint VBO;
 	size_t width;
 	size_t height;
-	Shader shader;
+	Shader* shader;
 
 	GBuffer();
-	GBuffer(size_t width, size_t height, Shader shader);
+	GBuffer(size_t width, size_t height, Shader* shader);
 
 	void setup();
 
-	virtual void setShader(Shader shader);
+	virtual void setShader(Shader* shader);
 	virtual void setDimensions(size_t width, size_t height);
 	virtual void createVAO();
 
 	virtual void DrawToBuffer(std::vector<DrawObject*> objs)
 	{ this->DrawToBuffer(this->shader, objs); }
-	virtual void DrawToBuffer(Shader shader, std::vector<DrawObject*> objs);
+	virtual void DrawToBuffer(Shader* shader, std::vector<DrawObject*> objs);
 
 	//virtual void UploadUniforms()
 	//{ this->UploadUniforms(this->shader); }

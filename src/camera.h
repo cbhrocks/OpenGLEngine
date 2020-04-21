@@ -18,12 +18,13 @@ public:
 	GLuint uboBlock;
 	float farBound;
 	float nearBound;
-	float aspectRatio;
+	float width;
+	float height;
 	float fov;
 	FBOManagerI* tbm;
 
 	Camera();
-	Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float aspectRatio, float fov);
+	Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov);
 
 	glm::mat4 getProjectionMatrix() const;
 
@@ -37,6 +38,18 @@ public:
 
 	glm::vec3 getLook() const;
 	void setLook(const glm::vec3& look);
+
+	float getWidth() const;
+	void setWidth(float width);
+
+	float getHeight() const;
+	void setHeight(float height);
+
+	float getFOV() const;
+	void setFOV(float fov);
+
+	float getAspectRatio() const;
+	void setAspectRatio(float width, float height);
 
 	FBOManagerI* getTBM() const;
 	void setTBM(FBOManagerI* tbm);

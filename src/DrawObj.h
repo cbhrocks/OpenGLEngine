@@ -22,7 +22,7 @@ class DrawObject {
         /*  Mesh Data  */
         GLuint VAO;
 		GLfloat reflect;
-		Shader shader;
+		Shader& shader;
         std::vector<glm::vec3> Positions;
 		std::vector<glm::vec3> Normals;
 		std::vector<glm::vec2> TexCoords;
@@ -39,7 +39,7 @@ class DrawObject {
 		DrawObject();
 
 		DrawObject(
-			Shader shader,
+			Shader& shader,
 			std::vector<glm::vec3> positions,
 			std::vector<glm::vec3> normals,
 			std::vector<glm::vec2> texCoords,
@@ -62,7 +62,7 @@ class DrawObject {
 
 		virtual void Draw(Shader& shader);
 
-		Shader getShader() const;
+		Shader& getShader() const;
 		void setShader(Shader& shader);
 
 		bool isTransparent() const;
@@ -112,7 +112,7 @@ public:
 	builder& setTransparent(bool transparent);
 	builder& setHighlight(bool highlight);
 
-	DrawObject* build(Shader shader) const;
+	DrawObject* build(Shader& shader) const;
 
 private:
 	std::vector<glm::vec3> Positions = {};

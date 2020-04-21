@@ -104,77 +104,90 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
 }
 
 // Uses the current shader
-void Shader::Use()
+const void Shader::Use() const
 {
 	glUseProgram(this->Program);
 }
-GLuint Shader::getId()
+const GLuint Shader::getId() const
 {
 	return this->Program;
 }
 
 // utility uniform functions
 // ------------------------------------------------------------------------
-void Shader::setBool(const std::string &name, bool value) const
+const Shader& Shader::setBool(const std::string &name, bool value) const
 {
 	glUniform1i(glGetUniformLocation(this->Program, name.c_str()), (int)value);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setInt(const std::string &name, int value) const
+const Shader& Shader::setInt(const std::string &name, int value) const
 {
 	glUniform1i(glGetUniformLocation(this->Program, name.c_str()), value);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setFloat(const std::string &name, float value) const
+const Shader& Shader::setFloat(const std::string &name, float value) const
 {
 	glUniform1f(glGetUniformLocation(this->Program, name.c_str()), value);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setVec2(const std::string &name, const glm::vec2 &value) const
+const Shader& Shader::setVec2(const std::string &name, const glm::vec2 &value) const
 {
 	glUniform2fv(glGetUniformLocation(this->Program, name.c_str()), 1, &value[0]);
+	return *this;
 }
-void Shader::setVec2(const std::string &name, float x, float y) const
+const Shader& Shader::setVec2(const std::string &name, float x, float y) const
 {
 	glUniform2f(glGetUniformLocation(this->Program, name.c_str()), x, y);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setVec3(const std::string &name, const glm::vec3 &value) const
+const Shader& Shader::setVec3(const std::string &name, const glm::vec3 &value) const
 {
 	glUniform3fv(glGetUniformLocation(this->Program, name.c_str()), 1, &value[0]);
+	return *this;
 }
-void Shader::setVec3(const std::string &name, float x, float y, float z) const
+const Shader& Shader::setVec3(const std::string &name, float x, float y, float z) const
 {
 	glUniform3f(glGetUniformLocation(this->Program, name.c_str()), x, y, z);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setVec4(const std::string &name, const glm::vec4 &value) const
+const Shader& Shader::setVec4(const std::string &name, const glm::vec4 &value) const
 {
 	glUniform4fv(glGetUniformLocation(this->Program, name.c_str()), 1, &value[0]);
+	return *this;
 }
-void Shader::setVec4(const std::string &name, float x, float y, float z, float w)
+const Shader& Shader::setVec4(const std::string &name, float x, float y, float z, float w) const
 {
 	glUniform4f(glGetUniformLocation(this->Program, name.c_str()), x, y, z, w);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setMat2(const std::string &name, const glm::mat2 &mat) const
+const Shader& Shader::setMat2(const std::string &name, const glm::mat2 &mat) const
 {
 	glUniformMatrix2fv(glGetUniformLocation(this->Program, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setMat3(const std::string &name, const glm::mat3 &mat) const
+const Shader& Shader::setMat3(const std::string &name, const glm::mat3 &mat) const
 {
 	glUniformMatrix3fv(glGetUniformLocation(this->Program, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const
+const Shader& Shader::setMat4(const std::string &name, const glm::mat4 &mat) const
 {
 	glUniformMatrix4fv(glGetUniformLocation(this->Program, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+	return *this;
 }
 // ------------------------------------------------------------------------
-void Shader::setUniformBlock(const std::string &name, const GLuint &binding) const
+const Shader& Shader::setUniformBlock(const std::string &name, const GLuint &binding) const
 {
 	glUniformBlockBinding(this->Program, glGetUniformBlockIndex(this->Program, name.c_str()), binding);
+	return *this;
 }
 
 // utility function for checking shader compilation/linking errors.

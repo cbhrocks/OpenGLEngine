@@ -27,12 +27,12 @@ public:
 
 	void onFrame();
 
-	void uploadSkyboxUniforms(Shader shader);
+	void uploadSkyboxUniforms(const Shader& shader);
 
 	void draw();
 	void drawShadows();
 	void drawSkybox();
-	void drawModels(Shader shader);
+	void drawModels(const Shader& shader);
 	void drawModels();
 	void drawHighlight();
 
@@ -47,8 +47,15 @@ public:
 
 	size_t getWidth() const;
 	void setWidth(size_t width);
+
 	size_t getHeight() const;
 	void setHeight(size_t height);
+
+	//FBOManager* getFBOManager() const;
+	//void setFBOManager(FBOManager* fbo);
+
+	LightManager* getLightManager() const;
+	void setLightManager(LightManager* lightManager);
 
 	void setGammaCorrection(bool gamma);
 	bool getGammaCorrection() const;
@@ -64,12 +71,13 @@ private:
 	GLuint ubo;
 	Skybox* skybox;
 	LightManager* lightManager;
+	//FBOManager* fboManager;
 	std::vector<Model*> models;
 	std::vector<DrawObject*> drawObjects;
 	std::vector<Camera*> cameras;
 	int activeCamera;
 	bool running;
-	Shader lightShader;
+	Shader* lightShader;
 
 	void setup();
 

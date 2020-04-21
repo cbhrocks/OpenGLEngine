@@ -6,15 +6,15 @@ Camera::Camera()
 Camera::~Camera()
 { }
 
-Camera::Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float aspectRatio, float fov) :
-	position(pos), look(look), up(up), farBound(farBound), nearBound(nearBound), aspectRatio(aspectRatio), fov(fov)
+Camera::Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov) :
+	position(pos), look(look), up(up), farBound(farBound), nearBound(nearBound), width(width), height(height), fov(fov)
 {
 	setupUbos();
 }
 
 glm::mat4 Camera::getProjectionMatrix() const
 {
-	return glm::perspective(this->fov, this->aspectRatio, this->nearBound, this->farBound); // using aspect ratio
+	return glm::perspective(this->fov, this->getAspectRatio(), this->nearBound, this->farBound); // using aspect ratio
 	//return glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, this->near, this->far); // using width and height
 }
 
@@ -62,6 +62,32 @@ glm::vec3 Camera::getLook() const
 void Camera::setLook(const glm::vec3& look)
 {
 	this->look = look;
+}
+
+float Camera::getHeight() const 
+{
+	return this->height;
+}
+
+void Camera::setHeight(float height) {
+	this->height = height;
+}
+
+float Camera::getFOV() const {
+	return this->fov;
+}
+
+void Camera::setFOV(float fov) {
+	this->fov = fov;
+}
+
+float Camera::getAspectRatio() const {
+	return this->width/this->height;
+}
+
+void Camera::setAspectRatio(float width, float height) {
+	this->width = width;
+	this->height = height;
 }
 
 void Camera::uploadUniforms(Shader& shader)

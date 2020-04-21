@@ -25,25 +25,27 @@ class Light
 {
     public:
         /*  Model Data */
-		Shader shader;
-		Shader shadowDepth = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag");
-		Shader shadowCubeDepth = Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom");
         glm::vec3 ambient;
         glm::vec3 diffuse;
         glm::vec3 specular;
-        std::string prefix;
+		const Shader* shader;
+		const Shader& shadowDepth;
+		const Shader& shadowCubeDepth;
+        const std::string prefix;
 
 		Light(
-			const glm::vec3& ambient,
-			const glm::vec3& diffuse,
-			const glm::vec3& specular,
-			const Shader& shader,
-			const std::string& prefix = std::string()
+			glm::vec3& ambient,
+			glm::vec3& diffuse,
+			glm::vec3& specular,
+			const Shader* shader,
+			const std::string& prefix = std::string(),
+			const Shader& shadowDepth = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag"),
+			const Shader& shadowCubeDepth = Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")
 		);
 
-		const Shader getShader() const;
+		const Shader* getShader() const;
 
-		void setShader(Shader& shader);
+		void setShader(Shader* shader);
 
 		const glm::vec3 getAmbient() const;
 
@@ -83,11 +85,11 @@ class BasicLight : public Light
 		bool definedVAO = false;
 
 		BasicLight(
-			const glm::vec3& ambient,
-			const glm::vec3& diffuse,
-			const glm::vec3& specular,
-			const glm::vec3& position,
-			const Shader& shader,
+			glm::vec3& ambient,
+			glm::vec3& diffuse,
+			glm::vec3& specular,
+			glm::vec3& position,
+			const Shader* shader,
 			const std::string& prefix = std::string("b")
 		);
 
@@ -101,7 +103,7 @@ class BasicLight : public Light
 
 		virtual void Draw();
 
-		virtual void Draw(Shader shader) const;
+		virtual void Draw(const Shader& shader) const;
 
 		using Light::uploadUniforms;
 		virtual void uploadUniforms(Shader& shader, const std::string& lightNum) const;
@@ -116,7 +118,7 @@ class BasicLight : public Light
 
 		const bool hasShadowMap() const;
 
-		virtual void drawShadowMap(std::function<void (Shader shader)> draw);
+		virtual void drawShadowMap(std::function<void (const Shader& shader)> draw);
 
 		virtual std::vector<glm::mat4> getShadowTransforms();
 
@@ -139,14 +141,14 @@ class PointLight : public BasicLight
         float quadratic;
 
 		PointLight(
-			const glm::vec3& ambient,
-			const glm::vec3& diffuse,
-			const glm::vec3& specular,
-			const glm::vec3& position,
+			glm::vec3& ambient,
+			glm::vec3& diffuse,
+			glm::vec3& specular,
+			glm::vec3& position,
 			float constant,
 			float linear,
 			float quadratic,
-			const Shader& shader,
+			const Shader* shader,
 			const std::string& prefix = std::string("p")
 		);
 
@@ -180,12 +182,12 @@ class DirectionLight : public BasicLight
         glm::vec3 direction;
 
 		DirectionLight(
-			const glm::vec3& ambient,
-			const glm::vec3& diffuse,
-			const glm::vec3& specular,
-			const glm::vec3& position,
-			const glm::vec3& direction,
-			const Shader& shader,
+			glm::vec3& ambient,
+			glm::vec3& diffuse,
+			glm::vec3& specular,
+			glm::vec3& position,
+			glm::vec3& direction,
+			const Shader* shader,
 			const std::string& prefix = std::string("d")
 		);
 
@@ -203,7 +205,7 @@ class DirectionLight : public BasicLight
 
 		virtual void genShadowMap();
 
-		virtual void drawShadowMap(std::function<void (Shader shader)> draw);
+		virtual void drawShadowMap(std::function<void (const Shader& shader)> draw);
 
 		virtual glm::mat4 getShadowTransform();
 
@@ -219,17 +221,17 @@ class SpotLight : public PointLight
         float outerCutOff;
 
 		SpotLight(
-			const glm::vec3& ambient,
-			const glm::vec3& diffuse,
-			const glm::vec3& specular,
-			const glm::vec3& position,
-			const glm::vec3& direction,
-			const float& constant,
-			const float& linear,
-			const float& quadratic,
-			const float& cutOff,
-			const float& outerCutOff,
-			const Shader& shader,
+			glm::vec3& ambient,
+			glm::vec3& diffuse,
+			glm::vec3& specular,
+			glm::vec3& position,
+			glm::vec3& direction,
+			float& constant,
+			float& linear,
+			float& quadratic,
+			float& cutOff,
+			float& outerCutOff,
+			const Shader* shader,
 			const std::string& prefix = std::string("s")
 		);
 
@@ -286,5 +288,5 @@ public:
 
 	void runUpdateFuncs();
 
-	void drawShadowMaps(std::function<void (Shader shader)> draw);
+	void drawShadowMaps(std::function<void (const Shader& shader)> draw);
 };

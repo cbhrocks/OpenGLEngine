@@ -11,18 +11,18 @@ Scene::Scene() :
 {
 	this->setup();
 	this->initializeShaders();
-	this->loadObjects();
+	//this->loadObjects();
 }
 
 void Scene::loadObjects() {
-	Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), this->up, 100.0f, 0.1f, this->width/this->height, 45.0f);
-	FBOManagerI* tbm = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
+	//Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), this->up, 100.0f, 0.1f, this->width, this->height, 45.0f);
+	//FBOManagerI* tbm = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
 	//FBOManagerI* tbm = new HDRBuffer(this->getWidth(), this->getHeight(), this->shaders["basic2D"]);
-	tbm->setup();
-	tbm->createVAO();
-	camera->setTBM(tbm);
+	//tbm->setup();
+	//tbm->createVAO();
+	//camera->setTBM(tbm);
 
-	this->cameras.push_back(camera);
+	//this->cameras.push_back(camera);
 
 	this->lightManager = new LightManager();
 
@@ -31,7 +31,7 @@ void Scene::loadObjects() {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 5.0f),
-		this->shaders["light"]
+		&this->shaders["light"]
 	);
 	this->lightManager->addBasicLight(*basicLight);
 	DirectionLight* directionLight = new DirectionLight(
@@ -43,7 +43,7 @@ void Scene::loadObjects() {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(-5.0f, 10.0f, 5.0f),
 		glm::vec3(0.25f, -0.5f, -0.25f),
-		this->shaders["light"]
+		&this->shaders["light"]
 	);
 	this->lightManager->addDirectionLight(*directionLight);
 	PointLight* pointLight = new PointLight(
@@ -57,7 +57,7 @@ void Scene::loadObjects() {
 		1.0f,
 		0.09f,
 		0.032f,
-		this->shaders["light"]
+		&this->shaders["light"]
 	);
 	pointLight->addUpdateFunction("rotate", [](PointLight* pl) {
 		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -75,7 +75,7 @@ void Scene::loadObjects() {
 		0.000007f,
 		glm::cos(glm::radians(12.5f)),
 		glm::cos(glm::radians(17.5f)),
-		this->shaders["light"]
+		&this->shaders["light"]
 	);
 	spotLight->addUpdateFunction("followCamera", [camera = this->getActiveCamera()](SpotLight* sl) {
 		sl->setPosition(camera->position);
@@ -230,7 +230,22 @@ void Scene::loadObjects() {
 		.build(this->shaders["trans"]);
 	window2->setPosition(glm::vec3(0.5, 1.0, 3.0));
 	this->drawObjects.push_back(window2);
+}
 
+//FBOManager* Scene::getFBOManager() const {
+//	return this->fboManager;
+//}
+//
+//void Scene::setFBOManager(FBOManager* fbo) {
+//	this->fboManager = fbo;
+//}
+
+LightManager* Scene::getLightManager() const {
+	return this->lightManager;
+}
+
+void Scene::setLightManager(LightManager* lightManager) {
+	this->lightManager = lightManager;
 }
 
 void Scene::clearObjects() {
@@ -247,7 +262,7 @@ void Scene::onFrame()
 	this->getActiveCamera()->updateUniformBlock();
 }
 
-void Scene::uploadSkyboxUniforms(Shader shader) {
+void Scene::uploadSkyboxUniforms(const Shader& shader) {
 	shader.Use();
 	glm::mat4 projection = this->getActiveCamera()->getProjectionMatrix();
 	glm::mat4 view = glm::mat4(glm::mat3(this->getActiveCamera()->getViewMatrix()));
@@ -268,7 +283,7 @@ void Scene::draw() {
 }
 
 void Scene::drawShadows() {
-	this->lightManager->drawShadowMaps([this](Shader shader) {
+	this->lightManager->drawShadowMaps([this](const Shader& shader) {
 		this->drawModels(shader);
 	});
 
@@ -283,7 +298,7 @@ void Scene::drawSkybox() {
 	skybox->Draw();
 }
 
-void Scene::drawModels(Shader shader) {
+void Scene::drawModels(const Shader& shader) {
 	for (int i = 0; i < this->models.size(); i++) {
 		this->models.at(i)->uploadUniforms(shader);
 		this->models.at(i)->Draw(shader);
@@ -456,109 +471,100 @@ void Scene::scaleModels(const glm::vec3& scale)
 
 void Scene::initializeShaders()
 {
-	this->shaders["basic"] = Shader("src/shaders/basic.vert", "src/shaders/basic.frag");
-	this->shaders["basic"].setUniformBlock("Camera", 1);
+	this->shaders["basic"] = Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- basic");
 
-	this->shaders["texture"] = Shader("src/shaders/basic.vert", "src/shaders/texture.frag");
-	this->shaders["texture"].setUniformBlock("Camera", 1);
+	this->shaders["texture"] = Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- texture");
 
-	this->shaders["trans"] = Shader("src/shaders/basic.vert", "src/shaders/trans.frag");
-	this->shaders["trans"].setUniformBlock("Camera", 1);
+	this->shaders["trans"] = Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- trans");
 
-	this->shaders["depth"] = Shader("src/shaders/depth.vert", "src/shaders/depth.frag");
-	this->shaders["depth"].setUniformBlock("Camera", 1);
+	this->shaders["depth"] = Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- depth");
 
-	this->shaders["normal"] = Shader("src/shaders/normal.vert", "src/shaders/normal.frag", "src/shaders/normal.geom");
-	this->shaders["normal"].setUniformBlock("Camera", 1);
+	this->shaders["normal"] = Shader("src/shaders/normal.vert", "src/shaders/normal.frag", "src/shaders/normal.geom").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- normal");
 
-	this->shaders["tbn"] = Shader("src/shaders/tbn.vert", "src/shaders/tbn.frag", "src/shaders/tbn.geom");
-	this->shaders["tbn"].setUniformBlock("Camera", 1);
+	this->shaders["tbn"] = Shader("src/shaders/tbn.vert", "src/shaders/tbn.frag", "src/shaders/tbn.geom").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- tbn");
 
-	this->shaders["faceNormal"] = Shader("src/shaders/faceNormal.vert", "src/shaders/faceNormal.frag", "src/shaders/faceNormal.geom");
-	this->shaders["faceNormal"].setUniformBlock("Camera", 1);
+	this->shaders["faceNormal"] = Shader("src/shaders/faceNormal.vert", "src/shaders/faceNormal.frag", "src/shaders/faceNormal.geom").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- faceNormal");
 
 	this->shaders["skybox"] = Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag");
 	checkGLError("Scene::initializeShaders -- skybox");
 
-	this->shaders["light"] = Shader("src/shaders/basic.vert", "src/shaders/light.frag");
-	this->shaders["light"].setUniformBlock("Camera", 1);
+	this->shaders["light"] = Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- light");
 
 	this->shaders["shadowDepth"] = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag");
 
-	this->shaders["shadowDebug"] = Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag");
-	this->shaders["shadowDebug"].setUniformBlock("Camera", 1);
+	this->shaders["shadowDebug"] = Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- shadowDebug");
 
-	this->shaders["phongLighting"] = Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag");
-	this->shaders["phongLighting"].setUniformBlock("Camera", 1);
-	this->shaders["phongLighting"].setUniformBlock("Lights", 2);
+	this->shaders["phongLighting"] = Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag")
+		.setUniformBlock("Camera", 1)
+		.setUniformBlock("Lights", 2);
 	checkGLError("Scene::initializeShaders -- phongLighting");
 
-	this->shaders["blinnPhongLighting"] = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag");
-	this->shaders["blinnPhongLighting"].setUniformBlock("Camera", 1);
-	this->shaders["blinnPhongLighting"].setUniformBlock("Lights", 2);
+	this->shaders["blinnPhongLighting"] = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag")
+		.setUniformBlock("Camera", 1)
+		.setUniformBlock("Lights", 2);
 	checkGLError("Scene::initializeShaders -- blinnPhongLighting");
 
-	this->shaders["BPLightingNorm"] = Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag");
-	this->shaders["BPLightingNorm"].setUniformBlock("Camera", 1);
-	this->shaders["BPLightingNorm"].setUniformBlock("Lights", 2);
+	this->shaders["BPLightingNorm"] = Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag")
+		.setUniformBlock("Camera", 1)
+		.setUniformBlock("Lights", 2);
 	checkGLError("Scene::initializeShaders -- blinnPhongLighting");
 
-	this->shaders["bloom2D"] = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag");
-	this->shaders["bloom2D"].setUniformBlock("Scene", 0);
+	this->shaders["bloom2D"] = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- bloom2D");
 
-	this->shaders["highlight"] = Shader("src/shaders/basic.vert", "src/shaders/highlight.frag");
-	this->shaders["highlight"].setUniformBlock("Camera", 1);
+	this->shaders["highlight"] = Shader("src/shaders/basic.vert", "src/shaders/highlight.frag")
+		.setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- highlight");
 
-	this->shaders["reflection"] = Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag");
-	this->shaders["reflection"].setUniformBlock("Camera", 1);
+	this->shaders["reflection"] = Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag")
+		.setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- reflection");
 
-	this->shaders["explode"] = Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom");
-	this->shaders["explode"].setUniformBlock("Scene", 0);
-	this->shaders["explode"].setUniformBlock("Camera", 1);
+	this->shaders["explode"] = Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom")
+		.setUniformBlock("Scene", 0)
+		.setUniformBlock("Camera", 1);
 	checkGLError("Scene::initializeShaders -- explode");
 
-	this->shaders["basic2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag");
-	this->shaders["basic2D"].setUniformBlock("Scene", 0);
+	this->shaders["basic2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- basic2D");
 
-	this->shaders["gaussianBlur2D"] = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag");
-	this->shaders["gaussianBlur2D"].setUniformBlock("Scene", 0);
+	this->shaders["gaussianBlur2D"] = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- gaussianBlur2D");
 
-	this->shaders["hdr2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag");
-	this->shaders["hdr2D"].setUniformBlock("Scene", 0);
+	this->shaders["hdr2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- hdr2D");
 
-	this->shaders["inverse2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/inverse2D.frag");
-	this->shaders["inverse2D"].setUniformBlock("Scene", 0);
+	this->shaders["inverse2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/inverse2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- inverse2D");
 
-	this->shaders["grey2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/grey2D.frag");
-	this->shaders["grey2D"].setUniformBlock("Scene", 0);
+	this->shaders["grey2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/grey2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- grey2D");
 
-	this->shaders["sharpen2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/sharpen2D.frag");
-	this->shaders["sharpen2D"].setUniformBlock("Scene", 0);
+	this->shaders["sharpen2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/sharpen2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- sharpen2D");
 
-	this->shaders["blur2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag");
-	this->shaders["blur2D"].setUniformBlock("Scene", 0);
+	this->shaders["blur2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- blur2D");
 
-	this->shaders["edge2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag");
-	this->shaders["edge2D"].setUniformBlock("Scene", 0);
+	this->shaders["edge2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag")
+		.setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- edge2D");
 }
 
