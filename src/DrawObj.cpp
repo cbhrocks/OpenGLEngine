@@ -1,7 +1,7 @@
 #include "DrawObj.h"
 
 DrawObject::DrawObject(
-	Shader* shader,
+	const Shader* shader,
 	std::vector<glm::vec3> positions,
 	std::vector<glm::vec3> normals,
 	std::vector<glm::vec2> texCoords,
@@ -37,7 +37,7 @@ DrawObject::DrawObject(
 // render the mesh
 void DrawObject::UploadUniforms()
 {
-	this->UploadUniforms(&this->shader);
+	this->UploadUniforms(*this->shader);
 }
 
 void DrawObject::UploadUniforms(const Shader& shader)
@@ -64,12 +64,12 @@ void DrawObject::UploadUniforms(const Shader& shader)
 
 void DrawObject::Draw()
 {
-	this->Draw(this->shader);
+	this->Draw(*this->shader);
 };
 
-void DrawObject::Draw(const Shader* shader)
+void DrawObject::Draw(const Shader& shader)
 {
-	shader->Use();
+	shader.Use();
 
 	// bind appropriate textures
 	GLuint diffuseNr = 1;
@@ -102,7 +102,7 @@ void DrawObject::Draw(const Shader* shader)
 			number = std::to_string(shadowOmniNr++);
 
 		// now set the sampler to the correct texture unit
-		shader->setInt(("material." + name + number).c_str(), i);
+		shader.setInt(("material." + name + number).c_str(), i);
 		// and finally bind the texture
 		glBindTexture(name == "texture_shadow_cube" ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, Textures[i].id);
 		checkGLError("DrawObject::Draw -- bind textures");
@@ -110,7 +110,7 @@ void DrawObject::Draw(const Shader* shader)
 
 	if (Skybox != nullptr) {
 		glActiveTexture(GL_TEXTURE0 + ++i);
-		shader->setInt("skybox", i);
+		shader.setInt("skybox", i);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, this->Skybox->id);
 	}
 
@@ -264,7 +264,7 @@ void DrawObject::setup()
 	DrawObject::builder& DrawObject::builder::setTransparent(bool transparent) { this->transparent = transparent; return *this; }
 	DrawObject::builder& DrawObject::builder::setHighlight(bool highlight) { this->highlight = highlight; return *this; }
 
-	DrawObject* DrawObject::builder::build(Shader& shader) const
+	DrawObject* DrawObject::builder::build(const Shader* shader) const
 	{
 		return new DrawObject(
 			shader, 

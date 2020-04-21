@@ -397,14 +397,24 @@ int main(int argc, char** argv)
     slot.scene = new Scene();
 	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
 
-	Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), slot.scene->getUp(), 100.0f, 0.1f, width, height, 45.0f);
 
 	Shader shader2D = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0);
+	Shader gBlur2D = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag").setUniformBlock("Scene", 0);
+	Shader hdr2D = Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag").setUniformBlock("Scene", 0);
+	Shader inverse2D = Shader("src/shaders/basic2D.vert", "src/shaders/inverse2D.frag").setUniformBlock("Scene", 0);
+	Shader grey2D = Shader("src/shaders/basic2D.vert", "src/shaders/grey2D.frag").setUniformBlock("Scene", 0);
+	Shader sharpen2D = Shader("src/shaders/basic2D.vert", "src/shaders/sharpen2D.frag").setUniformBlock("Scene", 0);
+	Shader blur2D = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag").setUniformBlock("Scene", 0);
+	Shader edge2D = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag").setUniformBlock("Scene", 0);
+	Shader bloom2D = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0);
+	checkGLError("Scene::initializeShaders -- 2D shaders");
 	//checkGLError("Scene::initializeShaders -- basic2D");
-	FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
-	//tbm->setup();
-	tbm->createVAO();
-	camera->setTBM(tbm);
+	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
+	FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
+	tbm->setup();
+	//tbm->createVAO();
+	//camera->setTBM(tbm);
+	Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), slot.scene->getUp(), 100.0f, 0.1f, width, height, 45.0f, tbm);
 	slot.scene->addCamera(camera);
 	slot.scene->loadObjects();
 

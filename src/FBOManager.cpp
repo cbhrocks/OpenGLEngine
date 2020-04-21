@@ -7,25 +7,42 @@ FBOManager::FBOManager() { }
 FBOManager::FBOManager(size_t width, size_t height, Shader* shader) :
 	width(width), height(height), shader(shader)
 {
-	this->setup();
 }
 
 void FBOManager::setup() 
 {
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glGenFramebuffers(1, &this->FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, this->FBO);
 
-	this->createTextures();
-	this->createRBO();
+	// create the texture that will be used to paint the quad
+	glGenTextures(1, this->textures);
+	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, this->width, this->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->textures[0], 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	checkGLError("FBOManager::setup -- create texture");
 
+	// create the renderbuffer that includes depth and stencil
+	glGenRenderbuffers(1, &this->RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, this->RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, this->width, this->height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, this->RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	checkGLError("FBOManager::setup -- create rbo");
+
+	// check to make sure complete
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	checkGLError("Initial FBOManager");
+
+	this->createVAO();
 }
 
-void FBOManager::setShader(Shader* shader)
+void FBOManager::setShader(const Shader* shader)
 {
 	this->shader = shader;
 }
@@ -34,46 +51,21 @@ void FBOManager::setDimensions(size_t width, size_t height)
 {
 	this->width = width;
 	this->height = height;
-	this->createTextures();
+	this->setup();
 }
 
-void FBOManager::createTextures()
-{
-	glGenTextures(1, this->textures);
-	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, this->width, this->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->textures[0], 0);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	checkGLError("create texture FBOManager");
-}
-
-void FBOManager::createRBO()
-{
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, this->width, this->height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	checkGLError("create rbo FBOManager");
-}
-
+/*
+This method is called in order to create a quad that the rendered image is going to be placed on.
+*/
 void FBOManager::createVAO()
 {
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
+	glGenVertexArrays(1, &this->VAO);
+	glGenBuffers(1, &this->VBO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertexData), quadVertexData, GL_STATIC_DRAW);
 
-	glBindVertexArray(VAO);
+	glBindVertexArray(this->VAO);
 
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -96,13 +88,13 @@ void FBOManager::setActive()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void FBOManager::UploadUniforms(Shader* shader)
+void FBOManager::UploadUniforms(const Shader& shader)
 {
-	shader->setInt("texId", 0);
+	shader.setInt("texId", 0);
 	checkGLError("FBOManager::UploadUniforms");
 }
 
-void FBOManager::Draw(Shader* shader)
+void FBOManager::Draw(const Shader& shader)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -111,7 +103,7 @@ void FBOManager::Draw(Shader* shader)
 	glDisable(GL_DEPTH_TEST);
 	checkGLError("FBOManager::Draw -- prep opengl");
 
-	shader->Use();
+	shader.Use();
 	this->UploadUniforms(shader);
 	checkGLError("FBOManager::Draw -- upload uniforms");
 
@@ -129,64 +121,70 @@ void FBOManager::Draw(Shader* shader)
 	checkGLError("FBOManager::Draw");
 }
 
-HDRBuffer::HDRBuffer()
-{
-}
-
 HDRBuffer::HDRBuffer(size_t width, size_t height, Shader* shader) :
 	FBOManager(width, height, shader)
 {
 }
 
-void HDRBuffer::createTextures()
+void HDRBuffer::setup()
 {
+	glGenFramebuffers(1, &this->FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, this->FBO);
+
+	// create the texture that will be used to paint the quad
 	glGenTextures(1, this->textures);
 	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
-
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGBA, GL_FLOAT, NULL);
-
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->textures[0], 0);
-
 	glBindTexture(GL_TEXTURE_2D, 0);
+	checkGLError("HDRBuffer::setup -- create textures");
 
-	checkGLError("create texture FBOManager");
-}
+	// create the renderbuffer that includes depth and stencil
+	glGenRenderbuffers(1, &this->RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, this->RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, this->width, this->height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, this->RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	checkGLError("FBOManager::setup -- create rbo");
 
-BloomBuffer::BloomBuffer()
-{
+	// check to make sure complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	checkGLError("Initial FBOManager");
+
+	this->createVAO();
 }
 
 BloomBuffer::BloomBuffer(size_t width, size_t height, Shader* shader, Shader* blurShader) :
-	HDRBuffer(width, height, shader), blurShader(blurShader)
+	FBOManager(width, height, shader), blurShader(blurShader)
 {
 }
 
-void BloomBuffer::createTextures()
+void BloomBuffer::setup() 
 {
+	//HDRBuffer::setup();
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	// create the texture that will be used to paint the quad
 	glGenTextures(2, this->textures);
 	for (int i = 0; i < 2; i++) {
 		glBindTexture(GL_TEXTURE_2D, this->textures[i]);
-
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGBA, GL_FLOAT, NULL);
-
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->textures[i], 0);
 	}
-
 	glBindTexture(GL_TEXTURE_2D, 0);
+	checkGLError("BloomBuffer::setup -- create textures");
 
-	checkGLError("BloomBuffer::createTextures");
-}
-
-void BloomBuffer::createRBO()
-{
+	// create the renderbuffer that includes depth and stencil, has two attachments for two colors.
 	glGenRenderbuffers(1, &RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, this->width, this->height);
@@ -194,17 +192,42 @@ void BloomBuffer::createRBO()
 	GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 	glDrawBuffers(2, attachments);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	checkGLError("BloomBuffer::createRBO");
+	checkGLError("BloomBuffer::setup -- create renderbuffer");
+
+	// check to make sure complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	checkGLError("Initial FBOManager");
+
+	this->createVAO();
+
+	glGenFramebuffers(2, this->pingpongFBOs);
+	glGenTextures(2, this->pingpongTextures);
+	for (unsigned int i = 0; i < 2; i++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, this->pingpongFBOs[i]);
+		glBindTexture(GL_TEXTURE_2D, this->pingpongTextures[i]);
+		glTexImage2D(
+			GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL
+		);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->pingpongTextures[i], 0);
+	}
 }
 
-void BloomBuffer::UploadUniforms(Shader* shader)
+void BloomBuffer::UploadUniforms(const Shader& shader)
 {
-	shader->setInt("sceneTex", 0);
-	shader->setInt("bloomTex", 1);
+	shader.setInt("sceneTex", 0);
+	shader.setInt("bloomTex", 1);
 	checkGLError("FBOManager::UploadUniforms");
 }
 
-void BloomBuffer::Draw(Shader* shader)
+void BloomBuffer::Draw(const Shader& shader)
 {
 	bool horizontal = true, first_iteration = true;
 	int amount = 10;
@@ -231,7 +254,7 @@ void BloomBuffer::Draw(Shader* shader)
 	glDisable(GL_DEPTH_TEST);
 	checkGLError("BloomBuffer::Draw -- prep opengl");
 
-	shader->Use();
+	shader.Use();
 	this->UploadUniforms(shader);
 	checkGLError("BloomBuffer::Draw -- upload uniforms");
 
@@ -251,27 +274,6 @@ void BloomBuffer::Draw(Shader* shader)
 	checkGLError("BloomBuffer::Draw");
 }
 
-void BloomBuffer::setup() 
-{
-	HDRBuffer::setup();
-
-	glGenFramebuffers(2, this->pingpongFBOs);
-	glGenTextures(2, this->pingpongTextures);
-	for (unsigned int i = 0; i < 2; i++)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, this->pingpongFBOs[i]);
-		glBindTexture(GL_TEXTURE_2D, this->pingpongTextures[i]);
-		glTexImage2D(
-			GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL
-		);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->pingpongTextures[i], 0);
-	}
-}
-
 GBuffer::GBuffer()
 {
 }
@@ -288,27 +290,6 @@ void GBuffer::setShader(Shader* shader) {
 void GBuffer::setDimensions(size_t width, size_t height) {
 	this->width = width;
 	this->height = height;
-}
-
-void GBuffer::createVAO() {
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertexData), quadVertexData, GL_STATIC_DRAW);
-
-	glBindVertexArray(VAO);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	//texture coords
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	glBindVertexArray(0);
-
-	checkGLError("create vao FBOManager");
 }
 
 void GBuffer::setup()
@@ -353,7 +334,7 @@ void GBuffer::setup()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GBuffer::DrawToBuffer(Shader* shader, std::vector<DrawObject*> objs)
+void GBuffer::DrawToBuffer(const Shader* shader, std::vector<DrawObject*> objs)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
 
@@ -364,8 +345,8 @@ void GBuffer::DrawToBuffer(Shader* shader, std::vector<DrawObject*> objs)
 	shader->setInt("gAlbedoSpec", 2);
 
 	for (int i = 0; i < objs.size(); i++) {
-		objs.at(i)->UploadUniforms(shader);
-		objs.at(i)->Draw(shader);
+		objs.at(i)->UploadUniforms(*shader);
+		objs.at(i)->Draw(*shader);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

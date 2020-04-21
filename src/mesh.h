@@ -51,7 +51,7 @@ class Mesh {
         }
 
         // render the mesh
-        void Draw(Shader shader) 
+        void Draw(const Shader& shader) 
         {
             // bind appropriate textures
             GLuint diffuseNr  = 1;

@@ -31,7 +31,8 @@ void Scene::loadObjects() {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 5.0f),
-		&this->shaders["light"]
+		&this->shaders["light"],
+		&this->shaders["shadowCubeDepth"]
 	);
 	this->lightManager->addBasicLight(*basicLight);
 	DirectionLight* directionLight = new DirectionLight(
@@ -43,7 +44,8 @@ void Scene::loadObjects() {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(-5.0f, 10.0f, 5.0f),
 		glm::vec3(0.25f, -0.5f, -0.25f),
-		&this->shaders["light"]
+		&this->shaders["light"],
+		&this->shaders["shadowDepth"]
 	);
 	this->lightManager->addDirectionLight(*directionLight);
 	PointLight* pointLight = new PointLight(
@@ -57,17 +59,17 @@ void Scene::loadObjects() {
 		1.0f,
 		0.09f,
 		0.032f,
-		&this->shaders["light"]
+		&this->shaders["light"],
+		&this->shaders["shadowCubeDepth"]
 	);
 	pointLight->addUpdateFunction("rotate", [](PointLight* pl) {
 		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
 	});
-	pointLight->genShadowMap();
 	this->lightManager->addPointLight(*pointLight);
 	SpotLight* spotLight = new SpotLight(
-		glm::vec3(0.00, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.2f, 0.2f, 0.2f),
+		glm::vec3(1.5f, 1.5f, 1.5f),
+		glm::vec3(3.0f, 3.0f, 3.0f),
 		this->getActiveCamera()->getPosition(),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		1.0f,
@@ -75,7 +77,8 @@ void Scene::loadObjects() {
 		0.000007f,
 		glm::cos(glm::radians(12.5f)),
 		glm::cos(glm::radians(17.5f)),
-		&this->shaders["light"]
+		&this->shaders["light"],
+		nullptr
 	);
 	spotLight->addUpdateFunction("followCamera", [camera = this->getActiveCamera()](SpotLight* sl) {
 		sl->setPosition(camera->position);
@@ -97,7 +100,7 @@ void Scene::loadObjects() {
 	skyboxTexture.type = "texture_skybox";
 	this->skybox = new Skybox(skyboxTexture, this->shaders["skybox"]);
 
-	Model* nanosuit = new Model(std::string("objects/test/nanosuit/nanosuit.obj"), this->shaders["blinnPhongLighting"], this->gammaCorrection);
+	Model* nanosuit = new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &this->shaders["blinnPhongLighting"], this->gammaCorrection);
 	nanosuit->setScale(glm::vec3(0.5f));
 	this->models.push_back(nanosuit);
 
@@ -150,7 +153,7 @@ void Scene::loadObjects() {
 		.setNormals(planeNormals)
 		.setTexCoords(scaleData(5, planeTexCoords))
 		.setTextures(wallTextures)
-		.build(this->shaders["BPLightingNorm"]);
+		.build(&this->shaders["BPLightingNorm"]);
 	floor->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	//floor->setScale(glm::vec3(25.0));
 	this->drawObjects.push_back(floor);
@@ -162,7 +165,7 @@ void Scene::loadObjects() {
 			.setNormals(planeNormals)
 			.setTexCoords(scaleData(3, planeTexCoords))
 			.setTextures(wallTextures)
-			.build(this->shaders["BPLightingNorm"]);
+			.build(&this->shaders["BPLightingNorm"]);
 
 		i == 0 ? wall->setRotation(glm::vec3(0.0, 90.0, 0.0)) :
 			i == 1 ? wall->setRotation(glm::vec3(0.0, 0.0, 0.0)) :
@@ -183,7 +186,7 @@ void Scene::loadObjects() {
 		.setHighlight(true)
 		//.setReflect(0.5f)
 		//.setSkybox(&this->skybox->texture)
-		.build(this->shaders["blinnPhongLighting"]);
+		.build(&this->shaders["blinnPhongLighting"]);
 	cube->setScale(glm::vec3(3));
 	cube->setPosition(glm::vec3(-4.0, 1.5, 3.5));
 	this->drawObjects.push_back(cube);
@@ -196,7 +199,7 @@ void Scene::loadObjects() {
 		//.setHighlight(true)
 		//.setReflect(0.5f)
 		//.setSkybox(&this->skybox->texture)
-		.build(this->shaders["blinnPhongLighting"]);
+		.build(&this->shaders["blinnPhongLighting"]);
 	cube2->setScale(glm::vec3(2));
 	cube2->setPosition(glm::vec3(2.0, 4, 3.5));
 	cube2->setRotation(glm::vec3(45.0f, 45.0f, 0.0f));
@@ -207,7 +210,7 @@ void Scene::loadObjects() {
 		.setNormals(planeNormals)
 		.setTexCoords(planeTexCoords)
 		.setTextures(grassTextures)
-		.build(this->shaders["trans"]);
+		.build(&this->shaders["trans"]);
 	grass->setPosition(glm::vec3(0.0, 1.0, 1.0));
 	this->drawObjects.push_back(grass);
 
@@ -217,7 +220,7 @@ void Scene::loadObjects() {
 		.setTexCoords(planeTexCoords)
 		.setTextures(windowTextures)
 		.setTransparent(true)
-		.build(this->shaders["trans"]);
+		.build(&this->shaders["trans"]);
 	window1->setPosition(glm::vec3(0.5, 1.0, 2.0));
 	this->drawObjects.push_back(window1);
 
@@ -227,7 +230,7 @@ void Scene::loadObjects() {
 		.setTexCoords(planeTexCoords)
 		.setTextures(windowTextures)
 		.setTransparent(true)
-		.build(this->shaders["trans"]);
+		.build(&this->shaders["trans"]);
 	window2->setPosition(glm::vec3(0.5, 1.0, 3.0));
 	this->drawObjects.push_back(window2);
 }
@@ -252,7 +255,7 @@ void Scene::clearObjects() {
 	this->lightManager = new LightManager();
 	this->models.clear();
 	this->drawObjects.clear();
-	this->cameras.clear();
+	//this->cameras.clear();
 }
 
 void Scene::onFrame()
@@ -275,11 +278,16 @@ void Scene::uploadSkyboxUniforms(const Shader& shader) {
 
 void Scene::draw() {
 	this->drawShadows();
-	this->getActiveCamera()->getTBM()->setActive();
+	Camera* camera = this->getActiveCamera();
+	if (camera->getTBM() != nullptr) {
+		this->getActiveCamera()->getTBM()->setActive();
+	}
 	this->drawModels();
 	this->drawHighlight();
 	//this->drawModels(this->shaders["tbn"]);
-	this->getActiveCamera()->getTBM()->Draw();
+	if (camera->getTBM() != nullptr) {
+		this->getActiveCamera()->getTBM()->Draw();
+	}
 }
 
 void Scene::drawShadows() {
@@ -361,9 +369,10 @@ void Scene::drawModels()
 		}
 	}
 	//draw transparent models
+	//TODO: look into putting the highlight drawing elsewhere, or make it independent of the drawobj's shader
 	for (std::map<float, DrawObject*>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
 	{
-		it->second->getShader().Use();
+		it->second->getShader()->Use();
 		it->second->UploadUniforms();
 		//predraw functions
 		if (it->second->canHighlight()) {
@@ -458,6 +467,11 @@ bool Scene::getGammaCorrection() const
 	return this->gammaCorrection;
 }
 
+void Scene::setExposure(float exposure)
+{
+	 this->exposure = exposure;
+}
+
 float Scene::getExposure() const
 {
 	return this->exposure;
@@ -471,112 +485,26 @@ void Scene::scaleModels(const glm::vec3& scale)
 
 void Scene::initializeShaders()
 {
-	this->shaders["basic"] = Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- basic");
-
-	this->shaders["texture"] = Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- texture");
-
-	this->shaders["trans"] = Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- trans");
-
-	this->shaders["depth"] = Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- depth");
-
-	this->shaders["normal"] = Shader("src/shaders/normal.vert", "src/shaders/normal.frag", "src/shaders/normal.geom").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- normal");
-
-	this->shaders["tbn"] = Shader("src/shaders/tbn.vert", "src/shaders/tbn.frag", "src/shaders/tbn.geom").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- tbn");
-
-	this->shaders["faceNormal"] = Shader("src/shaders/faceNormal.vert", "src/shaders/faceNormal.frag", "src/shaders/faceNormal.geom").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- faceNormal");
-
-	this->shaders["skybox"] = Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag");
-	checkGLError("Scene::initializeShaders -- skybox");
-
-	this->shaders["light"] = Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- light");
-
-	this->shaders["shadowDepth"] = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag");
-
-	this->shaders["shadowDebug"] = Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- shadowDebug");
-
-	this->shaders["phongLighting"] = Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag")
-		.setUniformBlock("Camera", 1)
-		.setUniformBlock("Lights", 2);
-	checkGLError("Scene::initializeShaders -- phongLighting");
-
-	this->shaders["blinnPhongLighting"] = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag")
-		.setUniformBlock("Camera", 1)
-		.setUniformBlock("Lights", 2);
-	checkGLError("Scene::initializeShaders -- blinnPhongLighting");
-
-	this->shaders["BPLightingNorm"] = Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag")
-		.setUniformBlock("Camera", 1)
-		.setUniformBlock("Lights", 2);
-	checkGLError("Scene::initializeShaders -- blinnPhongLighting");
-
-	this->shaders["bloom2D"] = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- bloom2D");
-
-	this->shaders["highlight"] = Shader("src/shaders/basic.vert", "src/shaders/highlight.frag")
-		.setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- highlight");
-
-	this->shaders["reflection"] = Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag")
-		.setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- reflection");
-
-	this->shaders["explode"] = Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom")
-		.setUniformBlock("Scene", 0)
-		.setUniformBlock("Camera", 1);
-	checkGLError("Scene::initializeShaders -- explode");
-
-	this->shaders["basic2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- basic2D");
-
-	this->shaders["gaussianBlur2D"] = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- gaussianBlur2D");
-
-	this->shaders["hdr2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- hdr2D");
-
-	this->shaders["inverse2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/inverse2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- inverse2D");
-
-	this->shaders["grey2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/grey2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- grey2D");
-
-	this->shaders["sharpen2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/sharpen2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- sharpen2D");
-
-	this->shaders["blur2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- blur2D");
-
-	this->shaders["edge2D"] = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag")
-		.setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- edge2D");
+	this->shaders.insert(std::pair<std::string, const Shader>("basic", Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("texture", Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("trans", Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("depth", Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("normal", Shader("src/shaders/normal.vert", "src/shaders/normal.frag", "src/shaders/normal.geom").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("tbn", Shader("src/shaders/tbn.vert", "src/shaders/tbn.frag", "src/shaders/tbn.geom").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("faceNormal", Shader("src/shaders/faceNormal.vert", "src/shaders/faceNormal.frag", "src/shaders/faceNormal.geom").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("skybox", Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag")));
+	this->shaders.insert(std::pair<std::string, const Shader>("light", Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("shadowDepth", Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag")));
+	this->shaders.insert(std::pair<std::string, const Shader>("shadowCubeDepth", Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")));
+	this->shaders.insert(std::pair<std::string, const Shader>("shadowDebug", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("phongLighting", Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
+	this->shaders.insert(std::pair<std::string, const Shader>("blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
+	this->shaders.insert(std::pair<std::string, const Shader>("BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
+	this->shaders.insert(std::pair<std::string, const Shader>("highlight", Shader("src/shaders/basic.vert", "src/shaders/highlight.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("reflection", Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag").setUniformBlock("Camera", 1)));
+	this->shaders.insert(std::pair<std::string, const Shader>("explode", Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1)));
+	checkGLError("Scene::initializeShaders -- Scene shaders");
 }
-
-GLuint ubo;
-Skybox* skybox;
-LightManager* lightManager;
-std::vector<Model*> models;
-std::vector<DrawObject*> drawObjects;
-std::vector<Camera*> cameras;
-int activeCamera;
-bool running;
-Shader lightShader;
 
 void Scene::setup() {
 	this->setupUbo();

@@ -29,8 +29,7 @@ class Light
         glm::vec3 diffuse;
         glm::vec3 specular;
 		const Shader* shader;
-		const Shader& shadowDepth;
-		const Shader& shadowCubeDepth;
+		const Shader* shadowDepth;
         const std::string prefix;
 
 		Light(
@@ -38,14 +37,17 @@ class Light
 			glm::vec3& diffuse,
 			glm::vec3& specular,
 			const Shader* shader,
-			const std::string& prefix = std::string(),
-			const Shader& shadowDepth = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag"),
-			const Shader& shadowCubeDepth = Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")
+			const Shader* shadowDepth,
+			const std::string& prefix = std::string()
 		);
 
 		const Shader* getShader() const;
 
 		void setShader(Shader* shader);
+
+		const Shader* getShadowShader() const;
+
+		void setShadowShader(Shader* shader);
 
 		const glm::vec3 getAmbient() const;
 
@@ -71,6 +73,8 @@ class Light
 
 		virtual void genShadowMap() = 0;
 
+		virtual void genVAO() = 0;
+
     private:
 		std::map<std::string, std::function<void(Light*)>> updateFuncs;
 };
@@ -90,8 +94,11 @@ class BasicLight : public Light
 			glm::vec3& specular,
 			glm::vec3& position,
 			const Shader* shader,
+			const Shader* shadowDepth,
 			const std::string& prefix = std::string("b")
 		);
+
+		virtual void init();
 
 		virtual glm::vec3 getPosition() const;
 
@@ -149,6 +156,7 @@ class PointLight : public BasicLight
 			float linear,
 			float quadratic,
 			const Shader* shader,
+			const Shader* shadowDepth,
 			const std::string& prefix = std::string("p")
 		);
 
@@ -188,6 +196,7 @@ class DirectionLight : public BasicLight
 			glm::vec3& position,
 			glm::vec3& direction,
 			const Shader* shader,
+			const Shader* shadowDepth,
 			const std::string& prefix = std::string("d")
 		);
 
@@ -226,12 +235,13 @@ class SpotLight : public PointLight
 			glm::vec3& specular,
 			glm::vec3& position,
 			glm::vec3& direction,
-			float& constant,
-			float& linear,
-			float& quadratic,
-			float& cutOff,
-			float& outerCutOff,
+			float constant,
+			float linear,
+			float quadratic,
+			float cutOff,
+			float outerCutOff,
 			const Shader* shader,
+			const Shader* shadowDepth,
 			const std::string& prefix = std::string("s")
 		);
 

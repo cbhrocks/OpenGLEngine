@@ -23,8 +23,7 @@ public:
 	float fov;
 	FBOManagerI* tbm;
 
-	Camera();
-	Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov);
+	Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov, FBOManagerI* tbm);
 
 	glm::mat4 getProjectionMatrix() const;
 

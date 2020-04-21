@@ -1,13 +1,10 @@
 #include "camera.h"
 
-Camera::Camera() 
-{ }
-
 Camera::~Camera()
 { }
 
-Camera::Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov) :
-	position(pos), look(look), up(up), farBound(farBound), nearBound(nearBound), width(width), height(height), fov(fov)
+Camera::Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov, FBOManagerI* tbm) :
+	position(pos), look(look), up(up), farBound(farBound), nearBound(nearBound), width(width), height(height), fov(fov), tbm(tbm)
 {
 	setupUbos();
 }

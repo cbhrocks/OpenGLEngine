@@ -53,11 +53,11 @@ class DrawObject {
         // render the mesh
 		void UploadUniforms();
 
-		virtual void UploadUniforms(Shader& shader);
+		virtual void UploadUniforms(const Shader& shader);
 
 		void Draw();
 
-		virtual void Draw(const Shader* shader);
+		virtual void Draw(const Shader& shader);
 
 		const Shader* getShader() const;
 		void setShader(const Shader* shader);
@@ -109,7 +109,7 @@ public:
 	builder& setTransparent(bool transparent);
 	builder& setHighlight(bool highlight);
 
-	DrawObject* build(Shader& shader) const;
+	DrawObject* build(const Shader* shader) const;
 
 private:
 	std::vector<glm::vec3> Positions = {};

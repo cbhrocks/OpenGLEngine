@@ -2,9 +2,8 @@
 
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
-Model::Model() : position(0.0f) {}
-Model::Model(std::string const &path, const Shader& shader, const bool& gammaCorrection) :
-	scale(1.0f), position(0.0f), shader(shader), gammaCorrection(gammaCorrection)
+Model::Model(std::string const &path, const Shader* shader, const bool& gammaCorrection, glm::vec3& position, glm::vec3& scale) :
+	shader(shader), gammaCorrection(gammaCorrection), position(position), scale(scale)
 {
 	loadModel(path);
 }
@@ -12,10 +11,10 @@ Model::Model(std::string const &path, const Shader& shader, const bool& gammaCor
 // draws the model, and thus all its meshes
 void Model::Draw()
 {
-	this->Draw(this->shader);
+	this->Draw(*this->shader);
 }
 
-void Model::Draw(Shader shader)
+void Model::Draw(const Shader& shader)
 {
 	shader.Use();
 	for (unsigned int i = 0; i < meshes.size(); i++)
@@ -34,10 +33,10 @@ void Model::setScale(glm::vec3 scale)
 
 void Model::uploadUniforms()
 {
-	this->uploadUniforms(this->shader);
+	this->uploadUniforms(*this->shader);
 }
 
-void Model::uploadUniforms(Shader& shader)
+void Model::uploadUniforms(const Shader& shader)
 {
 	std::cout << "shader id: " << shader.getId() << "\n";
 	shader.Use();
@@ -51,12 +50,12 @@ void Model::uploadUniforms(Shader& shader)
 	checkGLError("upload uniforms -- matrices");
 }
 
-void Model::setShader(const Shader& shader)
+void Model::setShader(const Shader* shader)
 {
 	this->shader = shader;
 }
 
-Shader Model::getShader()
+const Shader* Model::getShader()
 {
 	return this->shader;
 }

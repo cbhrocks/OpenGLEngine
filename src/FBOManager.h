@@ -10,16 +10,14 @@ class FBOManagerI {
 public:
 	virtual void setup() = 0;
 
-	virtual void setShader(Shader* shader) = 0;
+	virtual void setShader(const Shader* shader) = 0;
 	virtual void setDimensions(size_t width, size_t height) = 0;
-	virtual void createTextures() = 0;
-	virtual void createRBO() = 0;
 	virtual void createVAO() = 0;
 	virtual void setActive() = 0;
 	virtual void UploadUniforms() = 0;
-	virtual void UploadUniforms(Shader* shader) = 0;
+	virtual void UploadUniforms(const Shader& shader) = 0;
 	virtual void Draw() = 0;
-	virtual void Draw(Shader* shader) = 0;
+	virtual void Draw(const Shader& shader) = 0;
 };
 
 class FBOManager : public FBOManagerI{
@@ -31,54 +29,49 @@ public:
 	GLuint VBO;
 	size_t width;
 	size_t height;
-	Shader* shader;
+	const Shader* shader;
 
 	FBOManager();
 	FBOManager(size_t width, size_t height, Shader* shader);
 
 	void setup();
 
-	virtual void setShader(Shader* shader);
+	void setShader(const Shader* shader);
 	virtual void setDimensions(size_t width, size_t height);
-	virtual void createTextures();
-	virtual void createRBO();
-	virtual void createVAO();
+	void createVAO();
 	virtual void setActive();
-	virtual void Draw()
-	{ this->Draw(this->shader); }
-	virtual void UploadUniforms()
-	{ this->UploadUniforms(this->shader); }
-	virtual void UploadUniforms(Shader* shader);
-	virtual void Draw(Shader* shader);
+	void Draw()
+	{ this->Draw(*this->shader); }
+	void UploadUniforms()
+	{ this->UploadUniforms(*this->shader); }
+	virtual void UploadUniforms(const Shader& shader);
+	virtual void Draw(const Shader& shader);
 };
 
 class HDRBuffer : public FBOManager{
 public:
-	HDRBuffer();
 	HDRBuffer(size_t width, size_t height, Shader* shader);
 
-	void createTextures();
+	void setup();
 };
 
 
-class BloomBuffer : public HDRBuffer{
+class BloomBuffer : public FBOManager{
 public:
 	Shader* blurShader;
 	GLuint textures[2];
 	GLuint pingpongFBOs[2];
 	GLuint pingpongTextures[2];
 
-	BloomBuffer();
 	BloomBuffer(size_t width, size_t height, Shader* shader, Shader* blurShader);
 
 	void setup();
 
-	void createTextures();
-	void createRBO();
+	using FBOManager::setShader;
 	using FBOManager::Draw;
-	void Draw(Shader* shader);
+	void Draw(const Shader& shader);
 	using FBOManager::UploadUniforms;
-	void BloomBuffer::UploadUniforms(Shader* shader);
+	void BloomBuffer::UploadUniforms(const Shader& shader);
 };
 
 class GBuffer {
@@ -99,11 +92,10 @@ public:
 
 	virtual void setShader(Shader* shader);
 	virtual void setDimensions(size_t width, size_t height);
-	virtual void createVAO();
 
 	virtual void DrawToBuffer(std::vector<DrawObject*> objs)
 	{ this->DrawToBuffer(this->shader, objs); }
-	virtual void DrawToBuffer(Shader* shader, std::vector<DrawObject*> objs);
+	virtual void DrawToBuffer(const Shader* shader, std::vector<DrawObject*> objs);
 
 	//virtual void UploadUniforms()
 	//{ this->UploadUniforms(this->shader); }

@@ -16,7 +16,7 @@ public:
 	glm::vec3 up;
 	size_t width, height;
 	double currentTime;
-	std::map<std::string, Shader> shaders;
+	std::map<std::string, const Shader> shaders;
 	bool gammaCorrection;
 	float exposure;
 	Tex2DRenderer tex2DR;
@@ -77,7 +77,6 @@ private:
 	std::vector<Camera*> cameras;
 	int activeCamera;
 	bool running;
-	Shader* lightShader;
 
 	void setup();
 
