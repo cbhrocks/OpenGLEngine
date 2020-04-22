@@ -95,9 +95,9 @@ void Scene::loadObjects() {
 
 	Texture specular = createTexture(std::string("texture_specular"), glm::vec3(0.3));
 
-	Texture shadow;
-	shadow.type = std::string("texture_shadow_direction");
-	shadow.id = directionLight->getDepthMap();
+	Texture shadowDirection;
+	shadowDirection.type = std::string("texture_shadow_direction");
+	shadowDirection.id = directionLight->getDepthMap();
 
 	Texture shadowPoint;
 	shadowPoint.type = std::string("texture_shadow_cube");
@@ -111,19 +111,19 @@ void Scene::loadObjects() {
 	wallNormal.id = loadTexture(std::string("objects/test/textures/brickwall_normal.jpg"), true);
 	wallNormal.type = "texture_normal";
 	wallNormal.path = "objects/test/textures/brickwall_normal.png";
-	std::vector<Texture> wallTextures{ wallDiffuse, wallNormal, specular, shadow, shadowPoint };
+	std::vector<Texture> wallTextures{ wallDiffuse, wallNormal, specular, shadowDirection, shadowPoint };
 
 	Texture floorDiffuse;
 	floorDiffuse.id = loadTexture(std::string("objects/test/textures/wood.png"), true);
 	floorDiffuse.type = "texture_diffuse";
 	floorDiffuse.path = "objects/test/textures/wood.png";
-	std::vector<Texture> floorTextures{ floorDiffuse, specular, shadow, shadowPoint };
+	std::vector<Texture> floorTextures{ floorDiffuse, specular, shadowDirection, shadowPoint };
 
 	Texture cubeTexture;
 	cubeTexture.id = loadTexture(std::string("objects/test/textures/container.jpg"), true);
 	cubeTexture.type = "texture_diffuse";
 	cubeTexture.path = "objects/test/textures/container.jpg";
-	std::vector<Texture> cubeTextures{ cubeTexture, specular, shadow , shadowPoint};
+	std::vector<Texture> cubeTextures{ cubeTexture, specular, shadowDirection , shadowPoint};
 
 	Texture grassTexture;
 	grassTexture.id = loadTexture(std::string("objects/test/textures/grass.png"), true);
@@ -141,13 +141,12 @@ void Scene::loadObjects() {
 		.setPositions(scaleData(10, planePositions))
 		.setNormals(planeNormals)
 		.setTexCoords(scaleData(5, planeTexCoords))
-		.setTextures(wallTextures)
-		.build(&this->shaders["BPLightingNorm"]);
+		.setTextures(floorTextures)
+		.build(&this->shaders["blinnPhongLighting"]);
 	floor->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	//floor->setScale(glm::vec3(25.0));
 	this->drawObjects.push_back(floor);
 
-	std::vector<DrawObject*> walls;
 	for (int i = 0; i < 3; i++) {
 		DrawObject* wall = DrawObject::builder()
 			.setPositions(scaleData(10, planePositions))
@@ -304,7 +303,7 @@ void Scene::drawModels(const Shader& shader) {
 			this->drawObjects.at(i)->UploadUniforms(shader);
 			this->drawObjects.at(i)->Draw(shader);
 		}
-		//add transparent models to list sorted by distance
+		//add transparent models to map with key distance since maps are sorted by key by default.
 		else {
 			float distance = glm::length(this->getActiveCamera()->getPosition() - this->drawObjects.at(i)->getPosition());
 			sorted[distance] = this->drawObjects.at(i);
@@ -334,7 +333,7 @@ void Scene::drawModels()
 			this->drawObjects.at(i)->UploadUniforms();
 			this->drawObjects.at(i)->Draw();
 		}
-		//add transparent models to list sorted by distance
+		//add transparent models to map with key distance since maps are sorted by key by default.
 		else {
 			float distance = glm::length(this->getActiveCamera()->getPosition() - this->drawObjects.at(i)->getPosition());
 			sorted[distance] = this->drawObjects.at(i);
@@ -344,7 +343,7 @@ void Scene::drawModels()
 	//TODO: look into putting the highlight drawing elsewhere, or make it independent of the drawobj's shader
 	for (std::map<float, DrawObject*>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
 	{
-		it->second->getShader()->Use();
+		//it->second->getShader()->Use();
 		it->second->UploadUniforms();
 		it->second->Draw();
 	}
