@@ -123,8 +123,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
         slot->render.toggleWireframeMode();
-    if (key == GLFW_KEY_G && action == GLFW_PRESS)
-        slot->scene->setGammaCorrection(!slot->scene->getGammaCorrection());
+	if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+		if (slot->scene->getGammaCorrection() == 1.0f)
+			slot->scene->setGammaCorrection(2.2f);
+		else
+			slot->scene->setGammaCorrection(1.0f);
+	}
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -394,9 +398,7 @@ int main(int argc, char** argv)
     //initalize scene
 
     Slot slot;// = new Slot;
-    slot.scene = new Scene();
 	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
-
 
 	Shader shader2D = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0);
 	Shader gBlur2D = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag").setUniformBlock("Scene", 0);
@@ -407,15 +409,15 @@ int main(int argc, char** argv)
 	Shader blur2D = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag").setUniformBlock("Scene", 0);
 	Shader edge2D = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag").setUniformBlock("Scene", 0);
 	Shader bloom2D = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0);
+	Shader blinn = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
 	checkGLError("Scene::initializeShaders -- 2D shaders");
 	//checkGLError("Scene::initializeShaders -- basic2D");
 	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
 	FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
 	tbm->setup();
-	//tbm->createVAO();
-	//camera->setTBM(tbm);
-	Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), slot.scene->getUp(), 100.0f, 0.1f, width, height, 45.0f, tbm);
-	slot.scene->addCamera(camera);
+    slot.scene = new Scene();
+	slot.scene->addCamera(new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), 100.0f, 0.1f, width, height, 45.0f, tbm));
+	//slot.scene->addModel(new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &blinn, true, glm::vec3(0.0f), glm::vec3(0.5f)));
 	slot.scene->loadObjects();
 
 	//slot.scene.setFBOManager(fbom)
@@ -469,8 +471,6 @@ int main(int argc, char** argv)
 
         glfwPollEvents();
         doMovement(slot.scene);
-        //glfwWaitEvents();
-        //render.render(scene);
         
         slot.scene->timeStep(currentTime);
 

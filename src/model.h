@@ -39,7 +39,7 @@ class Model
 			const Shader* shader,
 			const bool& gammaCorrection,
 			glm::vec3& position = glm::vec3(0.0f),
-			glm::vec3& scale = glm::vec3(0.0f)
+			glm::vec3& scale = glm::vec3(1.0f)
 		);
 
         // drastd::ws the model, and thus all its meshes

@@ -64,7 +64,8 @@ layout (std140) uniform Camera
 layout (std140) uniform Scene
 {
 	float time;
-	bool gamma;
+	float gamma;
+	float exposure;
 };
 
 struct Material {
@@ -184,7 +185,8 @@ vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 fragPos, ve
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     float dist = length(light.position - fragPos);
     vec3 lightDir = normalize(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma ? dist * dist : dist));
+    //float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma > 1 ? dist * dist : dist));
+    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * pow(dist, gamma));
 
 	float shadow = calculateOmniShadows(light.position);
 
@@ -206,7 +208,8 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
 
     float dist = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma ? dist * dist : dist));
+    //float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma > 1 ? dist * dist : dist));
+    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * pow(dist, gamma));
 
     vec3 ambient = calculateAmbient(light.ambient);
 	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse);

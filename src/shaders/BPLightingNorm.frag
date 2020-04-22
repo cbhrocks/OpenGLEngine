@@ -64,7 +64,8 @@ layout (std140) uniform Camera
 layout (std140) uniform Scene
 {
 	float time;
-	bool gamma;
+	float gamma;
+	float exposure;
 };
 
 struct Material {
@@ -190,7 +191,8 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir) {
 
     vec3 lightDir = normalize(tangentLightPos - fs_in.TangentFragPos);
     float dist = length(light.position - fs_in.FragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma ? dist * dist : dist));
+    //float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma > 1 ? dist * dist : dist));
+    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * pow(dist, gamma));
 
 	float shadow = calculateOmniShadows(light.position);
 
@@ -210,7 +212,8 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir) {
 
     vec3 lightDir = normalize(tangentLightPos - fs_in.TangentFragPos);
     float dist = length(light.position - fs_in.FragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma ? dist * dist : dist));
+    //float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma > 1 ? dist * dist : dist));
+    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * pow(dist, gamma));
 
     float theta = dot(lightDir, normalize(-light.direction));
     float epsilon = light.cutOff - light.outerCutOff;

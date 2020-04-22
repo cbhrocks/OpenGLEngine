@@ -14,14 +14,17 @@
 class Scene {
 public:
 	glm::vec3 up;
-	size_t width, height;
-	double currentTime;
 	std::map<std::string, const Shader> shaders;
-	bool gammaCorrection;
+	double currentTime;
+	float gammaCorrection;
 	float exposure;
-	Tex2DRenderer tex2DR;
+	bool bloom;
 
 	Scene();
+
+	void addModel(Model* model);
+	//void removeModel(std::string);
+
 	void loadObjects();
 	void clearObjects();
 
@@ -34,7 +37,6 @@ public:
 	void drawSkybox();
 	void drawModels(const Shader& shader);
 	void drawModels();
-	void drawHighlight();
 
 	void timeStep(double t);
 
@@ -45,23 +47,20 @@ public:
 	glm::vec3 getUp() const;
 	void setUp(glm::vec3 up);
 
-	size_t getWidth() const;
-	void setWidth(size_t width);
-
-	size_t getHeight() const;
-	void setHeight(size_t height);
-
 	//FBOManager* getFBOManager() const;
 	//void setFBOManager(FBOManager* fbo);
 
 	LightManager* getLightManager() const;
 	void setLightManager(LightManager* lightManager);
 
-	void setGammaCorrection(bool gamma);
-	bool getGammaCorrection() const;
+	void setGammaCorrection(float gamma);
+	float getGammaCorrection() const;
 
 	void setExposure(float exposure);
 	float getExposure() const;
+
+	void setBloom(bool bloom);
+	bool getBloom() const;
 
 	void scaleModels(const glm::vec3& scale);
 
@@ -71,12 +70,10 @@ private:
 	GLuint ubo;
 	Skybox* skybox;
 	LightManager* lightManager;
-	//FBOManager* fboManager;
 	std::vector<Model*> models;
 	std::vector<DrawObject*> drawObjects;
 	std::vector<Camera*> cameras;
 	int activeCamera;
-	bool running;
 
 	void setup();
 

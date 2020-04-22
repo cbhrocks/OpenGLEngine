@@ -45,7 +45,6 @@ class Renderer
 
 		void preRender(Scene* scene)
 		{
-			glStencilMask(0xFF);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		}
@@ -59,18 +58,6 @@ class Renderer
 		{
             scene->draw();
 			//scene->drawSkybox();
-		}
-
-		void renderHighlight(Scene* scene)
-		{
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glDisable(GL_DEPTH_TEST);
-
-			scene->drawHighlight();
-
-            checkGLError("render highlight");
-
-			glEnable(GL_DEPTH_TEST);
 		}
 
         void toggleWireframeMode()
@@ -104,9 +91,9 @@ class Renderer
             glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_LESS);
 
-			glEnable(GL_STENCIL_TEST);
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-			glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+			//glEnable(GL_STENCIL_TEST);
+			//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+			//glStencilFunc(GL_ALWAYS, 1, 0xFF);
 			//glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
 			//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_REPLACE, GL_REPLACE);
 

@@ -38,7 +38,6 @@ void Model::uploadUniforms()
 
 void Model::uploadUniforms(const Shader& shader)
 {
-	std::cout << "shader id: " << shader.getId() << "\n";
 	shader.Use();
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, this->position);

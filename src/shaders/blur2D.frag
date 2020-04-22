@@ -5,7 +5,8 @@ uniform sampler2D texId;
 layout (std140) uniform Scene
 {
 	float time;
-	bool gamma;
+	float gamma;
+	float exposure;
 };
 
 in vec2 TexCoords;

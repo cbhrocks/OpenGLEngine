@@ -82,7 +82,9 @@ class Mesh {
 
             // draw mesh
             glBindVertexArray(VAO);
+            checkGLError("Mesh::Draw draw VAO");
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+            checkGLError("Mesh::Draw draw VAO");
             glBindVertexArray(0);
             checkGLError("Mesh::Draw draw VAO");
 

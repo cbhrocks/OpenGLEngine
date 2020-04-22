@@ -1,13 +1,12 @@
 #include "Scene.h"
 
 Scene::Scene() :
-	width(1024),
-	height(1024),
 	up(0.0, 1.0, 0.0),
 	currentTime(0.0),
-	gammaCorrection(false),
+	gammaCorrection(2.2f),
 	exposure(1.0f),
-	activeCamera(0)
+	activeCamera(0),
+	bloom(true)
 {
 	this->setup();
 	this->initializeShaders();
@@ -15,15 +14,6 @@ Scene::Scene() :
 }
 
 void Scene::loadObjects() {
-	//Camera* camera = new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), this->up, 100.0f, 0.1f, this->width, this->height, 45.0f);
-	//FBOManagerI* tbm = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
-	//FBOManagerI* tbm = new HDRBuffer(this->getWidth(), this->getHeight(), this->shaders["basic2D"]);
-	//tbm->setup();
-	//tbm->createVAO();
-	//camera->setTBM(tbm);
-
-	//this->cameras.push_back(camera);
-
 	this->lightManager = new LightManager();
 
 	BasicLight* basicLight = new BasicLight(
@@ -100,8 +90,7 @@ void Scene::loadObjects() {
 	skyboxTexture.type = "texture_skybox";
 	this->skybox = new Skybox(skyboxTexture, this->shaders["skybox"]);
 
-	Model* nanosuit = new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &this->shaders["blinnPhongLighting"], this->gammaCorrection);
-	nanosuit->setScale(glm::vec3(0.5f));
+	Model* nanosuit = new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &this->shaders["blinnPhongLighting"], true, glm::vec3(0.0f), glm::vec3(0.5f));
 	this->models.push_back(nanosuit);
 
 	Texture specular = createTexture(std::string("texture_specular"), glm::vec3(0.3));
@@ -115,35 +104,35 @@ void Scene::loadObjects() {
 	shadowPoint.id = pointLight->getDepthMap();
 
 	Texture wallDiffuse;
-	wallDiffuse.id = loadTexture(std::string("objects/test/textures/brickwall.jpg"), this->gammaCorrection);
+	wallDiffuse.id = loadTexture(std::string("objects/test/textures/brickwall.jpg"), true);
 	wallDiffuse.type = "texture_diffuse";
 	wallDiffuse.path = "objects/test/textures/brickwall.png";
 	Texture wallNormal;
-	wallNormal.id = loadTexture(std::string("objects/test/textures/brickwall_normal.jpg"), false);
+	wallNormal.id = loadTexture(std::string("objects/test/textures/brickwall_normal.jpg"), true);
 	wallNormal.type = "texture_normal";
 	wallNormal.path = "objects/test/textures/brickwall_normal.png";
 	std::vector<Texture> wallTextures{ wallDiffuse, wallNormal, specular, shadow, shadowPoint };
 
 	Texture floorDiffuse;
-	floorDiffuse.id = loadTexture(std::string("objects/test/textures/wood.png"), this->gammaCorrection);
+	floorDiffuse.id = loadTexture(std::string("objects/test/textures/wood.png"), true);
 	floorDiffuse.type = "texture_diffuse";
 	floorDiffuse.path = "objects/test/textures/wood.png";
 	std::vector<Texture> floorTextures{ floorDiffuse, specular, shadow, shadowPoint };
 
 	Texture cubeTexture;
-	cubeTexture.id = loadTexture(std::string("objects/test/textures/container.jpg"), this->gammaCorrection);
+	cubeTexture.id = loadTexture(std::string("objects/test/textures/container.jpg"), true);
 	cubeTexture.type = "texture_diffuse";
 	cubeTexture.path = "objects/test/textures/container.jpg";
 	std::vector<Texture> cubeTextures{ cubeTexture, specular, shadow , shadowPoint};
 
 	Texture grassTexture;
-	grassTexture.id = loadTexture(std::string("objects/test/textures/grass.png"), this->gammaCorrection);
+	grassTexture.id = loadTexture(std::string("objects/test/textures/grass.png"), true);
 	grassTexture.type = "texture_diffuse";
 	grassTexture.path = std::string("objects/test/textures/grass.png");
 	std::vector<Texture> grassTextures{ grassTexture };
 
 	Texture windowTexture;
-	windowTexture.id = loadTexture(std::string("objects/test/textures/blending_transparent_window.png"), this->gammaCorrection);
+	windowTexture.id = loadTexture(std::string("objects/test/textures/blending_transparent_window.png"), true);
 	windowTexture.type = "texture_diffuse";
 	windowTexture.path = std::string("objects/test/textures/window.png");
 	std::vector<Texture> windowTextures{ windowTexture };
@@ -235,20 +224,16 @@ void Scene::loadObjects() {
 	this->drawObjects.push_back(window2);
 }
 
-//FBOManager* Scene::getFBOManager() const {
-//	return this->fboManager;
-//}
-//
-//void Scene::setFBOManager(FBOManager* fbo) {
-//	this->fboManager = fbo;
-//}
-
 LightManager* Scene::getLightManager() const {
 	return this->lightManager;
 }
 
 void Scene::setLightManager(LightManager* lightManager) {
 	this->lightManager = lightManager;
+}
+
+void Scene::addModel(Model* model) {
+	this->models.push_back(model);
 }
 
 void Scene::clearObjects() {
@@ -283,7 +268,6 @@ void Scene::draw() {
 		this->getActiveCamera()->getTBM()->setActive();
 	}
 	this->drawModels();
-	this->drawHighlight();
 	//this->drawModels(this->shaders["tbn"]);
 	if (camera->getTBM() != nullptr) {
 		this->getActiveCamera()->getTBM()->Draw();
@@ -297,7 +281,7 @@ void Scene::drawShadows() {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, this->width, this->height);
+	//glViewport(0, 0, this->width, this->height);
 }
 
 void Scene::drawSkybox() {
@@ -311,7 +295,6 @@ void Scene::drawModels(const Shader& shader) {
 		this->models.at(i)->uploadUniforms(shader);
 		this->models.at(i)->Draw(shader);
 	}
-
 	//this->lightManager->drawLights();
 
 	std::map<float, DrawObject*> sorted;
@@ -337,7 +320,6 @@ void Scene::drawModels(const Shader& shader) {
 
 void Scene::drawModels()
 {
-	glStencilMask(0x00);
 	for (int i = 0; i < this->models.size(); i++) {
 		this->models.at(i)->uploadUniforms();
 		this->models.at(i)->Draw();
@@ -350,17 +332,7 @@ void Scene::drawModels()
 	for (int i = 0; i < this->drawObjects.size(); i++) {
 		if (!this->drawObjects.at(i)->isTransparent()) {
 			this->drawObjects.at(i)->UploadUniforms();
-			//predraw functions
-			if (this->drawObjects.at(i)->canHighlight()) {
-				glStencilFunc(GL_ALWAYS, 1, 0xFF);
-				glStencilMask(0xFF);
-			}
 			this->drawObjects.at(i)->Draw();
-			//postdraw functions
-			if (this->drawObjects.at(i)->canHighlight()) {
-				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-				glStencilMask(0x00);
-			}
 		}
 		//add transparent models to list sorted by distance
 		else {
@@ -374,34 +346,8 @@ void Scene::drawModels()
 	{
 		it->second->getShader()->Use();
 		it->second->UploadUniforms();
-		//predraw functions
-		if (it->second->canHighlight()) {
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
-			glStencilMask(0xFF);
-		}
 		it->second->Draw();
-		//postdraw functions
-		if (it->second->canHighlight()) {
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-			glStencilMask(0x00);
-		}
 	}
-}
-
-void Scene::drawHighlight()
-{
-	//this->camera->uploadUniforms(shaders["highlight"]);
-	glDisable(GL_DEPTH_TEST);
-	for (int i = 0; i < this->drawObjects.size(); i++) {
-		if (this->drawObjects.at(i)->canHighlight()) {
-			glm::vec3 currentScale = this->drawObjects.at(i)->getScale();
-			this->drawObjects.at(i)->setScale(currentScale * 1.1f);
-			this->drawObjects.at(i)->UploadUniforms(shaders["highlight"]);
-			this->drawObjects.at(i)->Draw(shaders["highlight"]);
-			this->drawObjects.at(i)->setScale(currentScale);
-		}
-	}
-	glEnable(GL_DEPTH_TEST);
 }
 
 void Scene::timeStep(double t)
@@ -435,34 +381,15 @@ void Scene::setUp(glm::vec3 up)
 	this->up = up;
 }
 
-size_t Scene::getWidth() const
-{
-	return this->width;
-}
-
-void Scene::setWidth(size_t width)
-{
-	this->width = width;
-}
-
-size_t Scene::getHeight() const
-{
-	return this->height;
-}
-
-void Scene::setHeight(size_t height)
-{
-	this->height = height;
-}
-
-void Scene::setGammaCorrection(bool gamma)
+void Scene::setGammaCorrection(float gamma)
 {
 	this->gammaCorrection = gamma;
+	printf("Gamma correction set to: %f", gamma);
 	this->clearObjects();
 	this->loadObjects();
 }
 
-bool Scene::getGammaCorrection() const
+float Scene::getGammaCorrection() const
 {
 	return this->gammaCorrection;
 }
@@ -475,6 +402,16 @@ void Scene::setExposure(float exposure)
 float Scene::getExposure() const
 {
 	return this->exposure;
+}
+
+void Scene::setBloom(bool bloom)
+{
+	this->bloom = bloom;
+}
+
+bool Scene::getBloom() const
+{
+	return this->bloom;
 }
 
 void Scene::scaleModels(const glm::vec3& scale)
@@ -498,8 +435,8 @@ void Scene::initializeShaders()
 	this->shaders.insert(std::pair<std::string, const Shader>("shadowCubeDepth", Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")));
 	this->shaders.insert(std::pair<std::string, const Shader>("shadowDebug", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1)));
 	this->shaders.insert(std::pair<std::string, const Shader>("phongLighting", Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
-	this->shaders.insert(std::pair<std::string, const Shader>("blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
-	this->shaders.insert(std::pair<std::string, const Shader>("BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
+	this->shaders.insert(std::pair<std::string, const Shader>("blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
+	this->shaders.insert(std::pair<std::string, const Shader>("BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)));
 	this->shaders.insert(std::pair<std::string, const Shader>("highlight", Shader("src/shaders/basic.vert", "src/shaders/highlight.frag").setUniformBlock("Camera", 1)));
 	this->shaders.insert(std::pair<std::string, const Shader>("reflection", Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag").setUniformBlock("Camera", 1)));
 	this->shaders.insert(std::pair<std::string, const Shader>("explode", Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1)));
@@ -513,7 +450,8 @@ void Scene::setup() {
 void Scene::setupUbo() {
 	int uboSize = 4// time
 		+ 4 //gamma
-		+ 4; // exposure
+		+ 4 //exposure
+		+ 4; //bloom
 	glGenBuffers(1, &this->ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, this->ubo);
 	glBufferData(GL_UNIFORM_BUFFER, uboSize, NULL, GL_STATIC_DRAW);
@@ -524,12 +462,14 @@ void Scene::setupUbo() {
 
 void Scene::updateUbo() {
 	float time = this->currentTime;
-	int gamma = this->gammaCorrection;
+	float gamma = this->gammaCorrection;
 	float exposure = this->exposure;
+	bool bloom = this->bloom;
 	glBindBuffer(GL_UNIFORM_BUFFER, this->ubo);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, 4, &time);
 	glBufferSubData(GL_UNIFORM_BUFFER, 4, 4, &gamma);
 	glBufferSubData(GL_UNIFORM_BUFFER, 8, 4, &exposure);
+	glBufferSubData(GL_UNIFORM_BUFFER, 12, 4, &bloom);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	checkGLError("Scene::updateUbo");
 }

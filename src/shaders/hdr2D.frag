@@ -5,7 +5,7 @@ uniform sampler2D texId;
 layout (std140) uniform Scene
 {
 	float time;
-	bool gamma;
+	float gamma;
 };
 
 in vec2 TexCoords;
@@ -19,7 +19,6 @@ void main()
 	//reinhard tone mapping
 	vec3 mapped = texColor / (texColor + vec3(1.0));
 
-	if (gamma)
-		texColor = pow(texColor, vec3(1.0/2.2));
+	texColor = pow(texColor, vec3(1.0/gamma));
     FragColor = vec4(mapped, 1.0);
 }
