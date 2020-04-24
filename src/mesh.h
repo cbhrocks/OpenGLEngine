@@ -34,18 +34,15 @@ class Mesh {
         /*  Mesh Data  */
         std::vector<VertexData> vertices;
         std::vector<GLuint> indices;
-        std::vector<Texture> textures;
+		std::vector<Texture> textures;
         GLuint VAO;
 
         /*  Functions  */
         // constructor
         Mesh() {}
-        Mesh(std::vector<VertexData> vertices, std::vector<GLuint> indices, std::vector<Texture> textures)
+        Mesh(std::vector<VertexData> vertices, std::vector<GLuint> indices, std::vector<Texture> textures):
+			vertices(vertices), indices(indices), textures(textures)
         {
-            this->vertices = vertices;
-            this->indices = indices;
-            this->textures = textures;
-
             // now that we have all the required data, set the vertex buffers and its attribute pointers.
             this->setupMesh();
         }
@@ -54,16 +51,18 @@ class Mesh {
         void Draw(const Shader& shader) 
         {
             // bind appropriate textures
-            GLuint diffuseNr  = 1;
-            GLuint specularNr = 1;
-            GLuint normalNr   = 1;
-            GLuint heightNr   = 1;
+			GLuint diffuseNr = 1;
+			GLuint specularNr = 1;
+			GLuint normalNr = 1;
+			GLuint heightNr = 1;
+			GLuint reflectNr = 1;
             for(GLuint i = 0; i < textures.size(); i++)
             {
                 glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
                 // retrieve texture number (the N in diffuse_textureN)
+                checkGLError("Draw bind textures");
                 std::string number;
-                std::string name = textures[i].type;
+                std::string name = this->textures[i].type;
                 if(name == "texture_diffuse")
                     number = std::to_string(diffuseNr++);
                 else if(name == "texture_specular")
@@ -72,23 +71,23 @@ class Mesh {
                     number = std::to_string(normalNr++); // transfer unsigned int to stream
                 else if(name == "texture_height")
                     number = std::to_string(heightNr++); // transfer unsigned int to stream
+				else if (name == "texture_reflect")
+					number = std::to_string(reflectNr++); // transfer unsigned int to stream
 
                 // now set the sampler to the correct texture unit
                 shader.setInt(("material." + name + number).c_str(), i);
                 // and finally bind the texture
-                glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
                 checkGLError("Draw bind textures");
             }
 
             // draw mesh
             glBindVertexArray(VAO);
-            checkGLError("Mesh::Draw draw VAO");
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-            checkGLError("Mesh::Draw draw VAO");
-            glBindVertexArray(0);
             checkGLError("Mesh::Draw draw VAO");
 
             // always good practice to set everything back to defaults once configured.
+            glBindVertexArray(0);
             glActiveTexture(GL_TEXTURE0);
         }
 

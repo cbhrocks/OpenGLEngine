@@ -17,9 +17,10 @@
 #include "shader.h"
 #include "glHelper.h"
 #include "vertexData.h"
+#include "TextureManager.h"
 
 //static Shader shadowCubeDepth = Shader("src/shaders/shadowCubeDepth.vert", "src/shaders/shadowCubeDepth.frag");
-//checkGLError("Scene::initializeShaders -- shadowDepth");
+//checkGLError("Scene::initializeShaders -- shadowShader");
 
 class Light 
 {
@@ -28,8 +29,11 @@ class Light
         glm::vec3 ambient;
         glm::vec3 diffuse;
         glm::vec3 specular;
+		// shader used to render the light itself if desired.
 		const Shader* shader;
-		const Shader* shadowDepth;
+		// Shader to get the depth of objects from light's perspective. 
+		// ucan then be used to determine where shadows are in scene.
+		const Shader* shadowShader;
         const std::string prefix;
 
 		Light(
@@ -37,7 +41,7 @@ class Light
 			glm::vec3& diffuse,
 			glm::vec3& specular,
 			const Shader* shader,
-			const Shader* shadowDepth,
+			const Shader* shadowShader,
 			const std::string& prefix = std::string()
 		);
 
@@ -67,7 +71,7 @@ class Light
 		
 		virtual void uploadUniforms(const std::string& lightNum);
 
-		virtual void uploadUniforms(Shader& shader, const std::string& lightNum) const;
+		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 
 		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
@@ -84,9 +88,8 @@ class BasicLight : public Light
     public:
         GLuint VAO;
         glm::vec3 position;
-		GLuint shadowFBO, depthMap;
-		bool definedShadowMap = false;
-		bool definedVAO = false;
+		GLuint shadowFBO;
+		Texture shadowTexture;
 
 		BasicLight(
 			glm::vec3& ambient,
@@ -94,7 +97,7 @@ class BasicLight : public Light
 			glm::vec3& specular,
 			glm::vec3& position,
 			const Shader* shader,
-			const Shader* shadowDepth,
+			const Shader* shadowShader,
 			const std::string& prefix = std::string("b")
 		);
 
@@ -113,7 +116,7 @@ class BasicLight : public Light
 		virtual void Draw(const Shader& shader) const;
 
 		using Light::uploadUniforms;
-		virtual void uploadUniforms(Shader& shader, const std::string& lightNum) const;
+		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 
 		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
@@ -129,12 +132,15 @@ class BasicLight : public Light
 
 		virtual std::vector<glm::mat4> getShadowTransforms();
 
-		virtual GLuint getDepthMap() const;
+		virtual Texture getShadowMap() const;
 
-
-    private:
+	protected:
+		bool definedShadowMap = false;
+		bool definedVAO = false;
 		size_t shadowWidth = 1024;
 		size_t shadowHeight = 1024;
+
+    private:
         GLuint VBO;
 		std::map<std::string, std::function<void(BasicLight*)>> updateFuncs;
 };
@@ -156,7 +162,7 @@ class PointLight : public BasicLight
 			float linear,
 			float quadratic,
 			const Shader* shader,
-			const Shader* shadowDepth,
+			const Shader* shadowShader,
 			const std::string& prefix = std::string("p")
 		);
 
@@ -176,7 +182,7 @@ class PointLight : public BasicLight
 
 		virtual void runUpdateFuncs();
 
-		virtual void uploadUniforms(Shader& shader, const std::string& lightNum) const;
+		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 
 		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
@@ -196,7 +202,7 @@ class DirectionLight : public BasicLight
 			glm::vec3& position,
 			glm::vec3& direction,
 			const Shader* shader,
-			const Shader* shadowDepth,
+			const Shader* shadowShader,
 			const std::string& prefix = std::string("d")
 		);
 
@@ -208,7 +214,7 @@ class DirectionLight : public BasicLight
 
 		virtual void runUpdateFuncs();
 
-		virtual void uploadUniforms(Shader& shader, const std::string& lightNum) const;
+		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 
 		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
@@ -241,7 +247,7 @@ class SpotLight : public PointLight
 			float cutOff,
 			float outerCutOff,
 			const Shader* shader,
-			const Shader* shadowDepth,
+			const Shader* shadowShader,
 			const std::string& prefix = std::string("s")
 		);
 
@@ -261,7 +267,7 @@ class SpotLight : public PointLight
 
 		virtual void runUpdateFuncs();
 
-		void uploadUniforms(Shader& shader, const std::string& lightNum) const;
+		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 
 		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
@@ -277,6 +283,8 @@ public:
 	std::vector<PointLight> pointLights;
 	std::vector<DirectionLight> directionLights;
 	std::vector<SpotLight> spotLights;
+	Texture shadowDirectionText;
+	Texture shadowCubeText;
 
 	LightManager();
 

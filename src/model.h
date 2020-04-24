@@ -28,18 +28,19 @@ class Model
         std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
         std::vector<Mesh> meshes;
         std::string directory;
-		glm::vec3& position, scale;
+		glm::vec3 position, scale, rotation;
 		const Shader* shader;
 		bool gammaCorrection;
 
         /*  Functions   */
         // constructor, expects a filepath to a 3D model.
 		Model(
-			std::string const &path,
+			std::string const path,
 			const Shader* shader,
-			const bool& gammaCorrection,
-			glm::vec3& position = glm::vec3(0.0f),
-			glm::vec3& scale = glm::vec3(1.0f)
+			const bool gammaCorrection,
+			glm::vec3 position = glm::vec3(0.0f),
+			glm::vec3 scale = glm::vec3(1.0f),
+			glm::vec3 rotation = glm::vec3(0.0f)
 		);
 
         // drastd::ws the model, and thus all its meshes
@@ -47,9 +48,17 @@ class Model
 
 		void Draw(const Shader& shader);
 
+		const glm::vec3 getPosition() const;
+
 		void setPosition(glm::vec3 position);
 
+		const glm::vec3 getScale() const;
+
 		void setScale(glm::vec3 scale);
+
+		const glm::vec3 getRotation() const;
+
+		void setRotation(glm::vec3 rotation);
 
 		void uploadUniforms();
 

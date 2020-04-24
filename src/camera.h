@@ -13,7 +13,7 @@ class Camera
 {
 public:
 	glm::vec3 position;
-	glm::vec3 look;
+	glm::vec3 front;
 	glm::vec3 up;
 	GLuint uboBlock;
 	float farBound;
@@ -23,7 +23,17 @@ public:
 	float fov;
 	FBOManagerI* tbm;
 
-	Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov, FBOManagerI* tbm);
+	Camera(
+		glm::vec3 pos,
+		glm::vec3 front,
+		glm::vec3 up,
+		float farBound,
+		float nearBound,
+		float width,
+		float height,
+		float fov,
+		FBOManagerI* tbm
+	);
 
 	glm::mat4 getProjectionMatrix() const;
 
@@ -36,7 +46,7 @@ public:
 	void setUp(const glm::vec3& up);
 
 	glm::vec3 getLook() const;
-	void setLook(const glm::vec3& look);
+	void setFront(const glm::vec3& look);
 
 	float getWidth() const;
 	void setWidth(float width);

@@ -5,14 +5,14 @@ Light::Light(
 	glm::vec3& diffuse,
 	glm::vec3& specular,
 	const Shader* shader,
-	const Shader* shadowDepth,
+	const Shader* shadowShader,
 	const std::string& prefix
 ) :
 	ambient(ambient),
 	diffuse(diffuse),
 	specular(specular),
 	shader(shader),
-	shadowDepth(shadowDepth),
+	shadowShader(shadowShader),
 	prefix(prefix)
 {
 }
@@ -29,12 +29,12 @@ void Light::setShader(Shader* shader)
 
 const Shader* Light::getShadowShader() const
 {
-	return this->shadowDepth;
+	return this->shadowShader;
 }
 
 void Light::setShadowShader(Shader* shadowShader)
 {
-	this->shadowDepth = shadowShader;
+	this->shadowShader = shadowShader;
 }
 
 const glm::vec3 Light::getAmbient() const
@@ -82,10 +82,10 @@ void Light::runUpdateFuncs()
 
 void Light::uploadUniforms(const std::string& lightNum)
 {
-	this->uploadUniforms(lightNum);
+	this->uploadUniforms(*this->shader, lightNum);
 }
 
-void Light::uploadUniforms(Shader& shader, const std::string& lightNum) const
+void Light::uploadUniforms(const Shader& shader, const std::string& lightNum) const
 {
 	shader.Use();
 	shader.setVec3((this->prefix + "light[" + lightNum + "].ambient").c_str(), this->ambient);
@@ -120,10 +120,10 @@ BasicLight::BasicLight(
 	glm::vec3& specular,
 	glm::vec3& position,
 	const Shader* shader,
-	const Shader* shadowDepth,
+	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	Light(ambient, diffuse, specular, shader, shadowDepth, prefix),
+	Light(ambient, diffuse, specular, shader, shadowShader, prefix),
 	position(position)
 {
 }
@@ -186,7 +186,7 @@ void BasicLight::Draw(const Shader& shader) const
 	checkGLError("BasicLight::Draw");
 }
 
-void BasicLight::uploadUniforms(Shader& shader, const std::string& lightNum) const
+void BasicLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
 {
 	Light::uploadUniforms(shader, lightNum);
 	shader.setVec3((this->prefix + "light[" + lightNum + "].position").c_str(), this->position);
@@ -233,8 +233,8 @@ void BasicLight::genShadowMap()
 	glGenFramebuffers(1, &this->shadowFBO);
 	checkGLError("BasicLight::genShadowMap");
 
-	glGenTextures(1, &this->depthMap);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, this->depthMap);
+	glGenTextures(1, &this->shadowTexture.id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, this->shadowTexture.id);
 	for (GLuint i = 0; i < 6; ++i) {
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, this->shadowWidth, this->shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	}
@@ -248,7 +248,7 @@ void BasicLight::genShadowMap()
 	checkGLError("BasicLight::genShadowMap");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFBO);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, this->depthMap, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, this->shadowTexture.id, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	checkGLError("BasicLight::genShadowMap");
@@ -274,22 +274,22 @@ void BasicLight::drawShadowMap(std::function<void(const Shader& shader)> draw)
 	glClear(GL_DEPTH_BUFFER_BIT);
 	checkGLError("BasicLight::drawShadowMap -- bind framebuffer");
 
-	this->shadowDepth->Use();
+	this->shadowShader->Use();
 	std::vector<glm::mat4> transforms = this->getShadowTransforms();
 	for (int i = 0; i < transforms.size(); i++) {
-		this->shadowDepth->setMat4("shadowTransform[" + std::to_string(i) + "]", transforms.at(i));
+		this->shadowShader->setMat4("shadowTransform[" + std::to_string(i) + "]", transforms.at(i));
 	}
-	this->shadowDepth->setFloat("far", 25.0f);
-	this->shadowDepth->setVec3("lightPos", this->position);
+	this->shadowShader->setFloat("far", 25.0f);
+	this->shadowShader->setVec3("lightPos", this->position);
 	checkGLError("BasicLight::drawShadowMap -- upload matrices");
 
-	draw(*this->shadowDepth);
+	draw(*this->shadowShader);
 	checkGLError("BasicLight::drawShadowMap -- draw");
 }
 
-GLuint BasicLight::getDepthMap() const
+Texture BasicLight::getShadowMap() const
 {
-	return this->depthMap;
+	return this->shadowTexture;
 }
 
 std::vector<glm::mat4> BasicLight::getShadowTransforms()
@@ -318,10 +318,10 @@ PointLight::PointLight(
 	float linear,
 	float quadratic,
 	const Shader* shader,
-	const Shader* shadowDepth,
+	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	BasicLight(ambient, diffuse, specular, position, shader, shadowDepth, prefix),
+	BasicLight(ambient, diffuse, specular, position, shader, shadowShader, prefix),
 	constant(constant), linear(linear), quadratic(quadratic)
 { 
 }
@@ -369,7 +369,7 @@ void PointLight::runUpdateFuncs()
 	}
 }
 
-void PointLight::uploadUniforms(Shader& shader, const std::string& lightNum) const
+void PointLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
 {
 	BasicLight::uploadUniforms(shader, lightNum);
 	shader.setFloat((this->prefix + "light[" + lightNum + "].constant").c_str(), this->constant);
@@ -403,10 +403,10 @@ DirectionLight::DirectionLight(
 	glm::vec3& position,
 	glm::vec3& direction,
 	const Shader* shader,
-	const Shader* shadowDepth,
+	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	BasicLight(ambient, diffuse, specular, position, shader, shadowDepth, prefix),
+	BasicLight(ambient, diffuse, specular, position, shader, shadowShader, prefix),
 	direction(direction)
 {
 }
@@ -434,7 +434,7 @@ void DirectionLight::runUpdateFuncs()
 	}
 }
 
-void DirectionLight::uploadUniforms(Shader& shader, const std::string& lightNum) const
+void DirectionLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
 {
 	BasicLight::uploadUniforms(shader, lightNum);
 	shader.setVec3((this->prefix + "light[" + lightNum + "].direction").c_str(), this->direction);
@@ -457,16 +457,16 @@ GLuint DirectionLight::updateUniformBlock(GLuint ubo, GLuint start)
 
 void DirectionLight::genShadowMap()
 {
-	if (this->shadowDepth == nullptr) {
+	if (this->shadowShader == nullptr) {
 		return;
 	}
 
 	glGenFramebuffers(1, &this->shadowFBO);
 	checkGLError("DirectionLight::genShadowMap");
 
-	glGenTextures(1, &this->depthMap);
-	glBindTexture(GL_TEXTURE_2D, this->depthMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glGenTextures(1, &this->shadowTexture.id);
+	glBindTexture(GL_TEXTURE_2D, this->shadowTexture.id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, this->shadowWidth, this->shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	checkGLError("DirectionLight::genShadowMap");
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -478,7 +478,7 @@ void DirectionLight::genShadowMap()
 	checkGLError("DirectionLight::genShadowMap");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->depthMap, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->shadowTexture.id, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	checkGLError("DirectionLight::genShadowMap");
@@ -494,14 +494,14 @@ void DirectionLight::genShadowMap()
 
 void DirectionLight::drawShadowMap(std::function<void(const Shader& shader)> draw)
 {
-	glViewport(0, 0, 1024, 1024);
+	glViewport(0, 0, (float)this->shadowWidth, (float)this->shadowHeight);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	this->shadowDepth->Use();
-	this->shadowDepth->setMat4("lightSpaceMatrix", this->getShadowTransform());
+	this->shadowShader->Use();
+	this->shadowShader->setMat4("lightSpaceMatrix", this->getShadowTransform());
 
-	draw(*this->shadowDepth);
+	draw(*this->shadowShader);
 }
 
 glm::mat4 DirectionLight::getShadowTransform()
@@ -524,10 +524,10 @@ SpotLight::SpotLight(
 	float cutOff,
 	float outerCutOff,
 	const Shader* shader,
-	const Shader* shadowDepth,
+	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	PointLight(ambient, diffuse, specular, position, constant, linear, quadratic, shader, shadowDepth, prefix),
+	PointLight(ambient, diffuse, specular, position, constant, linear, quadratic, shader, shadowShader, prefix),
 	direction(direction), cutOff(cutOff), outerCutOff(outerCutOff)
 {
 }
@@ -575,7 +575,7 @@ void SpotLight::runUpdateFuncs()
 	}
 }
 
-void SpotLight::uploadUniforms(Shader& shader, const std::string& lightNum) const
+void SpotLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
 {
 	PointLight::uploadUniforms(shader, lightNum);
 	shader.setVec3((this->prefix + "light[" + lightNum + "].direction").c_str(), this->direction);
@@ -630,33 +630,24 @@ void LightManager::addSpotLight(SpotLight& slight)
 
 void LightManager::drawLights() {
 	for (int i = 0; i < this->pointLights.size(); i++) {
-		if (!this->pointLights[i].hasVAO())
-			this->pointLights[i].genVAO();
+		if (this->pointLights[i].hasVAO()) {
+			this->pointLights[i].Draw();
+		}
 	}
 	for (int i = 0; i < this->basicLights.size(); i++) {
-		if (!this->basicLights[i].hasVAO())
-			this->basicLights[i].genVAO();
+		if (this->basicLights[i].hasVAO()) {
+			this->basicLights[i].Draw();
+		}
 	}
 	for (int i = 0; i < this->directionLights.size(); i++) {
-		if (!this->directionLights[i].hasVAO())
-			this->directionLights[i].genVAO();
+		if (this->directionLights[i].hasVAO()) {
+			this->directionLights[i].Draw();
+		}
 	}
 	for (int i = 0; i < this->spotLights.size(); i++) {
-		//if (!this->spotLights[i].hasVAO())
-		//	this->spotLights[i].genVAO();
-	}
-
-	for (int i = 0; i < this->pointLights.size(); i++) {
-		this->pointLights[i].Draw();
-	}
-	for (int i = 0; i < this->basicLights.size(); i++) {
-		this->basicLights[i].Draw();
-	}
-	for (int i = 0; i < this->directionLights.size(); i++) {
-		this->directionLights[i].Draw();
-	}
-	for (int i = 0; i < this->spotLights.size(); i++) {
-		//this->spotLights[i].Draw();
+		//if (this->spotLights[i].hasVAO()){
+			//this->spotLights[i].Draw();
+		//}
 	}
 }
 
@@ -747,27 +738,16 @@ void LightManager::runUpdateFuncs()
 void LightManager::drawShadowMaps(std::function<void (const Shader& shader)> draw)
 {
 	for (int i = 0; i < this->basicLights.size(); i++) {
-		if (this->basicLights.at(i).getShadowShader() != nullptr) {
-			//create depth mat if none exists
-			if (!this->basicLights.at(i).hasShadowMap())
-				this->basicLights.at(i).genShadowMap();
-			// draw depth map
+		if (this->basicLights.at(i).hasShadowMap())
 			this->basicLights.at(i).drawShadowMap(draw);
-		}
 	}
 	for (int i = 0; i < this->pointLights.size(); i++) {
-		if (this->pointLights.at(i).getShadowShader() != nullptr) {
-			if (!this->pointLights.at(i).hasShadowMap())
-				this->pointLights.at(i).genShadowMap();
+		if (this->pointLights.at(i).hasShadowMap())
 			this->pointLights.at(i).drawShadowMap(draw);
-		}
 	}
 	for (int i = 0; i < this->directionLights.size(); i++) {
-		if (this->directionLights.at(i).getShadowShader() != nullptr) {
-			if (!this->directionLights.at(i).hasShadowMap())
-				this->directionLights.at(i).genShadowMap();
+		if (this->directionLights.at(i).hasShadowMap())
 			this->directionLights.at(i).drawShadowMap(draw);
-		}
 	}
 	checkGLError("LightManager::drawShadowMaps -- generate shadow maps");
 

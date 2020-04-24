@@ -281,7 +281,7 @@ static void cursor_position_callback(GLFWwindow* window, double x, double y)
     glm::vec3 right = glm::normalize(glm::cross(newLook, slot->scene->getUp()));  
     glm::vec3 camUp = glm::normalize(glm::cross(right, newLook));
 
-	slot->scene->getActiveCamera()->setLook(glm::normalize(newLook));
+	slot->scene->getActiveCamera()->setFront(glm::normalize(newLook));
     slot->scene->getActiveCamera()->setUp(camUp);
 
     printf("new look: %f, %f, %f\n", newLook.x, newLook.y, newLook.z);
@@ -397,9 +397,38 @@ int main(int argc, char** argv)
 
     //initalize scene
 
+
+
+
+
+
+
+
+
     Slot slot;// = new Slot;
 	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
+	// Light Shaders
+	Shader basic = Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1);
+	Shader texture = Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1);
+	Shader trans = Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1);
+	Shader depth = Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1);
+	Shader normal = Shader("src/shaders/normal.vert", "src/shaders/normal.frag", "src/shaders/normal.geom").setUniformBlock("Camera", 1);
+	Shader tbn = Shader("src/shaders/tbn.vert", "src/shaders/tbn.frag", "src/shaders/tbn.geom").setUniformBlock("Camera", 1);
+	Shader faceNormal = Shader("src/shaders/faceNormal.vert", "src/shaders/faceNormal.frag", "src/shaders/faceNormal.geom").setUniformBlock("Camera", 1);
+	Shader skybox = Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag");
+	Shader highlight = Shader("src/shaders/basic.vert", "src/shaders/highlight.frag").setUniformBlock("Camera", 1);
+	Shader reflection = Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag").setUniformBlock("Camera", 1);
+	Shader explode = Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1);
 
+	Shader light = Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1);
+	Shader shadowDepth = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag");
+	Shader shadowCubeDepth = Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom");
+	Shader shadowDebug = Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1);
+	Shader phongLighting = Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
+	Shader blinnPhongLighting = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
+	Shader BPLightingNorm = Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
+	//checkGLError("main -- initializeShaders basic2D");
+	// 2D Shaders
 	Shader shader2D = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0);
 	Shader gBlur2D = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag").setUniformBlock("Scene", 0);
 	Shader hdr2D = Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag").setUniformBlock("Scene", 0);
@@ -409,16 +438,145 @@ int main(int argc, char** argv)
 	Shader blur2D = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag").setUniformBlock("Scene", 0);
 	Shader edge2D = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag").setUniformBlock("Scene", 0);
 	Shader bloom2D = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0);
-	Shader blinn = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
 	checkGLError("Scene::initializeShaders -- 2D shaders");
-	//checkGLError("Scene::initializeShaders -- basic2D");
+	//checkGLError("main -- initializeShaders basic2D");
 	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
 	FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
 	tbm->setup();
     slot.scene = new Scene();
-	slot.scene->addCamera(new Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), 100.0f, 0.1f, width, height, 45.0f, tbm));
-	//slot.scene->addModel(new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &blinn, true, glm::vec3(0.0f), glm::vec3(0.5f)));
-	slot.scene->loadObjects();
+
+	LightManager* lm = new LightManager();
+	BasicLight* basicLight = new BasicLight(
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 5.0f),
+		&light,
+		nullptr
+		//&shadowCubeDepth
+	);
+	lm->addBasicLight(*basicLight);
+	DirectionLight* directionLight = new DirectionLight(
+		//glm::vec3(0.2f, 0.2f, 0.2f),
+		//glm::vec3(0.5f, 0.5f, 0.5f),
+		//glm::vec3(1.0f, 1.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(-5.0f, 10.0f, 5.0f),
+		glm::vec3(0.25f, -0.5f, -0.25f),
+		&light,
+		&shadowDepth
+	);
+	lm->addDirectionLight(*directionLight);
+	PointLight* pointLight = new PointLight(
+		glm::vec3(0.2f, 0.2f, 0.2f),
+		glm::vec3(1.5f, 1.5f, 1.5f),
+		glm::vec3(3.0f, 3.0f, 3.0f),
+		//glm::vec3(0.2f, 0.2f, 0.2f),
+		//glm::vec3(200.0f, 200.0f, 200.0f),
+		//glm::vec3(3.0f, 3.0f, 3.0f),
+		glm::vec3(0.0f, 8.0f, 5.0f),
+		1.0f,
+		0.09f,
+		0.032f,
+		&light,
+		&shadowCubeDepth
+	);
+	pointLight->addUpdateFunction("rotate", [](PointLight* pl) {
+		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
+	});
+	lm->addPointLight(*pointLight);
+	SpotLight* spotLight = new SpotLight(
+		glm::vec3(0.2f, 0.2f, 0.2f),
+		glm::vec3(1.5f, 1.5f, 1.5f),
+		glm::vec3(3.0f, 3.0f, 3.0f),
+		glm::vec3(0.0f),
+		//this->getActiveCamera()->getPosition(),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		1.0f,
+		0.0014f,
+		0.000007f,
+		glm::cos(glm::radians(12.5f)),
+		glm::cos(glm::radians(17.5f)),
+		&light,
+		nullptr
+	);
+	spotLight->addUpdateFunction("followCamera", [&, slot](SpotLight* sl) {
+		Camera* camera = slot.scene->getActiveCamera();
+		sl->setPosition(camera->position);
+		sl->setDirection(camera->front);
+	});
+	lm->addSpotLight(*spotLight);
+	lm->createUniformBlock();
+
+	slot.scene->setLightManager(lm);
+
+	Model* nanosuit = new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &blinnPhongLighting, true, glm::vec3(0.0f), glm::vec3(0.5f));
+	slot.scene->setModel("nanosuit", nanosuit);
+
+	slot.scene->setModel("box1", new Model(std::string("objects/test/wood_box/wood_box.obj"), &blinnPhongLighting, true, glm::vec3(-4.0, 1.5, 3.5), glm::vec3(2.0f)));
+
+	slot.scene->setModel("box2", new Model(std::string("objects/test/wood_box/wood_box.obj"), &blinnPhongLighting, true, glm::vec3(2.0, 4, 3.5), glm::vec3(1.0f)));
+
+	slot.scene->setModel("box3", new Model(
+		std::string("objects/test/grass_square/grass_square.obj"),
+		&trans,
+		true,
+		glm::vec3( 0, 0.5, 0 ),
+		glm::vec3(1),
+		glm::vec3( 90, 0, 0 )
+	));
+
+	slot.scene->setModel("box4", new Model(
+		std::string("objects/test/window/window.obj"),
+		&trans,
+		true,
+		glm::vec3(0, 1.0, -3.0),
+		glm::vec3(1),
+		glm::vec3(90, 0, 0)
+	));
+
+	slot.scene->setModel("box5", new Model(
+		std::string("objects/test/window/window.obj"),
+		&trans,
+		true,
+		glm::vec3(0, 1.0, -2.0),
+		glm::vec3(1),
+		glm::vec3(90, 0, 0)
+	));
+
+	slot.scene->setModel("box6", new Model(
+		std::string("objects/test/wood_floor/wood_floor.obj"),
+		&phongLighting,
+		true,
+		glm::vec3(0),
+		glm::vec3(10)
+	));
+
+	slot.scene->setModel("box7", new Model(
+		std::string("objects/test/brick_wall/brick_wall.obj"),
+		&BPLightingNorm,
+		true,
+		glm::vec3( 0, 10, -10 ),
+		glm::vec3(10),
+		glm::vec3( 90, 0, 0 )
+	));
+
+	slot.scene->addCamera(
+		new Camera(
+			glm::vec3(0, 0, 0),
+			glm::vec3(0, 0, -1),
+			glm::vec3(0, 1, 0),
+			100.0f,
+			0.1f,
+			width,
+			height,
+			45.0f,
+			tbm
+		)
+	);
+
 
 	//slot.scene.setFBOManager(fbom)
     slot.window = window;
@@ -463,7 +621,7 @@ int main(int argc, char** argv)
 
 		slot.scene->onFrame();
 		slot.render.preRender(slot.scene);
-		slot.render.renderTexture(slot.scene);
+		slot.render.render(slot.scene);
         //slot.render.renderHighlight(slot.scene);
 		slot.render.postRender(slot.scene);
 

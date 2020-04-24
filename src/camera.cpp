@@ -3,8 +3,18 @@
 Camera::~Camera()
 { }
 
-Camera::Camera(glm::vec3 pos, glm::vec3 look, glm::vec3 up, float farBound, float nearBound, float width, float height, float fov, FBOManagerI* tbm) :
-	position(pos), look(look), up(up), farBound(farBound), nearBound(nearBound), width(width), height(height), fov(fov), tbm(tbm)
+Camera::Camera(
+	glm::vec3 pos, 
+	glm::vec3 look, 
+	glm::vec3 up, 
+	float farBound, 
+	float nearBound, 
+	float width, 
+	float height, 
+	float fov, 
+	FBOManagerI* tbm
+) :
+	position(pos), front(look), up(up), farBound(farBound), nearBound(nearBound), width(width), height(height), fov(fov), tbm(tbm)
 {
 	setupUbos();
 }
@@ -17,7 +27,7 @@ glm::mat4 Camera::getProjectionMatrix() const
 
 glm::mat4 Camera::getViewMatrix() const
 {
-	return glm::lookAt(this->position, this->position + this->look, this->up);
+	return glm::lookAt(this->position, this->position + this->front, this->up);
 }
 
 
@@ -53,12 +63,22 @@ void Camera::setUp(const glm::vec3& up)
 
 glm::vec3 Camera::getLook() const
 {
-	return this->look;
+	return this->front;
 }
 
-void Camera::setLook(const glm::vec3& look)
+void Camera::setFront(const glm::vec3& front)
 {
-	this->look = look;
+	this->front = front;
+}
+
+float Camera::getWidth() const
+{
+	return this->width;
+}
+
+void Camera::setWidth(float width)
+{
+	this->width = width;
 }
 
 float Camera::getHeight() const 

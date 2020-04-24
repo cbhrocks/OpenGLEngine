@@ -73,8 +73,7 @@ struct Material {
     sampler2D texture_specular1;
 	sampler2D texture_normal1;
 	sampler2D texture_height1;
-	sampler2D texture_shadow_direction1;
-	samplerCube texture_shadow_cube1;
+	sampler2D texture_reflect1;
 };
 
 //object data
@@ -99,9 +98,6 @@ vec3 calculateBasicLight(BasicLight light, vec3 normal, vec3 viewDir);
 vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 viewDir);
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir);
 vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
-
-float calculateDirectionShadows(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
-float calculateOmniShadows(vec3 lightPos);
 
 void main()
 {
@@ -162,11 +158,11 @@ vec3 calculateBasicLight(BasicLight light, vec3 normal, vec3 viewDir) {
 
     vec3 lightDir = normalize(tangentLightPos - fs_in.TangentFragPos);
 
-	float shadow = calculateOmniShadows(light.position);
+	//float shadow = calculateOmniShadows(light.position);
 
     vec3 ambient = calculateAmbient(light.ambient);
-	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse) * (1 - shadow);
-	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular) * (1 - shadow);
+	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse);
+	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular);
 
     vec3 finalColor = ambient + diffuse + specular;
     return finalColor;
@@ -176,11 +172,11 @@ vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
 
 	vec4 fragPosLightSpace = light.lightSpaceMatrix * vec4(fs_in.FragPos, 1.0); 
-	float shadow = calculateDirectionShadows(fragPosLightSpace, normal, lightDir);
+	//float shadow = calculateDirectionShadows(fragPosLightSpace, normal, lightDir);
 
     vec3 ambient = calculateAmbient(light.ambient);
-	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse) * (1 - shadow);
-	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular) * (1 - shadow);
+	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse);
+	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular);
 
     vec3 finalColor = ambient + diffuse + specular;
     return finalColor;
@@ -194,11 +190,11 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir) {
     //float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (gamma > 1 ? dist * dist : dist));
     float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * pow(dist, gamma));
 
-	float shadow = calculateOmniShadows(light.position);
+	//float shadow = calculateOmniShadows(light.position);
 
     vec3 ambient = calculateAmbient(light.ambient);
-	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse) * (1 - shadow);
-	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular) * (1 - shadow);
+	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse);
+	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular);
 
 	ambient *= attenuation;
 	diffuse *= attenuation;
@@ -226,63 +222,4 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir) {
     vec3 finalColor = ambient*attenuation + diffuse*intensity*attenuation + specular*intensity*attenuation;
 
     return finalColor;
-}
-
-float calculateDirectionShadows(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
-	//perspective divide
-	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	// transfor to [0, 1] range
-	projCoords = projCoords * 0.5 + 0.5;
-
-	// get depth of current fragment from light's perspective
-	float currentDepth = projCoords.z;
-
-	// bias to prevent acne
-	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-
-	// texel size to average shadow color;
-	vec2 texelSize = 1.0 / textureSize(material.texture_shadow_direction1, 0);
-	float pcfShadow = 0.0;
-	for (int x = -1; x <= 1; ++x) {
-		for (int y = -1; y <= 1; ++y) {
-			//closest depth of 9 texels
-			float pcfDepth = texture(material.texture_shadow_direction1, projCoords.xy + vec2(x, y) * texelSize).r;
-			pcfShadow += (currentDepth - bias > pcfDepth) && (projCoords.z < 1.0) ? 1.0 : 0.0;
-		}
-	}
-	pcfShadow /= 9.0;
-
-	return pcfShadow;
-}
-
-vec3 sampleOffsetDirections[20] = vec3[]
-(
-   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
-   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
-   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
-   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
-   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-);   
-
-float calculateOmniShadows(vec3 lightPos){
-	vec3 fragToLight = fs_in.FragPos - lightPos;
-	//get linear depth between fragment and light position
-	float currentDepth = length(fragToLight);
-
-	float shadow = 0.0;
-	float bias = 0.05;
-	float viewDistance = length(camPos - fs_in.FragPos);
-	float diskRadius = (1.0 + (viewDistance / 25.0)) / 25.0;
-	float offset = 0.1;
-	int samples = 20;
-	for (int i = 0; i < samples; ++i){
-				float closestDepth = texture(material.texture_shadow_cube1, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
-				//transform depth to [0, far]
-				closestDepth *= 25.0;
-				// bias to prevent acne
-				if (currentDepth - bias > closestDepth)
-					shadow +=  1.0;
-	}
-
-	return shadow /= float(samples);
 }

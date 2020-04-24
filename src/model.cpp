@@ -2,8 +2,15 @@
 
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
-Model::Model(std::string const &path, const Shader* shader, const bool& gammaCorrection, glm::vec3& position, glm::vec3& scale) :
-	shader(shader), gammaCorrection(gammaCorrection), position(position), scale(scale)
+Model::Model(
+	std::string const path, 
+	const Shader* shader, 
+	const bool gammaCorrection, 
+	glm::vec3 position, 
+	glm::vec3 scale, 
+	glm::vec3 rotation
+) :
+	shader(shader), gammaCorrection(gammaCorrection), position(position), scale(scale), rotation(rotation)
 {
 	loadModel(path);
 }
@@ -21,14 +28,30 @@ void Model::Draw(const Shader& shader)
 		meshes[i].Draw(shader);
 }
 
+const glm::vec3 Model::getPosition() const {
+	return this->position;
+}
+
 void Model::setPosition(glm::vec3 position)
 {
 	this->position = position;
 }
 
+const glm::vec3 Model::getScale() const {
+	return this->scale;
+}
+
 void Model::setScale(glm::vec3 scale)
 {
 	this->scale = scale;
+}
+
+const glm::vec3 Model::getRotation() const {
+	return this->rotation;
+}
+
+void Model::setRotation(glm::vec3 rotation) {
+	this->rotation = rotation;
 }
 
 void Model::uploadUniforms()
@@ -38,15 +61,22 @@ void Model::uploadUniforms()
 
 void Model::uploadUniforms(const Shader& shader)
 {
+	checkGLError("Model::uploadUniforms -- start");
 	shader.Use();
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, this->position);
+	//rotate x
+	model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.0, 0.0, 0.0));
+	//rotate y
+	model = glm::rotate(model, glm::radians(this->rotation.y), glm::vec3(0.0, 1.0, 0.0));
+	//rotate z
+	model = glm::rotate(model, glm::radians(this->rotation.z), glm::vec3(0.0, 0.0, 1.0));
 	model = glm::scale(model, this->scale);
 	glm::mat3 normal = glm::inverseTranspose(glm::mat3(model));
 
 	shader.setMat4("Model", model);
 	shader.setMat3("Normal", normal);
-	checkGLError("upload uniforms -- matrices");
+	checkGLError("Model::uploadUniforms -- end");
 }
 
 void Model::setShader(const Shader* shader)

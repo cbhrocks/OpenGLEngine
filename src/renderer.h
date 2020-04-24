@@ -17,74 +17,8 @@ class Renderer
     public:
         int toIntRange = 0;
 
-        Renderer()
+        Renderer(int width = 1024, int height = 1024): width(width), height(height)
         {
-            initialized = false;
-
-            //view
-            this->width = 640;
-            this->height = 480;
-
-            //shader
-        }
-
-        Renderer(int width, int height)
-        {
-            initialized = false;
-
-            //view
-            this->width = width;
-            this->height = height;
-
-            initialize();
-        }
-
-        void setRes(int width, int height){
-            glViewport(0, 0, this->width, this->height);
-        }
-
-		void preRender(Scene* scene)
-		{
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		}
-
-		void postRender(Scene* scene)
-		{
-
-		}
-
-		void renderTexture(Scene* scene)
-		{
-            scene->draw();
-			//scene->drawSkybox();
-		}
-
-        void toggleWireframeMode()
-        {
-            GLint polyMode;
-            glGetIntegerv(GL_POLYGON_MODE, &polyMode);
-
-            if ( polyMode == GL_LINE )
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            if ( polyMode == GL_FILL )
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            if ( polyMode == GL_POINTS )
-                ;//
-        }
-
-    private:
-        bool initialized;
-
-        GLuint squareVertexArray;
-
-        int width, height;
-
-        void initialize()
-        {
-            printf("initializing renderer\n");
-            initialized = true;
-
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
 
@@ -105,6 +39,61 @@ class Renderer
 			glEnable(GL_PROGRAM_POINT_SIZE);
             checkGLError("Renderer::initialize");
         }
+
+        void setRes(int width, int height){
+            glViewport(0, 0, this->width, this->height);
+        }
+
+		void preRender(Scene* scene)
+		{
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		}
+
+		void postRender(Scene* scene)
+		{
+
+		}
+
+		void render(Scene* scene)
+		{
+            scene->draw();
+		}
+
+		void renderShadows(Scene* scene)
+		{
+			scene->getLightManager()->drawShadowMaps([&, scene](const Shader& shader) {
+				scene->drawModels(shader);
+			});
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		}
+
+		void renderModels(Scene* scene)
+		{
+			std::map<std::string, Model*> models = scene->getModels();
+			for (auto it = models.begin(); it != models.end(); ++it) {
+				it->second->uploadUniforms();
+				it->second->Draw();
+			}
+		}
+
+        void toggleWireframeMode()
+        {
+            GLint polyMode;
+            glGetIntegerv(GL_POLYGON_MODE, &polyMode);
+
+            if ( polyMode == GL_LINE )
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            if ( polyMode == GL_FILL )
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            if ( polyMode == GL_POINTS )
+                ;//
+        }
+
+    private:
+        int width, height;
 };
 
 #endif

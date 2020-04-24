@@ -22,10 +22,15 @@ public:
 
 	Scene();
 
-	void addModel(Model* model);
-	//void removeModel(std::string);
+	std::map<std::string, Model*> getModels();
+	void setModels(std::map<std::string, Model*> models);
 
-	void loadObjects();
+	void setModel(std::string name, Model* model);
+	Model* getModel(std::string);
+	Model* removeModel(std::string);
+
+	void addObject(DrawObject* object);
+
 	void clearObjects();
 
 	void onFrame();
@@ -47,9 +52,6 @@ public:
 	glm::vec3 getUp() const;
 	void setUp(glm::vec3 up);
 
-	//FBOManager* getFBOManager() const;
-	//void setFBOManager(FBOManager* fbo);
-
 	LightManager* getLightManager() const;
 	void setLightManager(LightManager* lightManager);
 
@@ -62,15 +64,14 @@ public:
 	void setBloom(bool bloom);
 	bool getBloom() const;
 
-	void scaleModels(const glm::vec3& scale);
-
 	void initializeShaders();
 
 private:
 	GLuint ubo;
 	Skybox* skybox;
 	LightManager* lightManager;
-	std::vector<Model*> models;
+	//std::vector<Model*> models;
+	std::map<std::string, Model*> models;
 	std::vector<DrawObject*> drawObjects;
 	std::vector<Camera*> cameras;
 	int activeCamera;
