@@ -192,6 +192,7 @@ void BasicLight::uploadUniforms(const Shader& shader, const std::string& lightNu
 	shader.setVec3((this->prefix + "light[" + lightNum + "].position").c_str(), this->position);
 }
 
+// the uniform block size of a basic light is 64 bytes.
 GLuint BasicLight::updateUniformBlock(GLuint ubo, GLuint start)
 {
 	GLuint size = Light::updateUniformBlock(ubo, start);
@@ -672,30 +673,24 @@ void LightManager::uploadLightUniforms(Shader shader) {
 
 void LightManager::createUniformBlock()
 {
-	//GLuint basicLightSize = sizeof(glm::vec3) * 4; // 48
 	GLuint basicLightSize = 64;
-	//GLuint pointLightSize = basicLightSize + sizeof(float) * 3; // 60
 	GLuint pointLightSize = 80;
-	//GLuint spotLightSize = pointLightSize + sizeof(glm::vec3) + 2 * sizeof(float); //80
 	GLuint spotLightSize = 112;
-	//GLuint directionLightSize = basicLightSize + sizeof(glm::vec3); //60
-	GLuint directionLightSize = 80 + sizeof(glm::mat4);
-
-	//pad sizes not divisible by 16
-
-	//pointLightSize += 4;
-	//directionLightSize += 4;
+	GLuint directionLightSize = 144;
 
 	GLuint uboSize = this->basicLights.size() * basicLightSize +
 		this->pointLights.size() * pointLightSize +
 		this->spotLights.size() * spotLightSize +
 		this->directionLights.size() * directionLightSize;
 
+	glm::mat4 matrix = glm::mat4(1);
+	float* list = (float*) &matrix;
+
 	glGenBuffers(1, &this->ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, this->ubo);
-	glBufferData(GL_UNIFORM_BUFFER, uboSize, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, uboSize, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 2, this->ubo, 0, uboSize);
+	glBindBufferRange(GL_UNIFORM_BUFFER, this->LIGHTS_UNIFORM_BLOCK_BINDING_POINT, this->ubo, 0, uboSize);
 
 	//set initial value
 	checkGLError("LightManager::createUniformBlock");

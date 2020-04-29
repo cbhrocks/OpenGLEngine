@@ -45,7 +45,7 @@ class Skybox
         virtual void uploadUniforms(Shader& shader) const
         {
 			shader.Use();
-			this->shader.setInt("texture", 0);
+			this->shader.setInt("skybox", 0);
         }
 
 		virtual void Draw()

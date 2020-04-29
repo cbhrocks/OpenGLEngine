@@ -19,9 +19,6 @@
 #include "vertexData.h"
 #include "TextureManager.h"
 
-//static Shader shadowCubeDepth = Shader("src/shaders/shadowCubeDepth.vert", "src/shaders/shadowCubeDepth.frag");
-//checkGLError("Scene::initializeShaders -- shadowShader");
-
 class Light 
 {
     public:
@@ -275,8 +272,10 @@ private:
 	std::map<std::string, std::function<void(SpotLight*)>> updateFuncs;
 };
 
+
 class LightManager
 {
+static const GLuint LIGHTS_UNIFORM_BLOCK_BINDING_POINT = 2;
 public:
 	GLuint ubo;
 	std::vector<BasicLight> basicLights;

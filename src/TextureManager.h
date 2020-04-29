@@ -6,7 +6,7 @@
 struct Texture {
     GLuint id;
     std::string type;
-    std::string path;
+    //std::string path;
 };
 
 Texture static createTexture(std::string type, glm::vec3 color) {

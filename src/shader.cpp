@@ -189,6 +189,12 @@ const Shader& Shader::setUniformBlock(const std::string &name, const GLuint &bin
 	glUniformBlockBinding(this->Program, glGetUniformBlockIndex(this->Program, name.c_str()), binding);
 	return *this;
 }
+const GLuint Shader::getUniformBlockSize(const std::string &name) const {
+	GLuint uniformBlockIndex = glGetUniformBlockIndex(this->getId(), name.c_str());
+	GLsizei uniformBlockSize;
+	glGetActiveUniformBlockiv(this->getId(), uniformBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &uniformBlockSize);
+	return uniformBlockSize;
+}
 
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------

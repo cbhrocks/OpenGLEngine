@@ -11,7 +11,7 @@ public:
 	virtual void setup() = 0;
 
 	virtual void setShader(const Shader* shader) = 0;
-	virtual void setDimensions(size_t width, size_t height) = 0;
+	virtual void setDimensions(GLsizei width, GLsizei height) = 0;
 	virtual void createVAO() = 0;
 	virtual void setActive() = 0;
 	virtual void UploadUniforms() = 0;
@@ -27,17 +27,17 @@ public:
 	GLuint RBO;
 	GLuint VAO;
 	GLuint VBO;
-	size_t width;
-	size_t height;
+	GLsizei width;
+	GLsizei height;
 	const Shader* shader;
 
 	FBOManager();
-	FBOManager(size_t width, size_t height, Shader* shader);
+	FBOManager(GLsizei width, GLsizei height, Shader* shader);
 
 	void setup();
 
 	void setShader(const Shader* shader);
-	virtual void setDimensions(size_t width, size_t height);
+	virtual void setDimensions(GLsizei width, GLsizei height);
 	void createVAO();
 	virtual void setActive();
 	void Draw()
@@ -50,7 +50,7 @@ public:
 
 class HDRBuffer : public FBOManager{
 public:
-	HDRBuffer(size_t width, size_t height, Shader* shader);
+	HDRBuffer(GLsizei width, GLsizei height, Shader* shader);
 
 	void setup();
 };
@@ -63,7 +63,7 @@ public:
 	GLuint pingpongFBOs[2];
 	GLuint pingpongTextures[2];
 
-	BloomBuffer(size_t width, size_t height, Shader* shader, Shader* blurShader);
+	BloomBuffer(GLsizei width, GLsizei height, Shader* shader, Shader* blurShader);
 
 	void setup();
 
@@ -81,17 +81,16 @@ public:
 	GLuint depthBuffer; // rbo
 	GLuint VAO;
 	GLuint VBO;
-	size_t width;
-	size_t height;
+	GLsizei width;
+	GLsizei height;
 	Shader* shader;
 
 	GBuffer();
-	GBuffer(size_t width, size_t height, Shader* shader);
+	GBuffer(GLsizei width, GLsizei height, Shader* shader);
 
 	void setup();
 
 	virtual void setShader(Shader* shader);
-	virtual void setDimensions(size_t width, size_t height);
 
 	virtual void DrawToBuffer(std::vector<DrawObject*> objs)
 	{ this->DrawToBuffer(this->shader, objs); }

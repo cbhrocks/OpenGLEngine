@@ -4,7 +4,7 @@
 
 FBOManager::FBOManager() { }
 
-FBOManager::FBOManager(size_t width, size_t height, Shader* shader) :
+FBOManager::FBOManager(GLsizei width, GLsizei height, Shader* shader) :
 	width(width), height(height), shader(shader)
 {
 }
@@ -47,7 +47,7 @@ void FBOManager::setShader(const Shader* shader)
 	this->shader = shader;
 }
 
-void FBOManager::setDimensions(size_t width, size_t height)
+void FBOManager::setDimensions(GLsizei width, GLsizei height)
 {
 	this->width = width;
 	this->height = height;
@@ -83,7 +83,6 @@ void FBOManager::setActive()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, this->FBO);
 
-	glStencilMask(0xFF);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
@@ -121,7 +120,7 @@ void FBOManager::Draw(const Shader& shader)
 	checkGLError("FBOManager::Draw");
 }
 
-HDRBuffer::HDRBuffer(size_t width, size_t height, Shader* shader) :
+HDRBuffer::HDRBuffer(GLsizei width, GLsizei height, Shader* shader) :
 	FBOManager(width, height, shader)
 {
 }
@@ -159,7 +158,7 @@ void HDRBuffer::setup()
 	this->createVAO();
 }
 
-BloomBuffer::BloomBuffer(size_t width, size_t height, Shader* shader, Shader* blurShader) :
+BloomBuffer::BloomBuffer(GLsizei width, GLsizei height, Shader* shader, Shader* blurShader) :
 	FBOManager(width, height, shader), blurShader(blurShader)
 {
 }
@@ -278,18 +277,13 @@ GBuffer::GBuffer()
 {
 }
 
-GBuffer::GBuffer(size_t width, size_t height, Shader* shader) :
+GBuffer::GBuffer(GLsizei width, GLsizei height, Shader* shader) :
 	width(width), height(height), shader(shader)
 {
 }
 
 void GBuffer::setShader(Shader* shader) {
 	this->shader = shader;
-}
-
-void GBuffer::setDimensions(size_t width, size_t height) {
-	this->width = width;
-	this->height = height;
 }
 
 void GBuffer::setup()

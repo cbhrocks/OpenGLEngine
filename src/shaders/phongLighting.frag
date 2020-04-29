@@ -12,7 +12,6 @@ struct PointLight {
     vec3 diffuse;		// 16	//16
     vec3 specular;		// 16	//32
     vec3 position;		// 16	//48
-	float fake;
     float constant;		// 4	//64
     float linear;		// 4	//68
     float quadratic;	// 4	//72
@@ -23,12 +22,10 @@ struct SpotLight {
     vec3 diffuse;		// 16	//16
     vec3 specular;		// 16	//32
     vec3 position;		// 16	//48
-	float fake;
     float constant;		// 4	//64
     float linear;		// 4	//68
     float quadratic;	// 4	//72
     vec3 direction;		// 16	//80
-	float fake2;
     float cutOff;		// 4	//96
     float outerCutOff;	// 4	//100
 };//size -> with pad	// 104 -> 112
@@ -39,6 +36,7 @@ struct DirectionLight {
     vec3 specular;		// 16	//32	
 	vec3 position;		// 16	//48
     vec3 direction;		// 16	//64
+	mat4 lightSpaceMatrix;
 };						// 80 -> 80
 
 #define NR_BASIC_LIGHTS 1

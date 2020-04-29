@@ -14,70 +14,40 @@
 class Scene {
 public:
 	glm::vec3 up;
-	std::map<std::string, const Shader> shaders;
-	double currentTime;
-	float gammaCorrection;
-	float exposure;
-	bool bloom;
 
 	Scene();
 
 	std::map<std::string, Model*> getModels();
 	void setModels(std::map<std::string, Model*> models);
 
+	std::vector<std::string> getTransparentModels();
+	std::vector<std::string> getOpaqueModels();
+
 	void setModel(std::string name, Model* model);
 	Model* getModel(std::string);
 	Model* removeModel(std::string);
 
-	void addObject(DrawObject* object);
-
-	void clearObjects();
-
-	void onFrame();
-
-	void uploadSkyboxUniforms(const Shader& shader);
-
-	void draw();
-	void drawShadows();
-	void drawSkybox();
-	void drawModels(const Shader& shader);
-	void drawModels();
-
-	void timeStep(double t);
+	LightManager* getLightManager() const;
+	void setLightManager(LightManager* lightManager);
 
 	Camera* getActiveCamera() const;
 	void setActiveCamera(const int &activeCamera);
 	void addCamera(Camera* camera);
 
+	void setSkybox(Skybox* skybox);
+	Skybox* getSkybox();
+
 	glm::vec3 getUp() const;
 	void setUp(glm::vec3 up);
 
-	LightManager* getLightManager() const;
-	void setLightManager(LightManager* lightManager);
-
-	void setGammaCorrection(float gamma);
-	float getGammaCorrection() const;
-
-	void setExposure(float exposure);
-	float getExposure() const;
-
-	void setBloom(bool bloom);
-	bool getBloom() const;
-
-	void initializeShaders();
-
 private:
-	GLuint ubo;
 	Skybox* skybox;
 	LightManager* lightManager;
 	//std::vector<Model*> models;
 	std::map<std::string, Model*> models;
+	std::vector<std::string> transparentModels;
+	std::vector<std::string> opaqueModels;
 	std::vector<DrawObject*> drawObjects;
 	std::vector<Camera*> cameras;
 	int activeCamera;
-
-	void setup();
-
-	void setupUbo();
-	void updateUbo();
 };

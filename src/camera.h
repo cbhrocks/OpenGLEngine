@@ -18,21 +18,17 @@ public:
 	GLuint uboBlock;
 	float farBound;
 	float nearBound;
+	float yaw;
+	float pitch;
 	float width;
 	float height;
 	float fov;
-	FBOManagerI* tbm;
 
 	Camera(
 		glm::vec3 pos,
-		glm::vec3 front,
 		glm::vec3 up,
-		float farBound,
-		float nearBound,
-		float width,
-		float height,
-		float fov,
-		FBOManagerI* tbm
+		float pitch,
+		float yaw
 	);
 
 	glm::mat4 getProjectionMatrix() const;
@@ -45,26 +41,19 @@ public:
 	glm::vec3 getUp() const;
 	void setUp(const glm::vec3& up);
 
-	glm::vec3 getLook() const;
+	glm::vec3 getFront() const;
 	void setFront(const glm::vec3& look);
 
-	float getWidth() const;
-	void setWidth(float width);
+	float getPitch() const;
+	void setPitch(float pitch);
 
-	float getHeight() const;
-	void setHeight(float height);
-
-	float getFOV() const;
-	void setFOV(float fov);
-
-	float getAspectRatio() const;
-	void setAspectRatio(float width, float height);
-
-	FBOManagerI* getTBM() const;
-	void setTBM(FBOManagerI* tbm);
+	float getYaw() const;
+	void setYaw(float yaw);
 
 	void uploadUniforms(Shader& shader);
 	void updateUniformBlock();
+
+	void updateVectors(glm::vec3 worldUp);
 
 	~Camera();
 

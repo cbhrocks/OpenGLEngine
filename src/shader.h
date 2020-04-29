@@ -44,6 +44,7 @@ class Shader
 		const Shader& setMat4(const std::string &name, const glm::mat4 &mat) const;
 		// ------------------------------------------------------------------------
 		const Shader& setUniformBlock(const std::string &name, const GLuint &binding) const;
+		const GLuint getUniformBlockSize(const std::string &name) const;
 
     private:
         GLuint Program;

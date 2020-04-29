@@ -5,40 +5,24 @@ Camera::~Camera()
 
 Camera::Camera(
 	glm::vec3 pos, 
-	glm::vec3 look, 
 	glm::vec3 up, 
-	float farBound, 
-	float nearBound, 
-	float width, 
-	float height, 
-	float fov, 
-	FBOManagerI* tbm
+	float pitch,
+	float yaw
 ) :
-	position(pos), front(look), up(up), farBound(farBound), nearBound(nearBound), width(width), height(height), fov(fov), tbm(tbm)
+	position(pos), up(up), pitch(pitch), yaw(yaw), front(glm::vec3(0.0f, 0.0f, -1.0f)), farBound(100.0f), nearBound(0.1f), fov(45.0f)
 {
 	setupUbos();
 }
 
 glm::mat4 Camera::getProjectionMatrix() const
 {
-	return glm::perspective(this->fov, this->getAspectRatio(), this->nearBound, this->farBound); // using aspect ratio
+	return glm::perspective(this->fov, 1.0f, this->nearBound, this->farBound); // using aspect ratio
 	//return glm::perspectiveFov(1.0f, (float) this->width, (float) this->height, this->near, this->far); // using width and height
 }
 
 glm::mat4 Camera::getViewMatrix() const
 {
 	return glm::lookAt(this->position, this->position + this->front, this->up);
-}
-
-
-FBOManagerI* Camera::getTBM() const
-{
-	return this->tbm;
-}
-
-void Camera::setTBM(FBOManagerI* tbm)
-{
-	this->tbm = tbm;
 }
 
 glm::vec3 Camera::getPosition() const
@@ -61,7 +45,7 @@ void Camera::setUp(const glm::vec3& up)
 	this->up = up;
 }
 
-glm::vec3 Camera::getLook() const
+glm::vec3 Camera::getFront() const
 {
 	return this->front;
 }
@@ -71,40 +55,30 @@ void Camera::setFront(const glm::vec3& front)
 	this->front = front;
 }
 
-float Camera::getWidth() const
-{
-	return this->width;
+float Camera::getPitch() const {
+	return this->pitch;
 }
 
-void Camera::setWidth(float width)
-{
-	this->width = width;
+void Camera::setPitch(float pitch) {
+	this->pitch = pitch;
 }
 
-float Camera::getHeight() const 
-{
-	return this->height;
+float Camera::getYaw() const {
+	return this->yaw;
 }
 
-void Camera::setHeight(float height) {
-	this->height = height;
+void Camera::setYaw(float yaw) {
+	this->yaw = yaw;
 }
 
-float Camera::getFOV() const {
-	return this->fov;
-}
-
-void Camera::setFOV(float fov) {
-	this->fov = fov;
-}
-
-float Camera::getAspectRatio() const {
-	return this->width/this->height;
-}
-
-void Camera::setAspectRatio(float width, float height) {
-	this->width = width;
-	this->height = height;
+void Camera::updateVectors(glm::vec3 worldUp) {
+    this->front.x = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+    this->front.y = sin(glm::radians(this->pitch));
+    this->front.z = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+    // Also re-calculate the Right and Up vector
+    // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+    glm::vec3 right = glm::normalize(glm::cross(this->front, worldUp));  
+    this->up = glm::normalize(glm::cross(right, this->front));
 }
 
 void Camera::uploadUniforms(Shader& shader)

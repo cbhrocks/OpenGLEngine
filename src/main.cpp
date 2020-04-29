@@ -30,7 +30,6 @@ typedef struct
 } Slot;
 
 int keys[1024], mouseX, mouseY;
-GLfloat yaw, pitch;
 bool modKeys[4];
 
 static void error_callback(int error, const char* description)
@@ -124,10 +123,10 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
         slot->render.toggleWireframeMode();
 	if (key == GLFW_KEY_G && action == GLFW_PRESS) {
-		if (slot->scene->getGammaCorrection() == 1.0f)
-			slot->scene->setGammaCorrection(2.2f);
+		if (slot->render.getGammaCorrection() == 1.0f)
+			slot->render.setGammaCorrection(2.2f);
 		else
-			slot->scene->setGammaCorrection(1.0f);
+			slot->render.setGammaCorrection(1.0f);
 	}
 }
 
@@ -152,19 +151,19 @@ static void doMovement(Scene* scene) {
     GLfloat cameraSpeed = 0.1f;
 	Camera* camera = scene->getActiveCamera();
     if(keys[GLFW_KEY_W]){
-		camera->setPosition(camera->getPosition() + cameraSpeed * camera->getLook());
+		camera->setPosition(camera->getPosition() + cameraSpeed * camera->getFront());
         //printf("forward\n");
     }
     if(keys[GLFW_KEY_S]){
-		camera->setPosition(camera->getPosition() - cameraSpeed * camera->getLook());
+		camera->setPosition(camera->getPosition() - cameraSpeed * camera->getFront());
         //printf("backward\n");
     }
     if(keys[GLFW_KEY_A]){
-		camera->setPosition(camera->getPosition() - glm::normalize(glm::cross(camera->getLook(), camera->getUp())) * cameraSpeed);
+		camera->setPosition(camera->getPosition() - glm::normalize(glm::cross(camera->getFront(), camera->getUp())) * cameraSpeed);
         //printf("left\n");
     }
     if(keys[GLFW_KEY_D]){
-		camera->setPosition(camera->getPosition() + glm::normalize(glm::cross(camera->getLook(), camera->getUp())) * cameraSpeed);
+		camera->setPosition(camera->getPosition() + glm::normalize(glm::cross(camera->getFront(), camera->getUp())) * cameraSpeed);
         //printf("right\n");
     }
     //if (keys[GLFW_KEY_X] && modKeys[GLFW_MOD_ALT]){
@@ -242,6 +241,7 @@ bool firstMouse = true;
 static void cursor_position_callback(GLFWwindow* window, double x, double y)
 {
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
+	Camera* camera = slot->scene->getActiveCamera();
 
     if (firstMouse){
         mouseX = x;
@@ -252,39 +252,28 @@ static void cursor_position_callback(GLFWwindow* window, double x, double y)
     double xOff = x - mouseX;
     double yOff = mouseY - y;
 
-    yaw += xOff;
-    pitch += yOff;
+    xOff *= 0.4f; //this->MouseSensitivity;
+    yOff *= 0.4f; //this->MouseSensitivity;
+
+    float new_yaw = camera->getYaw() + xOff;
+    float new_pitch = camera->getPitch() + yOff;
 
     printf("%i at %0.3f: Cursor position: %f %f Position offset: %f %f Pitch and Yaw: %f %f\n",
-           slot->id, glfwGetTime(), x, y, xOff, yOff, pitch, yaw);
+           slot->id, glfwGetTime(), x, y, xOff, yOff, new_pitch, new_yaw);
 
     mouseX = x;
     mouseY = y;
 
-    xOff *= 0.1f; //this->MouseSensitivity;
-    yOff *= 0.1f; //this->MouseSensitivity;
-
     // Make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
+    if (new_pitch > 89.0f)
+        new_pitch = 89.0f;
+    if (new_pitch < -89.0f)
+        new_pitch = -89.0f;
 
-    //glm::vec3 camLook = slot->scene.getCameraLook();
-    glm::vec3 newLook;
+	camera->setPitch(new_pitch);
+	camera->setYaw(new_yaw);
 
-    newLook.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    newLook.y = sin(glm::radians(pitch));
-    newLook.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    // Also re-calculate the Right and Up vector
-    // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-    glm::vec3 right = glm::normalize(glm::cross(newLook, slot->scene->getUp()));  
-    glm::vec3 camUp = glm::normalize(glm::cross(right, newLook));
-
-	slot->scene->getActiveCamera()->setFront(glm::normalize(newLook));
-    slot->scene->getActiveCamera()->setUp(camUp);
-
-    printf("new look: %f, %f, %f\n", newLook.x, newLook.y, newLook.z);
+	slot->scene->getActiveCamera()->updateVectors(slot->scene->getUp());
 }
 
 static void cursor_enter_callback(GLFWwindow* window, int entered)
@@ -397,24 +386,12 @@ int main(int argc, char** argv)
 
     //initalize scene
 
-
-
-
-
-
-
-
-
     Slot slot;// = new Slot;
 	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
 	// Light Shaders
 	Shader basic = Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1);
 	Shader texture = Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1);
 	Shader trans = Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1);
-	Shader depth = Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1);
-	Shader normal = Shader("src/shaders/normal.vert", "src/shaders/normal.frag", "src/shaders/normal.geom").setUniformBlock("Camera", 1);
-	Shader tbn = Shader("src/shaders/tbn.vert", "src/shaders/tbn.frag", "src/shaders/tbn.geom").setUniformBlock("Camera", 1);
-	Shader faceNormal = Shader("src/shaders/faceNormal.vert", "src/shaders/faceNormal.frag", "src/shaders/faceNormal.geom").setUniformBlock("Camera", 1);
 	Shader skybox = Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag");
 	Shader highlight = Shader("src/shaders/basic.vert", "src/shaders/highlight.frag").setUniformBlock("Camera", 1);
 	Shader reflection = Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag").setUniformBlock("Camera", 1);
@@ -427,6 +404,12 @@ int main(int argc, char** argv)
 	Shader phongLighting = Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
 	Shader blinnPhongLighting = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
 	Shader BPLightingNorm = Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
+
+	//GLuint LightsUBSize = BPLightingNorm.getUniformBlockSize("Lights");
+	GLuint LightsUBSize2 = blinnPhongLighting.getUniformBlockSize("Lights");
+	//GLuint LightsUBSize3 = phongLighting.getUniformBlockSize("Lights");
+	GLuint SceneUBSize = BPLightingNorm.getUniformBlockSize("Scene");
+	GLuint CameraUBSize = BPLightingNorm.getUniformBlockSize("Camera");
 	//checkGLError("main -- initializeShaders basic2D");
 	// 2D Shaders
 	Shader shader2D = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0);
@@ -440,8 +423,8 @@ int main(int argc, char** argv)
 	Shader bloom2D = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0);
 	checkGLError("Scene::initializeShaders -- 2D shaders");
 	//checkGLError("main -- initializeShaders basic2D");
-	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
-	FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
+	FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
+	//FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
 	tbm->setup();
     slot.scene = new Scene();
 
@@ -457,12 +440,9 @@ int main(int argc, char** argv)
 	);
 	lm->addBasicLight(*basicLight);
 	DirectionLight* directionLight = new DirectionLight(
-		//glm::vec3(0.2f, 0.2f, 0.2f),
-		//glm::vec3(0.5f, 0.5f, 0.5f),
-		//glm::vec3(1.0f, 1.0f, 1.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.2f, 0.2f, 0.2f),
+		glm::vec3(0.5f, 0.5f, 0.5f),
+		glm::vec3(1.0f, 1.0f, 1.0f),
 		glm::vec3(-5.0f, 10.0f, 5.0f),
 		glm::vec3(0.25f, -0.5f, -0.25f),
 		&light,
@@ -470,16 +450,16 @@ int main(int argc, char** argv)
 	);
 	lm->addDirectionLight(*directionLight);
 	PointLight* pointLight = new PointLight(
+		glm::vec3(0.1f, 0.1f, 0.1f),
 		glm::vec3(0.2f, 0.2f, 0.2f),
-		glm::vec3(1.5f, 1.5f, 1.5f),
-		glm::vec3(3.0f, 3.0f, 3.0f),
+		glm::vec3(0.5f, 0.5f, 0.5f),
 		//glm::vec3(0.2f, 0.2f, 0.2f),
 		//glm::vec3(200.0f, 200.0f, 200.0f),
 		//glm::vec3(3.0f, 3.0f, 3.0f),
 		glm::vec3(0.0f, 8.0f, 5.0f),
 		1.0f,
-		0.09f,
-		0.032f,
+		0.35f,
+		0.44f,
 		&light,
 		&shadowCubeDepth
 	);
@@ -491,8 +471,10 @@ int main(int argc, char** argv)
 		glm::vec3(0.2f, 0.2f, 0.2f),
 		glm::vec3(1.5f, 1.5f, 1.5f),
 		glm::vec3(3.0f, 3.0f, 3.0f),
+		//glm::vec3(0.0f, 0.0f, 0.0f),
+		//glm::vec3(0.0f, 0.0f, 0.0f),
+		//glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f),
-		//this->getActiveCamera()->getPosition(),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		1.0f,
 		0.0014f,
@@ -508,72 +490,66 @@ int main(int argc, char** argv)
 		sl->setDirection(camera->front);
 	});
 	lm->addSpotLight(*spotLight);
+
 	lm->createUniformBlock();
 
 	slot.scene->setLightManager(lm);
 
-	Model* nanosuit = new Model(std::string("objects/test/nanosuit/nanosuit.obj"), &blinnPhongLighting, true, glm::vec3(0.0f), glm::vec3(0.5f));
-	slot.scene->setModel("nanosuit", nanosuit);
+	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj")))
+		->setShader(&BPLightingNorm)
+		//->setScale(glm::vec3(0.5f))
+	);
 
-	slot.scene->setModel("box1", new Model(std::string("objects/test/wood_box/wood_box.obj"), &blinnPhongLighting, true, glm::vec3(-4.0, 1.5, 3.5), glm::vec3(2.0f)));
+	slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
+		->setShader(&phongLighting)
+		->setPosition(glm::vec3(-4.0, 1.5, 3.5))
+		->setScale(glm::vec3(2.0f))
+	);
 
-	slot.scene->setModel("box2", new Model(std::string("objects/test/wood_box/wood_box.obj"), &blinnPhongLighting, true, glm::vec3(2.0, 4, 3.5), glm::vec3(1.0f)));
+	slot.scene->setModel("box2", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
+		->setShader(&blinnPhongLighting)
+		->setPosition(glm::vec3(2.0, 4, 3.5))
+	);
 
-	slot.scene->setModel("box3", new Model(
-		std::string("objects/test/grass_square/grass_square.obj"),
-		&trans,
-		true,
-		glm::vec3( 0, 0.5, 0 ),
-		glm::vec3(1),
-		glm::vec3( 90, 0, 0 )
-	));
+	slot.scene->setModel("grass", (new Model( std::string("objects/test/grass_square/grass_square.obj")))
+		->setShader(&trans)
+		->setPosition(glm::vec3( 0, 0.5, 0 ))
+		->setRotation(glm::vec3( 90, 0, 0 ))
+		->setTransparent(true)
+	);
 
-	slot.scene->setModel("box4", new Model(
-		std::string("objects/test/window/window.obj"),
-		&trans,
-		true,
-		glm::vec3(0, 1.0, -3.0),
-		glm::vec3(1),
-		glm::vec3(90, 0, 0)
-	));
+	slot.scene->setModel("window1", (new Model( std::string("objects/test/window/window.obj")))
+		->setShader(&trans)
+		->setPosition(glm::vec3(0, 1.0, -3.0))
+		->setRotation(glm::vec3(90, 0, 0))
+		->setTransparent(true)
+	);
 
-	slot.scene->setModel("box5", new Model(
-		std::string("objects/test/window/window.obj"),
-		&trans,
-		true,
-		glm::vec3(0, 1.0, -2.0),
-		glm::vec3(1),
-		glm::vec3(90, 0, 0)
-	));
+	slot.scene->setModel("window2", (new Model( std::string("objects/test/window/window.obj")))
+		->setShader(&trans)
+		->setPosition(glm::vec3(0, 1.0, -2.0))
+		->setRotation(glm::vec3(90, 0, 0))
+		->setTransparent(true)
+	);
 
-	slot.scene->setModel("box6", new Model(
-		std::string("objects/test/wood_floor/wood_floor.obj"),
-		&phongLighting,
-		true,
-		glm::vec3(0),
-		glm::vec3(10)
-	));
+	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
+		->setShader(&blinnPhongLighting)
+		->setScale(glm::vec3(10))
+	);
 
-	slot.scene->setModel("box7", new Model(
-		std::string("objects/test/brick_wall/brick_wall.obj"),
-		&BPLightingNorm,
-		true,
-		glm::vec3( 0, 10, -10 ),
-		glm::vec3(10),
-		glm::vec3( 90, 0, 0 )
-	));
+	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
+		->setShader(&BPLightingNorm)
+		->setPosition(glm::vec3(0, 10, -10))
+		->setScale(glm::vec3(10))
+		->setRotation(glm::vec3(90, 0, 0))
+	);
 
 	slot.scene->addCamera(
 		new Camera(
 			glm::vec3(0, 0, 0),
-			glm::vec3(0, 0, -1),
 			glm::vec3(0, 1, 0),
-			100.0f,
-			0.1f,
-			width,
-			height,
-			45.0f,
-			tbm
+			0.0f,
+			-90.0f
 		)
 	);
 
@@ -581,10 +557,8 @@ int main(int argc, char** argv)
 	//slot.scene.setFBOManager(fbom)
     slot.window = window;
     slot.render = Renderer(width, height);
+	slot.render.setTBM(tbm);
     slot.id = 0;
-
-    pitch = 0.0f;
-    yaw = 0.0f;
 
     //create callbacks
     glfwSetWindowUserPointer(window, &slot);
@@ -619,19 +593,24 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-		slot.scene->onFrame();
+		slot.render.setTime(currentTime);
 		slot.render.preRender(slot.scene);
 		slot.render.render(slot.scene);
         //slot.render.renderHighlight(slot.scene);
 		slot.render.postRender(slot.scene);
+		//slot.render.renderVertexNormalLines(slot.scene);
+		//slot.render.renderFaceNormalLines(slot.scene);
+		//slot.render.renderTBNLines(slot.scene);
+		//slot.render.renderDepth(slot.scene);
 
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();
         doMovement(slot.scene);
+		//Model* nanosuit = slot.scene->getModel("nanosuit");
+		//nanosuit->setRotation(glm::vec3(0.0f, nanosuit->getRotation().x + glfwGetTime() * 10, 0.0f));
+		//printf("nanosuit rotation %f, %f, %f\n", nanosuit->getRotation().x, nanosuit->getRotation().y, nanosuit->getRotation().z);
         
-        slot.scene->timeStep(currentTime);
-
         lastTime = currentTime;
         //break;
     }
