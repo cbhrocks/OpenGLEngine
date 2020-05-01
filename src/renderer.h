@@ -25,6 +25,9 @@ class Renderer
 		void renderLights(Scene* scene);
 		void renderSkybox(Scene* scene);
 
+		// defered rendering
+		void renderToGBuffer(Scene* scene);
+
 		// debug renders
 		void renderVertexNormalLines(Scene* scene);
 		void renderTBNLines(Scene* scene);
@@ -36,6 +39,9 @@ class Renderer
 		// getter and setters
 		FBOManagerI* getTBM() const;
 		void setTBM(FBOManagerI* tbm);
+
+		GBuffer* getGBuffer() const;
+		void setGBuffer(GBuffer* gBuffer);
 
 		void setTime(float time);
 		float getTime() const;
@@ -55,11 +61,17 @@ class Renderer
     private:
 		GLuint ubo;
 		FBOManagerI* tbm;
-		bool useFBO;
-		std::map<std::string, Shader> debugShaders;
+		GBuffer* gBuffer;
+		std::unordered_map<std::string, const Shader> shaders;
+
+		///<summary>first: The name of the model in the scene, second: the name of the shader
+		///<para>controls whether or not the model will be ommited from the gBuffer render pass, and then rendered afterwords with the specified shader</para>
+		///</summary>
+		std::unordered_map<std::string, std::string> forwardRenderModels;
         int width, height;
 		float time;
 		float exposure;
+		bool useFBO;
 		bool gammaCorrection;
 		bool bloom;
 		bool shadowsEnabled;

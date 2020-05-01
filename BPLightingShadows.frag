@@ -69,11 +69,9 @@ layout (std140) uniform Scene
 };
 
 struct Material {
-    sampler2D texture_diffuse1;
-    sampler2D texture_specular1;
-	sampler2D texture_normal1;
-	sampler2D texture_height1;
-	sampler2D texture_reflect1;
+    sampler2D diffuse;
+    sampler2D specular;
+	sampler2D normal;
 };
 
 //object data
@@ -140,20 +138,20 @@ void main()
 }
 
 vec3 calculateAmbient(vec3 lightAmbient) {
-    vec3 ambient = lightAmbient * vec3(texture(material.texture_diffuse1, fs_in.TexCoords));
+    vec3 ambient = lightAmbient * vec3(texture(material.diffuse, fs_in.TexCoords));
 	return ambient;
 }
 
 vec3 calculateDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse){
     float diff = max(dot(lightDirection, normal), 0.0);
-    vec3 diffuse =  lightDiffuse * diff * vec3(texture(material.texture_diffuse1, fs_in.TexCoords));
+    vec3 diffuse =  lightDiffuse * diff * vec3(texture(material.diffuse, fs_in.TexCoords));
 	return diffuse;
 }
 
 vec3 calculateSpecular(vec3 lightDirection, vec3 viewDirection, vec3 normal, vec3 lightSpecular) {
     vec3 halfwayDir = normalize(lightDirection + viewDirection);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 64);
-    vec3 specular = lightSpecular * spec * vec3(texture(material.texture_specular1, fs_in.TexCoords));
+    vec3 specular = lightSpecular * spec * vec3(texture(material.specular, fs_in.TexCoords));
 	return specular;
 }
 

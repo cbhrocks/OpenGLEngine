@@ -37,8 +37,6 @@ class Light
 			glm::vec3& ambient,
 			glm::vec3& diffuse,
 			glm::vec3& specular,
-			const Shader* shader,
-			const Shader* shadowShader,
 			const std::string& prefix = std::string()
 		);
 
@@ -93,8 +91,6 @@ class BasicLight : public Light
 			glm::vec3& diffuse,
 			glm::vec3& specular,
 			glm::vec3& position,
-			const Shader* shader,
-			const Shader* shadowShader,
 			const std::string& prefix = std::string("b")
 		);
 
@@ -158,8 +154,6 @@ class PointLight : public BasicLight
 			float constant,
 			float linear,
 			float quadratic,
-			const Shader* shader,
-			const Shader* shadowShader,
 			const std::string& prefix = std::string("p")
 		);
 
@@ -198,8 +192,6 @@ class DirectionLight : public BasicLight
 			glm::vec3& specular,
 			glm::vec3& position,
 			glm::vec3& direction,
-			const Shader* shader,
-			const Shader* shadowShader,
 			const std::string& prefix = std::string("d")
 		);
 
@@ -243,8 +235,6 @@ class SpotLight : public PointLight
 			float quadratic,
 			float cutOff,
 			float outerCutOff,
-			const Shader* shader,
-			const Shader* shadowShader,
 			const std::string& prefix = std::string("s")
 		);
 
@@ -295,7 +285,7 @@ public:
 
 	void addSpotLight(SpotLight& slight);
 
-	void drawLights();
+	void drawLights(const Shader& shader);
 
 	void uploadLightUniforms(Shader shader);
 

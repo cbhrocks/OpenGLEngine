@@ -173,7 +173,7 @@ void BloomBuffer::setup()
 	glGenTextures(2, this->textures);
 	for (int i = 0; i < 2; i++) {
 		glBindTexture(GL_TEXTURE_2D, this->textures[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -273,20 +273,7 @@ void BloomBuffer::Draw(const Shader& shader)
 	checkGLError("BloomBuffer::Draw");
 }
 
-GBuffer::GBuffer()
-{
-}
-
-GBuffer::GBuffer(GLsizei width, GLsizei height, Shader* shader) :
-	width(width), height(height), shader(shader)
-{
-}
-
-void GBuffer::setShader(Shader* shader) {
-	this->shader = shader;
-}
-
-void GBuffer::setup()
+GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height)
 {
 	glGenFramebuffers(1, &this->gBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
@@ -294,7 +281,7 @@ void GBuffer::setup()
 	// position color buffer
 	glGenTextures(1, &this->gPosition);
 	glBindTexture(GL_TEXTURE_2D, gPosition);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
@@ -302,7 +289,7 @@ void GBuffer::setup()
 	// normal color buffer
 	glGenTextures(1, &this->gNormal);
 	glBindTexture(GL_TEXTURE_2D, gNormal);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
@@ -310,7 +297,7 @@ void GBuffer::setup()
 	// albedo + spec intensity color buffer
 	glGenTextures(1, &this->gAlbedoSpec);
 	glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
@@ -320,7 +307,7 @@ void GBuffer::setup()
 
 	glGenRenderbuffers(1, &this->depthBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, this->depthBuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, this->width, this->height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, this->depthBuffer);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -328,20 +315,74 @@ void GBuffer::setup()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GBuffer::DrawToBuffer(const Shader* shader, std::vector<DrawObject*> objs)
+void GBuffer::setActive()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
 
-	shader->Use();
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
 
-	shader->setInt("gPosition", 0);
-	shader->setInt("gNormal", 1);
-	shader->setInt("gAlbedoSpec", 2);
-
-	for (int i = 0; i < objs.size(); i++) {
-		objs.at(i)->UploadUniforms(*shader);
-		objs.at(i)->Draw(*shader);
-	}
-
+void GBuffer::Draw(const Shader& shader)
+{
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glDisable(GL_DEPTH_TEST);
+	checkGLError("FBOManager::Draw -- prep opengl");
+
+	shader.Use();
+
+	checkGLError("FBOManager::Draw -- upload uniforms");
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, this->gPosition);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, this->gNormal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, this->gAlbedoSpec);
+	checkGLError("FBOManager::Draw -- bind texture");
+
+	this->drawQuad();
+	checkGLError("FBOManager::Draw -- draw");
+
+	//glEnable(GL_DEPTH_TEST);
+	checkGLError("FBOManager::Draw");
+}
+
+void GBuffer::copyDepth(GLuint fbo, GLsizei width, GLsizei height) {
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, this->gBuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	glBlitFramebuffer(0, 0, this->width, this->height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	checkGLError("GBuffer::copyDepth");
+}
+
+void GBuffer::drawQuad() {
+	if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		//cleanup
+		//glDeleteBuffers(1, &quadVBO);
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }

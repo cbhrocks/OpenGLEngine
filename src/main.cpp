@@ -389,43 +389,19 @@ int main(int argc, char** argv)
     Slot slot;// = new Slot;
 	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
 	// Light Shaders
-	Shader basic = Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1);
-	Shader texture = Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1);
-	Shader trans = Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1);
-	Shader skybox = Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag");
-	Shader highlight = Shader("src/shaders/basic.vert", "src/shaders/highlight.frag").setUniformBlock("Camera", 1);
-	Shader reflection = Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag").setUniformBlock("Camera", 1);
-	Shader explode = Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1);
-
-	Shader light = Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1);
-	Shader shadowDepth = Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag");
-	Shader shadowCubeDepth = Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom");
-	Shader shadowDebug = Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1);
-	Shader phongLighting = Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
-	Shader blinnPhongLighting = Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
-	Shader BPLightingNorm = Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2);
 
 	//GLuint LightsUBSize = BPLightingNorm.getUniformBlockSize("Lights");
-	GLuint LightsUBSize2 = blinnPhongLighting.getUniformBlockSize("Lights");
+	//GLuint LightsUBSize2 = blinnPhongLighting.getUniformBlockSize("Lights");
 	//GLuint LightsUBSize3 = phongLighting.getUniformBlockSize("Lights");
-	GLuint SceneUBSize = BPLightingNorm.getUniformBlockSize("Scene");
-	GLuint CameraUBSize = BPLightingNorm.getUniformBlockSize("Camera");
+	//GLuint SceneUBSize = BPLightingNorm.getUniformBlockSize("Scene");
+	//GLuint CameraUBSize = BPLightingNorm.getUniformBlockSize("Camera");
 	//checkGLError("main -- initializeShaders basic2D");
 	// 2D Shaders
-	Shader shader2D = Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0);
-	Shader gBlur2D = Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag").setUniformBlock("Scene", 0);
-	Shader hdr2D = Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag").setUniformBlock("Scene", 0);
-	Shader inverse2D = Shader("src/shaders/basic2D.vert", "src/shaders/inverse2D.frag").setUniformBlock("Scene", 0);
-	Shader grey2D = Shader("src/shaders/basic2D.vert", "src/shaders/grey2D.frag").setUniformBlock("Scene", 0);
-	Shader sharpen2D = Shader("src/shaders/basic2D.vert", "src/shaders/sharpen2D.frag").setUniformBlock("Scene", 0);
-	Shader blur2D = Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag").setUniformBlock("Scene", 0);
-	Shader edge2D = Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag").setUniformBlock("Scene", 0);
-	Shader bloom2D = Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0);
-	checkGLError("Scene::initializeShaders -- 2D shaders");
+	checkGLError("main::initializeShaders -- 2D shaders");
 	//checkGLError("main -- initializeShaders basic2D");
-	FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
+	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
 	//FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
-	tbm->setup();
+	//tbm->setup();
     slot.scene = new Scene();
 
 	LightManager* lm = new LightManager();
@@ -433,10 +409,7 @@ int main(int argc, char** argv)
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 5.0f),
-		&light,
-		nullptr
-		//&shadowCubeDepth
+		glm::vec3(0.0f, 1.0f, 5.0f)
 	);
 	lm->addBasicLight(*basicLight);
 	DirectionLight* directionLight = new DirectionLight(
@@ -444,24 +417,20 @@ int main(int argc, char** argv)
 		glm::vec3(0.5f, 0.5f, 0.5f),
 		glm::vec3(1.0f, 1.0f, 1.0f),
 		glm::vec3(-5.0f, 10.0f, 5.0f),
-		glm::vec3(0.25f, -0.5f, -0.25f),
-		&light,
-		&shadowDepth
+		glm::vec3(0.25f, -0.5f, -0.25f)
 	);
 	lm->addDirectionLight(*directionLight);
 	PointLight* pointLight = new PointLight(
-		glm::vec3(0.1f, 0.1f, 0.1f),
-		glm::vec3(0.2f, 0.2f, 0.2f),
-		glm::vec3(0.5f, 0.5f, 0.5f),
+		glm::vec3(0.3f, 0.3f, 0.3f),
+		glm::vec3(0.8f, 0.8f, 0.8f),
+		glm::vec3(1.5f, 1.5f, 1.5f),
 		//glm::vec3(0.2f, 0.2f, 0.2f),
 		//glm::vec3(200.0f, 200.0f, 200.0f),
 		//glm::vec3(3.0f, 3.0f, 3.0f),
 		glm::vec3(0.0f, 8.0f, 5.0f),
 		1.0f,
 		0.35f,
-		0.44f,
-		&light,
-		&shadowCubeDepth
+		0.44f
 	);
 	pointLight->addUpdateFunction("rotate", [](PointLight* pl) {
 		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -480,9 +449,7 @@ int main(int argc, char** argv)
 		0.0014f,
 		0.000007f,
 		glm::cos(glm::radians(12.5f)),
-		glm::cos(glm::radians(17.5f)),
-		&light,
-		nullptr
+		glm::cos(glm::radians(17.5f))
 	);
 	spotLight->addUpdateFunction("followCamera", [&, slot](SpotLight* sl) {
 		Camera* camera = slot.scene->getActiveCamera();
@@ -496,49 +463,41 @@ int main(int argc, char** argv)
 	slot.scene->setLightManager(lm);
 
 	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj")))
-		->setShader(&BPLightingNorm)
 		//->setScale(glm::vec3(0.5f))
 	);
 
 	slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
-		->setShader(&phongLighting)
 		->setPosition(glm::vec3(-4.0, 1.5, 3.5))
 		->setScale(glm::vec3(2.0f))
 	);
 
 	slot.scene->setModel("box2", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
-		->setShader(&blinnPhongLighting)
 		->setPosition(glm::vec3(2.0, 4, 3.5))
 	);
 
 	slot.scene->setModel("grass", (new Model( std::string("objects/test/grass_square/grass_square.obj")))
-		->setShader(&trans)
 		->setPosition(glm::vec3( 0, 0.5, 0 ))
 		->setRotation(glm::vec3( 90, 0, 0 ))
 		->setTransparent(true)
 	);
 
 	slot.scene->setModel("window1", (new Model( std::string("objects/test/window/window.obj")))
-		->setShader(&trans)
 		->setPosition(glm::vec3(0, 1.0, -3.0))
 		->setRotation(glm::vec3(90, 0, 0))
 		->setTransparent(true)
 	);
 
 	slot.scene->setModel("window2", (new Model( std::string("objects/test/window/window.obj")))
-		->setShader(&trans)
 		->setPosition(glm::vec3(0, 1.0, -2.0))
 		->setRotation(glm::vec3(90, 0, 0))
 		->setTransparent(true)
 	);
 
 	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
-		->setShader(&blinnPhongLighting)
 		->setScale(glm::vec3(10))
 	);
 
 	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
-		->setShader(&BPLightingNorm)
 		->setPosition(glm::vec3(0, 10, -10))
 		->setScale(glm::vec3(10))
 		->setRotation(glm::vec3(90, 0, 0))
@@ -557,7 +516,9 @@ int main(int argc, char** argv)
 	//slot.scene.setFBOManager(fbom)
     slot.window = window;
     slot.render = Renderer(width, height);
-	slot.render.setTBM(tbm);
+	//slot.render.setTBM(tbm);
+	GBuffer* gBuffer = new GBuffer(width, height);
+	slot.render.setGBuffer(gBuffer);
     slot.id = 0;
 
     //create callbacks
@@ -596,7 +557,9 @@ int main(int argc, char** argv)
 		slot.render.setTime(currentTime);
 		slot.render.preRender(slot.scene);
 		slot.render.render(slot.scene);
+		//slot.render.renderToGBuffer(slot.scene);
         //slot.render.renderHighlight(slot.scene);
+		//slot.render.renderLights(slot.scene);
 		slot.render.postRender(slot.scene);
 		//slot.render.renderVertexNormalLines(slot.scene);
 		//slot.render.renderFaceNormalLines(slot.scene);

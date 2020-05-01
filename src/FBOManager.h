@@ -71,32 +71,42 @@ public:
 	using FBOManager::Draw;
 	void Draw(const Shader& shader);
 	using FBOManager::UploadUniforms;
-	void BloomBuffer::UploadUniforms(const Shader& shader);
+	void UploadUniforms(const Shader& shader);
 };
 
 class GBuffer {
 public:
-	GLuint gPosition, gNormal, gAlbedoSpec; // world space position, surface normal, albedo base color 
+	// textures used by gBuffer. gPosition: world space position, gNormal: world space surface normal, gAlbedoSpec: albedo color with specular intensity alpha channel
+	GLuint gPosition, gNormal, gAlbedoSpec; 
 	GLuint gBuffer; // fbo
 	GLuint depthBuffer; // rbo
-	GLuint VAO;
-	GLuint VBO;
-	GLsizei width;
-	GLsizei height;
-	Shader* shader;
+	GLuint quadVBO, quadVAO = 0; // vao for drawing 2d scene
+	GLsizei width, height;
 
-	GBuffer();
-	GBuffer(GLsizei width, GLsizei height, Shader* shader);
+	GBuffer(GLsizei width, GLsizei height);
 
-	void setup();
+	/*
+	set the gBuffer active so that everything drawn will be drawn into it
+	*/
+	void setActive();
 
-	virtual void setShader(Shader* shader);
+	/*
+	Draw the quad with textures gathered from the gbuffer pass.
+	*/
+	void Draw(const Shader& shader);
 
-	virtual void DrawToBuffer(std::vector<DrawObject*> objs)
-	{ this->DrawToBuffer(this->shader, objs); }
-	virtual void DrawToBuffer(const Shader* shader, std::vector<DrawObject*> objs);
+	///<summary>copies the gBuffer depth data into the specified frame buffer object.
+	///<para>This is useful for combining forward rendering with deferred rendering, as you can get proper visual occlusion on objects that are forward rendered.</para>
+	///</summary>
+	///<param name="fbo">The target frame buffer to copy depth into.</param>
+	///<param name="width">The width of the the target frame buffer</param>
+	///<param name="height">The height of the the target frame buffer</param>
+	void copyDepth(GLuint fbo, GLsizei width, GLsizei height);
 
-	//virtual void UploadUniforms()
-	//{ this->UploadUniforms(this->shader); }
-	//virtual void UploadUniforms(Shader shader);
+private:
+	/*
+	if the quad VAO has not been created, create it.
+	draw the quad.
+	*/
+	void drawQuad();
 };

@@ -22,7 +22,7 @@ Renderer::Renderer(int width, int height) :
 
 	//glEnable(GL_FRAMEBUFFER_SRGB);
 
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -30,12 +30,46 @@ Renderer::Renderer(int width, int height) :
 
 	this->setupUbo();
 
-	this->debugShaders = {
+	this->shaders = {
+		//debug
 		{"vertexNormalLines", Shader("src/shaders/vertexNormalLines.vert", "src/shaders/vertexNormalLines.frag", "src/shaders/vertexNormalLines.geom").setUniformBlock("Camera", 1) },
 		{"faceNormalLines", Shader("src/shaders/faceNormalLines.vert", "src/shaders/faceNormalLines.frag", "src/shaders/faceNormalLines.geom").setUniformBlock("Camera", 1) },
 		{"tbnLines", Shader("src/shaders/tbnLines.vert", "src/shaders/tbnLines.frag", "src/shaders/tbnLines.geom").setUniformBlock("Camera", 1)},
-		{"depth", Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1)}
+		{"depth", Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1)},
+		// post processing
+		{"shader2D", Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0)},
+		{"gBlur2D", Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag").setUniformBlock("Scene", 0)},
+		{"hdr2D", Shader("src/shaders/basic2D.vert", "src/shaders/hdr2D.frag").setUniformBlock("Scene", 0)},
+		{"inverse2D", Shader("src/shaders/basic2D.vert", "src/shaders/inverse2D.frag").setUniformBlock("Scene", 0)},
+		{"grey2D", Shader("src/shaders/basic2D.vert", "src/shaders/grey2D.frag").setUniformBlock("Scene", 0)},
+		{"sharpen2D", Shader("src/shaders/basic2D.vert", "src/shaders/sharpen2D.frag").setUniformBlock("Scene", 0)},
+		{"blur2D", Shader("src/shaders/basic2D.vert", "src/shaders/blur2D.frag").setUniformBlock("Scene", 0)},
+		{"edge2D", Shader("src/shaders/basic2D.vert", "src/shaders/edge2D.frag").setUniformBlock("Scene", 0)},
+		{"bloom2D", Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0)},
+		//gbuffer
+		{"gBufferGeometry", Shader("src/shaders/gBuffer.vert", "src/shaders/gBuffer.frag").setUniformBlock("Camera", 1)},
+		{"gBufferDeferred", Shader("src/shaders/deferred_shading.vert", "src/shaders/deferred_shading.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
+		// drawing
+		{"basic", Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1)},
+		{"texture", Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1)},
+		{"trans", Shader("src/shaders/basic.vert", "src/shaders/trans.frag").setUniformBlock("Camera", 1)},
+		{"skybox", Shader("src/shaders/skybox.vert", "src/shaders/skybox.frag")},
+		{"highlight", Shader("src/shaders/basic.vert", "src/shaders/highlight.frag").setUniformBlock("Camera", 1)},
+		{"reflection", Shader("src/shaders/reflection.vert", "src/shaders/reflection.frag").setUniformBlock("Camera", 1)},
+		{"explode", Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1)},
+		{"light", Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1)},
+		// lighting
+		{"shadowDepth", Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag")},
+		{"shadowCubeDepth", Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")},
+		{"shadowDebug", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1)},
+		{"phongLighting", Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
+		{"blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
+		{"BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)}
 	};
+	checkGLError("Renderer::initialize -- shaders");
+	this->shaders["gBufferDeferred"].Use();
+	this->shaders["gBufferDeferred"].setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2);
+	checkGLError("Renderer::initialize -- shaders");
 }
 
 // render methods
@@ -61,18 +95,31 @@ void Renderer::postRender(Scene* scene)
 
 void Renderer::render(Scene* scene)
 {
-	if (this->shadowsEnabled) {
-		this->renderShadows(scene);
+	// render shadows
+	//if (this->shadowsEnabled) {
+	//	this->renderShadows(scene);
+	//}
+	// render all the models without forward rendering enabled
+	auto models = scene->getModels();
+
+	this->gBuffer->setActive();
+	for (auto &it : models) {
+		if (this->forwardRenderModels.count(it.first) < 1) {
+			it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
+			it.second->Draw(this->shaders["gBufferGeometry"]);
+		}
 	}
-	if (this->tbm != nullptr && this->useFBO) {
-		//this->tbm->setActive();
-	}
-	this->renderModels(scene);
-	if (this->tbm != nullptr && this->useFBO) {
-		//this->tbm->Draw();
+	this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
+	this->gBuffer->copyDepth(0, this->width, this->height);
+	// render the models with forward rendering
+	for (auto &it : this->forwardRenderModels) {
+		Model* model = models.at(it.first);
+		const Shader& shader = this->shaders.at(it.second);
+		model->uploadUniforms(shader);
+		model->Draw(shader);
 	}
 	// render lights for debug purposes
-	this->renderLights(scene);
+	scene->getLightManager()->drawLights(this->shaders["light"]);
 }
 
 void Renderer::renderShadows(Scene* scene)
@@ -114,7 +161,7 @@ void Renderer::renderModels(Scene* scene)
 
 void Renderer::renderLights(Scene* scene)
 {
-	scene->getLightManager()->drawLights();
+	//scene->getLightManager()->drawLights();
 }
 
 void Renderer::renderSkybox(Scene* scene)
@@ -124,29 +171,40 @@ void Renderer::renderSkybox(Scene* scene)
 	skybox->Draw();
 }
 
+// deferred rendering
+
+void Renderer::renderToGBuffer(Scene* scene) {
+	this->gBuffer->setActive();
+	for (auto &it : scene->getModels()) {
+		it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
+		it.second->Draw(this->shaders["gBufferGeometry"]);
+	}
+	this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
+}
+
 void Renderer::renderVertexNormalLines(Scene* scene) { 
-	Shader& shader = debugShaders.at("vertexNormalLines");
+	const Shader& shader = this->shaders.at("vertexNormalLines");
 	for (auto &it : scene->getModels()) {
 		it.second->uploadUniforms(shader);
 		it.second->Draw(shader);
 	}
 }
 void Renderer::renderTBNLines(Scene* scene) { 
-	Shader& shader = debugShaders.at("tbnLines");
+	const Shader& shader = this->shaders.at("tbnLines");
 	for (auto &it : scene->getModels()) {
 		it.second->uploadUniforms(shader);
 		it.second->Draw(shader);
 	}
 }
 void Renderer::renderVertexFaceLines(Scene* scene) { 
-	Shader& shader = debugShaders.at("vertexFaceLines");
+	const Shader& shader = this->shaders.at("vertexFaceLines");
 	for (auto &it : scene->getModels()) {
 		it.second->uploadUniforms(shader);
 		it.second->Draw(shader);
 	}
 }
 void Renderer::renderDepth(Scene* scene) { 
-	Shader& shader = debugShaders.at("depth");
+	const Shader& shader = this->shaders.at("depth");
 	for (auto &it : scene->getModels()) {
 		it.second->uploadUniforms(shader);
 		it.second->Draw(shader);
@@ -174,6 +232,9 @@ void Renderer::toggleWireframeMode()
 
 FBOManagerI* Renderer::getTBM() const { return this->tbm; }
 void Renderer::setTBM(FBOManagerI* tbm) { this->tbm = tbm; }
+
+GBuffer* Renderer::getGBuffer() const { return this->gBuffer; }
+void Renderer::setGBuffer(GBuffer* gBuffer) { this->gBuffer = gBuffer; }
 
 void Renderer::setTime(float time) { this->time = time; }
 float Renderer::getTime() const { return this->time; }

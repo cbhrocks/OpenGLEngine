@@ -4,15 +4,11 @@ Light::Light(
 	glm::vec3& ambient,
 	glm::vec3& diffuse,
 	glm::vec3& specular,
-	const Shader* shader,
-	const Shader* shadowShader,
 	const std::string& prefix
 ) :
 	ambient(ambient),
 	diffuse(diffuse),
 	specular(specular),
-	shader(shader),
-	shadowShader(shadowShader),
 	prefix(prefix)
 {
 }
@@ -119,11 +115,9 @@ BasicLight::BasicLight(
 	glm::vec3& diffuse,
 	glm::vec3& specular,
 	glm::vec3& position,
-	const Shader* shader,
-	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	Light(ambient, diffuse, specular, shader, shadowShader, prefix),
+	Light(ambient, diffuse, specular, prefix),
 	position(position)
 {
 }
@@ -318,11 +312,9 @@ PointLight::PointLight(
 	float constant,
 	float linear,
 	float quadratic,
-	const Shader* shader,
-	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	BasicLight(ambient, diffuse, specular, position, shader, shadowShader, prefix),
+	BasicLight(ambient, diffuse, specular, position, prefix),
 	constant(constant), linear(linear), quadratic(quadratic)
 { 
 }
@@ -403,11 +395,9 @@ DirectionLight::DirectionLight(
 	glm::vec3& specular,
 	glm::vec3& position,
 	glm::vec3& direction,
-	const Shader* shader,
-	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	BasicLight(ambient, diffuse, specular, position, shader, shadowShader, prefix),
+	BasicLight(ambient, diffuse, specular, position, prefix),
 	direction(direction)
 {
 }
@@ -524,11 +514,9 @@ SpotLight::SpotLight(
 	float quadratic,
 	float cutOff,
 	float outerCutOff,
-	const Shader* shader,
-	const Shader* shadowShader,
 	const std::string& prefix
 ) :
-	PointLight(ambient, diffuse, specular, position, constant, linear, quadratic, shader, shadowShader, prefix),
+	PointLight(ambient, diffuse, specular, position, constant, linear, quadratic, prefix),
 	direction(direction), cutOff(cutOff), outerCutOff(outerCutOff)
 {
 }
@@ -629,25 +617,25 @@ void LightManager::addSpotLight(SpotLight& slight)
 	this->spotLights.push_back(slight);
 }
 
-void LightManager::drawLights() {
+void LightManager::drawLights(const Shader& shader) {
 	for (int i = 0; i < this->pointLights.size(); i++) {
 		if (this->pointLights[i].hasVAO()) {
-			this->pointLights[i].Draw();
+			this->pointLights[i].Draw(shader);
 		}
 	}
 	for (int i = 0; i < this->basicLights.size(); i++) {
 		if (this->basicLights[i].hasVAO()) {
-			this->basicLights[i].Draw();
+			this->basicLights[i].Draw(shader);
 		}
 	}
 	for (int i = 0; i < this->directionLights.size(); i++) {
 		if (this->directionLights[i].hasVAO()) {
-			this->directionLights[i].Draw();
+			this->directionLights[i].Draw(shader);
 		}
 	}
 	for (int i = 0; i < this->spotLights.size(); i++) {
 		//if (this->spotLights[i].hasVAO()){
-			//this->spotLights[i].Draw();
+			//this->spotLights[i].Draw(shader);
 		//}
 	}
 }
