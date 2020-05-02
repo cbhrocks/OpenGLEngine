@@ -14,206 +14,115 @@
 #include <functional>
 #include <map>
 
+#include "model.h"
 #include "shader.h"
 #include "glHelper.h"
 #include "vertexData.h"
 #include "TextureManager.h"
 
-class Light 
+class ILight {
+public:
+	virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const = 0;
+	virtual GLuint updateUniformBlock(GLuint ubo, GLuint start) = 0;
+};
+
+class Light: public ILight
 {
     public:
-        /*  Model Data */
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
-        glm::vec3 specular;
-		// shader used to render the light itself if desired.
-		const Shader* shader;
-		// Shader to get the depth of objects from light's perspective. 
-		// ucan then be used to determine where shadows are in scene.
-		const Shader* shadowShader;
-        const std::string prefix;
-
 		Light(
-			glm::vec3& ambient,
-			glm::vec3& diffuse,
-			glm::vec3& specular,
-			const std::string& prefix = std::string()
+			glm::vec3 color,
+			float ambient,
+			float diffuse,
+			float specular,
+			const std::string prefix
 		);
-
-		const Shader* getShader() const;
-
-		void setShader(Shader* shader);
-
-		const Shader* getShadowShader() const;
-
-		void setShadowShader(Shader* shader);
-
-		const glm::vec3 getAmbient() const;
-
-		void setAmbient(const glm::vec3& ambient);
-
-		const glm::vec3 getDiffuse() const;
-
-		void setDiffuse(const glm::vec3& diffuse);
-
-		const glm::vec3 getSpecular() const;
-
-		void setSpecular(const glm::vec3& specular);
-
-		virtual void addUpdateFunction(const std::string& name, std::function<void(Light*)> lf);
-
-		virtual void runUpdateFuncs();
+        /*  Model Data */
+		const glm::vec3 getColor() const { return this->color; }
+		void getColor(const glm::vec3& color) { this->color = color; }
+		const float getAmbient() const { return this->ambient; }
+		void setAmbient(const float& ambient) { this->ambient = ambient; }
+		const float getDiffuse() const { return this->diffuse; }
+		void setDiffuse(const float& diffuse) { this->diffuse = diffuse; }
+		const float getSpecular() const { return this->specular; }
+		void setSpecular(const float& specular) { this->specular = specular; }
 		
-		virtual void uploadUniforms(const std::string& lightNum);
+		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const = 0;
+		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start) = 0;
 
-		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
-
-		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
-
-		virtual void genShadowMap() = 0;
-
-		virtual void genVAO() = 0;
-
-    private:
+    protected:
+		glm::vec3 color;
+		float ambient;
+		float diffuse;
+		float specular;
+		const std::string prefix;
+		GLuint shadowFBO;
+		Texture shadowTexture;
 		std::map<std::string, std::function<void(Light*)>> updateFuncs;
 };
 
-class BasicLight : public Light
+class PointLight : public Light
 {
     public:
-        GLuint VAO;
-        glm::vec3 position;
-		GLuint shadowFBO;
-		Texture shadowTexture;
-
-		BasicLight(
-			glm::vec3& ambient,
-			glm::vec3& diffuse,
-			glm::vec3& specular,
-			glm::vec3& position,
-			const std::string& prefix = std::string("b")
-		);
-
-		virtual void init();
-
-		virtual glm::vec3 getPosition() const;
-
-		virtual void setPosition(glm::vec3 position);
-
-		virtual void addUpdateFunction(const std::string& name, std::function<void(BasicLight*)> lf);
-
-		virtual void runUpdateFuncs();
-
-		virtual void Draw();
-
-		virtual void Draw(const Shader& shader) const;
-
-		using Light::uploadUniforms;
-		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
-
-		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
-
-		virtual void genVAO();
-
-		const bool hasVAO() const;
-
-		virtual void genShadowMap();
-
-		const bool hasShadowMap() const;
-
-		virtual void drawShadowMap(std::function<void (const Shader& shader)> draw);
-
-		virtual std::vector<glm::mat4> getShadowTransforms();
-
-		virtual Texture getShadowMap() const;
-
-	protected:
-		bool definedShadowMap = false;
-		bool definedVAO = false;
-		size_t shadowWidth = 1024;
-		size_t shadowHeight = 1024;
-
-    private:
-        GLuint VBO;
-		std::map<std::string, std::function<void(BasicLight*)>> updateFuncs;
-};
-
-
-class PointLight : public BasicLight
-{
-    public:
-        float constant;
-        float linear;
-        float quadratic;
 
 		PointLight(
-			glm::vec3& ambient,
-			glm::vec3& diffuse,
-			glm::vec3& specular,
-			glm::vec3& position,
+			glm::vec3 position,
+			glm::vec3 color,
+			float ambient,
+			float diffuse,
+			float specular,
 			float constant,
 			float linear,
 			float quadratic,
-			const std::string& prefix = std::string("p")
+			const std::string prefix = std::string("p")
 		);
 
-		const float getConstant() const;
+		const float getConstant() const { return this->constant; }
+		void setConstant(const float constant) { this->constant = constant; }
+		const float getLinear() const { return this->linear; };
+		void setLinear(const float linear) { this->linear = linear; }
+		const float getQuadratic() const { return this->quadratic; }
+		void setQuadratic(const float quadratic) { this->quadratic = quadratic; }
+		const glm::vec3 getPosition() { return this->position; }
+		void setPosition(const glm::vec3 position) { this->position = position; }
+		const Model* getModel() { return this->model; }
+		void setModel(Model* model) { this->model = model; }
 
-		void setConstant(const float& constant);
+		void addUpdateFunction(const std::string& name, std::function<void(PointLight*)> lf);
+		void runUpdateFuncs();
 
-		const float getLinear() const;
+		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
+		GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
-		void setLinear(const float& linear);
-
-		const float getQuadratic() const;
-
-		void setQuadratic(const float& quadratic);
-
-		virtual void addUpdateFunction(const std::string& name, std::function<void(PointLight*)> lf);
-
-		virtual void runUpdateFuncs();
-
-		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
-
-		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
-
-private:
-		std::map<std::string, std::function<void(PointLight*)>> updateFuncs;
+protected:
+	float constant, linear, quadratic;
+	glm::vec3 position;
+	Model* model;
+	std::map<std::string, std::function<void(PointLight*)>> updateFuncs;
 };
 
-class DirectionLight : public BasicLight
+class DirectionLight : public Light
 {
     public:
-        glm::vec3 direction;
-
 		DirectionLight(
-			glm::vec3& ambient,
-			glm::vec3& diffuse,
-			glm::vec3& specular,
-			glm::vec3& position,
-			glm::vec3& direction,
-			const std::string& prefix = std::string("d")
+			glm::vec3 color,
+			glm::vec3 direction,
+			float ambient,
+			float diffuse,
+			float specular,
+			const std::string prefix = std::string("d")
 		);
 
-		virtual glm::vec3 getDirection() const;
+		glm::vec3 getDirection() const { return this->direction; }
+		void setDirection(glm::vec3 direction) { this->direction = direction; }
 
-		virtual void setDirection(glm::vec3 direction);
+		void addUpdateFunction(const std::string& name, std::function<void(DirectionLight*)> lf);
+		void runUpdateFuncs();
 
-		virtual void addUpdateFunction(const std::string& name, std::function<void(DirectionLight*)> lf);
+		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
+		GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
-		virtual void runUpdateFuncs();
-
-		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
-
-		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
-
-		virtual void genShadowMap();
-
-		virtual void drawShadowMap(std::function<void (const Shader& shader)> draw);
-
-		virtual glm::mat4 getShadowTransform();
-
-private:
+protected:
+        glm::vec3 direction;
 		std::map<std::string, std::function<void(DirectionLight*)>> updateFuncs;
 };
 
@@ -225,38 +134,36 @@ class SpotLight : public PointLight
         float outerCutOff;
 
 		SpotLight(
-			glm::vec3& ambient,
-			glm::vec3& diffuse,
-			glm::vec3& specular,
-			glm::vec3& position,
-			glm::vec3& direction,
+			glm::vec3 position,
+			glm::vec3 direction,
+			glm::vec3 color,
+			float ambient,
+			float diffuse,
+			float specular,
 			float constant,
 			float linear,
 			float quadratic,
 			float cutOff,
 			float outerCutOff,
-			const std::string& prefix = std::string("s")
+			const std::string prefix = std::string("s")
 		);
 
-		virtual glm::vec3 getDirection() const;
+		glm::vec3 getDirection() const { return this->direction; }
+		void setDirection(glm::vec3 direction) { this->direction = direction; }
 
-		virtual void setDirection(glm::vec3 direction);
+		float getCutOff() const { return this->cutOff; }
+		void setCutOff(float cutOff) { this->cutOff = cutOff; }
 
-		virtual float getCutOff() const;
+		float getOuterCutOff() const { return this->outerCutOff; }
+		void setOuterCutOff(float outerCutOff) { this->outerCutOff = outerCutOff; }
 
-		virtual void setCutOff(float cutOff);
+		void addUpdateFunction(const std::string& name, std::function<void(SpotLight*)> lf);
 
-		virtual float getOuterCutOff() const;
-
-		virtual void setOuterCutOff(float outerCutOff);
-
-		virtual void addUpdateFunction(const std::string& name, std::function<void(SpotLight*)> lf);
-
-		virtual void runUpdateFuncs();
+		void runUpdateFuncs();
 
 		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 
-		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start);
+		GLuint updateUniformBlock(GLuint ubo, GLuint start) override;
 
 private:
 	std::map<std::string, std::function<void(SpotLight*)>> updateFuncs;
@@ -268,7 +175,7 @@ class LightManager
 static const GLuint LIGHTS_UNIFORM_BLOCK_BINDING_POINT = 2;
 public:
 	GLuint ubo;
-	std::vector<BasicLight> basicLights;
+	GLuint VAO = 0, VBO;
 	std::vector<PointLight> pointLights;
 	std::vector<DirectionLight> directionLights;
 	std::vector<SpotLight> spotLights;
@@ -276,8 +183,6 @@ public:
 	Texture shadowCubeText;
 
 	LightManager();
-
-	void addBasicLight(BasicLight& blight);
 
 	void addPointLight(PointLight& plight);
 

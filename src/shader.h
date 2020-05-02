@@ -45,6 +45,7 @@ class Shader
 		// ------------------------------------------------------------------------
 		const Shader& setUniformBlock(const std::string &name, const GLuint &binding) const;
 		const GLuint getUniformBlockSize(const std::string &name) const;
+		const GLuint Shader::getUniformOffset(const std::string &name) const;
 
     private:
         GLuint Program;

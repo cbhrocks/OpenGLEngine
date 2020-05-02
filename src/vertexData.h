@@ -141,7 +141,8 @@ GLfloat const normalCube[] = {
     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f
 };
 
-GLfloat const normalTextureCube[] = {
+///<summary>Cube vertex data that includes position, texture coords, and normals.</summary>
+GLfloat const cubeVertexData[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
 	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,

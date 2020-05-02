@@ -69,6 +69,29 @@ Renderer::Renderer(int width, int height) :
 	checkGLError("Renderer::initialize -- shaders");
 	this->shaders["gBufferDeferred"].Use();
 	this->shaders["gBufferDeferred"].setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2);
+
+	GLchar* names[] = {
+		"plight[0].ambient",
+		"plight[0].diffuse",
+		"plight[0].specular",
+		"plight[0].constant",
+		"plight[0].linear",
+		"plight[0].quadratic",
+		"plight[0].color",
+		"plight[0].position"
+	};
+	GLuint index;
+	GLuint prog_id = this->shaders["gBufferDeferred"].getId();
+	GLint offset, singleSize;
+
+	glGetUniformIndices(prog_id, 1, &names[6], &index);
+	glGetActiveUniformsiv(prog_id, 1, &index,
+		GL_UNIFORM_OFFSET, &offset);
+
+	glGetActiveUniformsiv(prog_id, 1, &index,
+		GL_UNIFORM_SIZE, &singleSize);
+
+	GLuint LightsUBSize = this->shaders["gBufferDeferred"].getUniformBlockSize("Lights");
 	checkGLError("Renderer::initialize -- shaders");
 }
 

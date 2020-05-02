@@ -195,6 +195,14 @@ const GLuint Shader::getUniformBlockSize(const std::string &name) const {
 	glGetActiveUniformBlockiv(this->getId(), uniformBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &uniformBlockSize);
 	return uniformBlockSize;
 }
+//const GLuint Shader::getUniformOffset(const std::string &name) const {
+//	GLuint index = glGetUniformIndices(this->Program, 1, name.c_str());
+//	glGetActiveUniformsiv(prog_id, 1, &index,
+//		GL_UNIFORM_OFFSET, &offset);
+//
+//	glGetActiveUniformsiv(prog_id, 1, &index,
+//		GL_UNIFORM_SIZE, &singleSize);
+//}
 
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------

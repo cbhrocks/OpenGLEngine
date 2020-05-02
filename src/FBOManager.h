@@ -4,7 +4,6 @@
 #include "vertexData.h"
 #include "shader.h"
 #include "glHelper.h"
-#include "DrawObj.h"
 
 class FBOManagerI {
 public:

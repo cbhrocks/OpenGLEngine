@@ -145,7 +145,7 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 	{
 		VertexData vertex;
 		//since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data glm::vec3 first.
-			// positions
+		// positions
 		vertex.Position = glm::vec3(
 			mesh->mVertices[i].x,
 			mesh->mVertices[i].y,
@@ -167,20 +167,17 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 		else
 			vertex.uv = glm::vec2(0.0f, 0.0f);
 
-		// tangent
+		// tangent and bitangent
 		vertex.Tangent = glm::vec3(
 			mesh->mTangents[i].x,
 			mesh->mTangents[i].y,
 			mesh->mTangents[i].z
 		);
-
-
 		vertex.Bitangent = glm::vec3(
 			mesh->mBitangents[i].x,
 			mesh->mBitangents[i].y,
 			mesh->mBitangents[i].z
 		);
-
 		vertices.push_back(vertex);
 	}
 
@@ -195,6 +192,21 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 
 	// process materials
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+	// load in the coeficients.
+	float shininess;
+	aiColor4D specularColor;
+	if (AI_SUCCESS != aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess)) {
+		shininess = 0.0f;
+	}
+	if (AI_SUCCESS != aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specularColor)) {
+		specularColor.r = 0;
+		specularColor.g = 0;
+		specularColor.b = 0;
+		specularColor.a = 0;
+	}
+	aiMaterialProperty** mProperties = material->mProperties;
+
 	// we assume a convention for sampler names in the shaders. Each diffuse texture should be named
 	// as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
 	// Same applies to other texture as the following list summarizes:

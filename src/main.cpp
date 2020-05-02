@@ -405,29 +405,20 @@ int main(int argc, char** argv)
     slot.scene = new Scene();
 
 	LightManager* lm = new LightManager();
-	BasicLight* basicLight = new BasicLight(
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 5.0f)
-	);
-	lm->addBasicLight(*basicLight);
 	DirectionLight* directionLight = new DirectionLight(
-		glm::vec3(0.2f, 0.2f, 0.2f),
-		glm::vec3(0.5f, 0.5f, 0.5f),
 		glm::vec3(1.0f, 1.0f, 1.0f),
-		glm::vec3(-5.0f, 10.0f, 5.0f),
-		glm::vec3(0.25f, -0.5f, -0.25f)
+		glm::vec3(0.25f, -0.5f, -0.25f),
+		0.2f,
+		0.5f,
+		1.0f
 	);
 	lm->addDirectionLight(*directionLight);
 	PointLight* pointLight = new PointLight(
-		glm::vec3(0.3f, 0.3f, 0.3f),
-		glm::vec3(0.8f, 0.8f, 0.8f),
-		glm::vec3(1.5f, 1.5f, 1.5f),
-		//glm::vec3(0.2f, 0.2f, 0.2f),
-		//glm::vec3(200.0f, 200.0f, 200.0f),
-		//glm::vec3(3.0f, 3.0f, 3.0f),
 		glm::vec3(0.0f, 8.0f, 5.0f),
+		glm::vec3(1, 1, 1),
+		0.3f,
+		1.5f,
+		2.5f,
 		1.0f,
 		0.35f,
 		0.44f
@@ -437,14 +428,12 @@ int main(int argc, char** argv)
 	});
 	lm->addPointLight(*pointLight);
 	SpotLight* spotLight = new SpotLight(
-		glm::vec3(0.2f, 0.2f, 0.2f),
-		glm::vec3(1.5f, 1.5f, 1.5f),
-		glm::vec3(3.0f, 3.0f, 3.0f),
-		//glm::vec3(0.0f, 0.0f, 0.0f),
-		//glm::vec3(0.0f, 0.0f, 0.0f),
-		//glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f),
 		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(1.0, 1.0, 1.0),
+		0.2f,
+		1.5f,
+		3.0f,
 		1.0f,
 		0.0014f,
 		0.000007f,
@@ -466,42 +455,42 @@ int main(int argc, char** argv)
 		//->setScale(glm::vec3(0.5f))
 	);
 
-	slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
-		->setPosition(glm::vec3(-4.0, 1.5, 3.5))
-		->setScale(glm::vec3(2.0f))
-	);
+	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
+	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
+	//	->setScale(glm::vec3(2.0f))
+	//);
 
-	slot.scene->setModel("box2", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
-		->setPosition(glm::vec3(2.0, 4, 3.5))
-	);
+	//slot.scene->setModel("box2", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
+	//	->setPosition(glm::vec3(2.0, 4, 3.5))
+	//);
 
-	slot.scene->setModel("grass", (new Model( std::string("objects/test/grass_square/grass_square.obj")))
-		->setPosition(glm::vec3( 0, 0.5, 0 ))
-		->setRotation(glm::vec3( 90, 0, 0 ))
-		->setTransparent(true)
-	);
+	//slot.scene->setModel("grass", (new Model( std::string("objects/test/grass_square/grass_square.obj")))
+	//	->setPosition(glm::vec3( 0, 0.5, 0 ))
+	//	->setRotation(glm::vec3( 90, 0, 0 ))
+	//	->setTransparent(true)
+	//);
 
-	slot.scene->setModel("window1", (new Model( std::string("objects/test/window/window.obj")))
-		->setPosition(glm::vec3(0, 1.0, -3.0))
-		->setRotation(glm::vec3(90, 0, 0))
-		->setTransparent(true)
-	);
+	//slot.scene->setModel("window1", (new Model( std::string("objects/test/window/window.obj")))
+	//	->setPosition(glm::vec3(0, 1.0, -3.0))
+	//	->setRotation(glm::vec3(90, 0, 0))
+	//	->setTransparent(true)
+	//);
 
-	slot.scene->setModel("window2", (new Model( std::string("objects/test/window/window.obj")))
-		->setPosition(glm::vec3(0, 1.0, -2.0))
-		->setRotation(glm::vec3(90, 0, 0))
-		->setTransparent(true)
-	);
+	//slot.scene->setModel("window2", (new Model( std::string("objects/test/window/window.obj")))
+	//	->setPosition(glm::vec3(0, 1.0, -2.0))
+	//	->setRotation(glm::vec3(90, 0, 0))
+	//	->setTransparent(true)
+	//);
 
-	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
-		->setScale(glm::vec3(10))
-	);
+	//slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
+	//	->setScale(glm::vec3(10))
+	//);
 
-	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
-		->setPosition(glm::vec3(0, 10, -10))
-		->setScale(glm::vec3(10))
-		->setRotation(glm::vec3(90, 0, 0))
-	);
+	//slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
+	//	->setPosition(glm::vec3(0, 10, -10))
+	//	->setScale(glm::vec3(10))
+	//	->setRotation(glm::vec3(90, 0, 0))
+	//);
 
 	slot.scene->addCamera(
 		new Camera(
