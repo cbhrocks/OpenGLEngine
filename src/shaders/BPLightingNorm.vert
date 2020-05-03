@@ -1,51 +1,42 @@
 #version 330 core
-
-struct BasicLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32	
-    vec3 position;		// 16	//48	
-};						// 64	//64
-
 struct PointLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32
+    float ambient;		// 4	//0
+    float diffuse;		// 4	//4
+    float specular;		// 4	//8
+    float constant;		// 4	//12
+    float linear;		// 4	//16
+    float quadratic;	// 4	//20
+    vec3 color;			// 16	//32	//move starting point to divisible
     vec3 position;		// 16	//48
-    float constant;		// 4	//64
-    float linear;		// 4	//68
-    float quadratic;	// 4	//72
-};						// 76 -> 80
+};						// 64
 
 struct SpotLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32
-    vec3 position;		// 16	//48
+    vec3 color;			// 16	//0
+    vec3 position;		// 16	//16		//move starting point to divisible
+    vec3 direction;		// 16	//32
+    float ambient;		// 4	//34
+    float diffuse;		// 4	//38
+    float specular;		// 4	//62
     float constant;		// 4	//64
     float linear;		// 4	//68
     float quadratic;	// 4	//72
-    vec3 direction;		// 16	//80
-    float cutOff;		// 4	//96
-    float outerCutOff;	// 4	//100
-};//size -> with pad	// 104 -> 112
+    float cutOff;		// 4	//76
+    float outerCutOff;	// 4	//80
+};						// 80
 
 struct DirectionLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32	
-	vec3 position;		// 16	//48
-    vec3 direction;		// 16	//64
-	mat4 lightSpaceMatrix;
-};						// 80 -> 80
+    float ambient;		// 4	//0
+    float diffuse;		// 4	//4
+    float specular;		// 4	//8
+    vec3 color;			// 16	//16	//move starting point to divisible
+    vec3 direction;		// 16	//32	//move starting point to divisible
+};						// 48
 
-#define NR_BASIC_LIGHTS 1
 #define NR_POINT_LIGHTS 1
 #define NR_SPOT_LIGHTS 1
 #define NR_DIRECTION_LIGHTS 1
 layout (std140) uniform Lights
 {
-	BasicLight blight[NR_BASIC_LIGHTS]; // basic light
 	PointLight plight[NR_POINT_LIGHTS]; // point light
 	SpotLight slight[NR_SPOT_LIGHTS]; // spot light
 	DirectionLight dlight[NR_DIRECTION_LIGHTS]; // directional light

@@ -403,6 +403,8 @@ int main(int argc, char** argv)
 	//FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
 	//tbm->setup();
     slot.scene = new Scene();
+    slot.window = window;
+    slot.render = Renderer(width, height);
 
 	LightManager* lm = new LightManager();
 	DirectionLight* directionLight = new DirectionLight(
@@ -451,9 +453,8 @@ int main(int argc, char** argv)
 
 	slot.scene->setLightManager(lm);
 
-	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj")))
-		//->setScale(glm::vec3(0.5f))
-	);
+	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj"))));
+	slot.render.setModelShader("nanosuit", "blinnPhongLighting");
 
 	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
 	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
@@ -486,11 +487,12 @@ int main(int argc, char** argv)
 	//	->setScale(glm::vec3(10))
 	//);
 
-	//slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
-	//	->setPosition(glm::vec3(0, 10, -10))
-	//	->setScale(glm::vec3(10))
-	//	->setRotation(glm::vec3(90, 0, 0))
-	//);
+	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
+		->setPosition(glm::vec3(0, 10, -10))
+		->setScale(glm::vec3(10))
+		->setRotation(glm::vec3(90, 0, 0))
+	);
+	slot.render.setModelShader("wall", "BPLightingNorm");
 
 	slot.scene->addCamera(
 		new Camera(
@@ -503,8 +505,6 @@ int main(int argc, char** argv)
 
 
 	//slot.scene.setFBOManager(fbom)
-    slot.window = window;
-    slot.render = Renderer(width, height);
 	//slot.render.setTBM(tbm);
 	GBuffer* gBuffer = new GBuffer(width, height);
 	slot.render.setGBuffer(gBuffer);

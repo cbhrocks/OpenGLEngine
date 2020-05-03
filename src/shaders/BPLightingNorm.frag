@@ -1,51 +1,43 @@
 #version 330 core
 
-struct BasicLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32	
-    vec3 position;		// 16	//48	
-};						// 64	//64
-
 struct PointLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32
+    float ambient;		// 4	//0
+    float diffuse;		// 4	//4
+    float specular;		// 4	//8
+    float constant;		// 4	//12
+    float linear;		// 4	//16
+    float quadratic;	// 4	//20
+    vec3 color;			// 16	//32	//move starting point to divisible
     vec3 position;		// 16	//48
-    float constant;		// 4	//64
-    float linear;		// 4	//68
-    float quadratic;	// 4	//72
-};						// 76 -> 80
+};						// 64
 
 struct SpotLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32
-    vec3 position;		// 16	//48
+    vec3 color;			// 16	//0
+    vec3 position;		// 16	//16		//move starting point to divisible
+    vec3 direction;		// 16	//32
+    float ambient;		// 4	//34
+    float diffuse;		// 4	//38
+    float specular;		// 4	//62
     float constant;		// 4	//64
     float linear;		// 4	//68
     float quadratic;	// 4	//72
-    vec3 direction;		// 16	//80
-    float cutOff;		// 4	//96
-    float outerCutOff;	// 4	//100
-};//size -> with pad	// 104 -> 112
+    float cutOff;		// 4	//76
+    float outerCutOff;	// 4	//80
+};						// 80
 
 struct DirectionLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32	
-	vec3 position;		// 16	//48
-    vec3 direction;		// 16	//64
-	mat4 lightSpaceMatrix;
-};						// 80 -> 80
+    float ambient;		// 4	//0
+    float diffuse;		// 4	//4
+    float specular;		// 4	//8
+    vec3 color;			// 16	//16	//move starting point to divisible
+    vec3 direction;		// 16	//32	//move starting point to divisible
+};						// 48
 
-#define NR_BASIC_LIGHTS 1
 #define NR_POINT_LIGHTS 1
 #define NR_SPOT_LIGHTS 1
 #define NR_DIRECTION_LIGHTS 1
 layout (std140) uniform Lights
 {
-	BasicLight blight[NR_BASIC_LIGHTS]; // basic light
 	PointLight plight[NR_POINT_LIGHTS]; // point light
 	SpotLight slight[NR_SPOT_LIGHTS]; // spot light
 	DirectionLight dlight[NR_DIRECTION_LIGHTS]; // directional light
@@ -66,9 +58,16 @@ layout (std140) uniform Scene
 };
 
 struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-	sampler2D normal;
+    sampler2D texture_diffuse;
+    sampler2D texture_specular;
+	sampler2D texture_normal;
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	float shininess;
+	float opacity;
+	float reflectivity;
+	float refractionIndex;
 };
 
 //object data
@@ -86,25 +85,16 @@ in VS_OUT {
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
 
-vec3 calculateAmbient(vec3 lightAmbient);
-vec3 calculateDiffuse(vec3 lightDirection, vec3 viewDirection, vec3 lightDiffuse);
-vec3 calculateSpecular(vec3 lightDirection, vec3 viewDirection, vec3 normal, vec3 lightSpecular);
-
-vec3 calculateBasicLight(BasicLight light, vec3 normal, vec3 viewDir, vec3 tangentLightPos);
-vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 viewDir, vec3 tangentLightPos);
-vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 tangentLightPos);
-vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir, vec3 tangentLightPos);
-
 void main()
 {
 	// obtain normal from normal map in range [0,1]
 	// only normalized this for nanosuit. shouldnt have to but for some reason did.
-    vec3 normal = texture(material.normal, fs_in.TexCoords).rgb; 
+    vec3 normalMap = texture(material.texture_normal, fs_in.TexCoords).rgb; 
     // transform normal vector to range [-1,1]
-    normal = normalize(normal * 2.0 - 1.0);  // this normal is in tangent space
+    vec3 normal = normalize(normalMap * 2.0 - 1.0);  // this normal is in tangent space
    
     // get diffuse color for ambient and diffuse
-	vec3 diffuseMap = texture(material.diffuse, fs_in.TexCoords).rgb;
+	vec3 diffuseMap = texture(material.texture_diffuse, fs_in.TexCoords).rgb;
     // final ambient
     vec3 ambient = plight[0].ambient * diffuseMap;
 
@@ -121,7 +111,7 @@ void main()
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
 	// object specular
-	vec3 specMap = texture(material.specular, fs_in.TexCoords).rgb;
+	vec3 specMap = texture(material.texture_specular, fs_in.TexCoords).rgb;
 	// final specular
     vec3 specular = vec3(plight[0].specular) * specMap * spec;
     //vec3 specular = vec3(0.2) * spec;

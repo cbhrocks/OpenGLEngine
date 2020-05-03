@@ -58,6 +58,10 @@ class Renderer
 		void setRes(int width, int height);
 		void updateUbo();
 
+		void setModelShader(std::string model, std::string shader) {
+			this->forwardRenderModels.insert_or_assign(model, shader);
+		}
+
     private:
 		GLuint ubo;
 		FBOManagerI* tbm;

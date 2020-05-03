@@ -19,12 +19,10 @@ Model::Model(
 }
 
 Model::Model(
-	std::vector<VertexData> vertices, 
-	std::vector<GLuint> indices, 
-	std::map<GLuint, std::string> textures
+	std::vector<std::unique_ptr<Mesh>> meshes
 ) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
-	this->meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, textures)));
+	std::move(meshes.begin(), meshes.end(), std::back_inserter(this->meshes));
 }
 
 // draws the model, and thus all its meshes
@@ -194,18 +192,30 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
 	// load in the coeficients.
-	float shininess;
-	aiColor4D specularColor;
-	if (AI_SUCCESS != aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess)) {
-		shininess = 0.0f;
+	Material mat;
+	float shininess, opacity, reflectivity, refractionIndex;
+	aiColor4D ambientColor, diffuseColor, specularColor;
+	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess)) {
+		mat.Shininess = shininess;
 	}
-	if (AI_SUCCESS != aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specularColor)) {
-		specularColor.r = 0;
-		specularColor.g = 0;
-		specularColor.b = 0;
-		specularColor.a = 0;
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambientColor)) {
+		mat.AmbientColor = glm::vec4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a);
 	}
-	aiMaterialProperty** mProperties = material->mProperties;
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor)) {
+		mat.DiffuseColor = glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a);
+	}
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specularColor)) {
+		mat.SpecularColor = glm::vec4(specularColor.r, specularColor.g, specularColor.b, specularColor.a);
+	}
+	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_OPACITY, &opacity)) {
+		mat.opacity = opacity;
+	}
+	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_REFLECTIVITY, &reflectivity)) {
+		mat.reflectivity = reflectivity;
+	}
+	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_REFRACTI, &refractionIndex)) {
+		mat.refractionIndex = refractionIndex;
+	}
 
 	// we assume a convention for sampler names in the shaders. Each diffuse texture should be named
 	// as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
@@ -216,28 +226,24 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 	std::map<GLuint, std::string> textures;
 
 	// 1. diffuse maps
-	std::map<GLuint, std::string> diffuseTextures = loadMaterialTextures(path, material, aiTextureType_DIFFUSE);
-	textures.insert(diffuseTextures.begin(), diffuseTextures.end());
+	mat.textureDiffuse = loadMaterialTextures(path, material, aiTextureType_DIFFUSE);
 	// 2. specular maps
-	std::map<GLuint, std::string> specularTextures = loadMaterialTextures(path, material, aiTextureType_SPECULAR);
-	textures.insert(specularTextures.begin(), specularTextures.end());
+	mat.textureSpecular = loadMaterialTextures(path, material, aiTextureType_SPECULAR);
 	// 3. normal maps
-	std::map<GLuint, std::string> normalTextures = loadMaterialTextures(path, material, aiTextureType_HEIGHT);
-	textures.insert(normalTextures.begin(), normalTextures.end());
+	mat.textureNormal = loadMaterialTextures(path, material, aiTextureType_HEIGHT);
 	// 4. height maps
-	std::map<GLuint, std::string> heightMaps = loadMaterialTextures(path, material, aiTextureType_AMBIENT);
-	textures.insert(heightMaps.begin(), heightMaps.end());
+	mat.textureHeight = loadMaterialTextures(path, material, aiTextureType_AMBIENT);
 
 	// return a mesh object created from the extracted mesh data
-	meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, textures)));
+	meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, mat)));
 }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
-std::map<GLuint, std::string> Model::loadMaterialTextures(const std::string& path, aiMaterial *material, aiTextureType type)
+std::vector<GLuint> Model::loadMaterialTextures(const std::string& path, aiMaterial *material, aiTextureType type)
 {
 	//std::vector<Texture> textures;
-	std::map<GLuint, std::string> textures;
+	std::vector<GLuint> textures;
 	for (unsigned int i = 0; i < material->GetTextureCount(type); i++)
 	{
 		GLenum format; // format of the texture on creation
@@ -250,7 +256,7 @@ std::map<GLuint, std::string> Model::loadMaterialTextures(const std::string& pat
 		auto it = textures_loaded.find(mat_path.C_Str());
 		if (it != textures_loaded.end())
 		{
-			textures.insert(std::make_pair(it->second.id, it->second.type));
+			textures.push_back(it->second.id);
 		}
 		else
 		{   // if texture hasn't been loaded already, load it
@@ -284,17 +290,17 @@ std::map<GLuint, std::string> Model::loadMaterialTextures(const std::string& pat
 			stbi_image_free(image_data);
 
 			switch (type) {
-			case aiTextureType_DIFFUSE: mode = "diffuse"; break;
-			case aiTextureType_SPECULAR: mode = "specular"; break;
-			case aiTextureType_HEIGHT: mode = "normal"; break;
-			case aiTextureType_AMBIENT: mode = "height"; break;
+			case aiTextureType_DIFFUSE: mode = "texture_diffuse"; break;
+			case aiTextureType_SPECULAR: mode = "texture_specular"; break;
+			case aiTextureType_HEIGHT: mode = "texture_normal"; break;
+			case aiTextureType_AMBIENT: mode = "texture_height"; break;
 			}
 
 			Texture texture;
 			texture.id = textureId;
 			texture.type = mode;
-			textures.insert(std::make_pair(textureId, mode));
 			this->textures_loaded.insert(std::make_pair(mat_path.C_Str(), texture));
+			textures.push_back(textureId);
 		}
 	}
 	return textures;

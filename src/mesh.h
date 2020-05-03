@@ -32,12 +32,28 @@ struct VertexData {
     glm::vec3 Bitangent;
 };
 
+struct Material {
+	glm::vec4 AmbientColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 DiffuseColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 SpecularColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	float Shininess = 0.0f;
+	float opacity = 1.0f;
+	float reflectivity = 0.0f;
+	float refractionIndex = 1.0;
+	std::vector<GLuint> textureAmbient;
+	std::vector<GLuint> textureDiffuse;
+	std::vector<GLuint> textureSpecular;
+	std::vector<GLuint> textureNormal;
+	std::vector<GLuint> textureHeight;
+	std::vector<GLuint> textureReflect;
+};
+
 class Mesh {
     public:
 
         /*  Functions  */
         // constructor and destructor
-        Mesh() {
+        Mesh() : material(Material()) {
             glGenVertexArrays(1, &VAO);
 		}
 		~Mesh() {
@@ -45,8 +61,8 @@ class Mesh {
 		}
 
 		// custom constructors
-        Mesh(std::vector<VertexData> vertices, std::vector<GLuint> indices, std::map<GLuint, std::string> textures):
-			vertices(vertices), indices(indices), textures(textures)
+        Mesh(std::vector<VertexData> vertices, std::vector<GLuint> indices, Material material = Material()):
+			vertices(vertices), indices(indices), material(material)
         {
             // vertex array object
             glGenVertexArrays(1, &VAO);
@@ -88,33 +104,53 @@ class Mesh {
         {
             // bind appropriate textures
 			GLuint unit = 0;
+			GLuint ambientNr = 0;
 			GLuint diffuseNr = 0;
 			GLuint specularNr = 0;
 			GLuint normalNr = 0;
 			GLuint heightNr = 0;
 			GLuint reflectNr = 0;
-			for (auto &texture : textures)
-            {
-                // retrieve texture number (the N in diffuse_textureN)
-                checkGLError("Draw bind textures");
-				std::string uniform_name = texture.second;
-                if(texture.second == "diffuse")
-					uniform_name += (diffuseNr++ > 0) ? std::to_string(diffuseNr)  : "";
-                else if(texture.second == "specular")
-					uniform_name += (specularNr++ > 0) ? std::to_string(specularNr)  : "";
-                else if(texture.second == "normal")
-					uniform_name += (normalNr++ > 0) ? std::to_string(normalNr)  : "";
-                else if(texture.second == "height")
-					uniform_name += (heightNr++ > 0) ? std::to_string(heightNr)  : "";
-				else if (texture.second == "reflect")
-					uniform_name += (reflectNr++ > 0) ? std::to_string(reflectNr)  : "";
-
-                // bind the texture and set uniform
+			for (GLuint &texture : this->material.textureAmbient)
+			{
                 glActiveTexture(GL_TEXTURE0 + unit);
-                glBindTexture(GL_TEXTURE_2D, texture.first);
-                shader.setInt(("material." + uniform_name).c_str(), unit++);
-                checkGLError("Draw bind textures");
-            }
+                glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("material.texture_ambient" + (ambientNr++ > 0 ? std::to_string(ambientNr) : ""), unit++);
+			}
+			for (GLuint &texture : this->material.textureDiffuse)
+			{
+                glActiveTexture(GL_TEXTURE0 + unit);
+                glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("material.texture_diffuse" + (diffuseNr++ > 0 ? std::to_string(diffuseNr) : ""), unit++);
+			}
+			for (GLuint &texture : this->material.textureSpecular)
+			{
+                glActiveTexture(GL_TEXTURE0 + unit);
+                glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("material.texture_specular" + (specularNr++ > 0 ? std::to_string(specularNr) : ""), unit++);
+			}
+			for (GLuint &texture : this->material.textureNormal)
+			{
+                glActiveTexture(GL_TEXTURE0 + unit);
+                glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("material.texture_normal" + (normalNr++ > 0 ? std::to_string(normalNr) : ""), unit++);
+			}
+			for (GLuint &texture : this->material.textureReflect)
+			{
+                glActiveTexture(GL_TEXTURE0 + unit);
+                glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("material.texture_reflect" + (reflectNr++ > 0 ? std::to_string(reflectNr) : ""), unit++);
+			}
+			checkGLError("Draw bind textures");
+
+
+			// set material coefficiants
+			shader.setVec4("material.ambient", this->material.AmbientColor);
+			shader.setVec4("material.diffuse", this->material.DiffuseColor);
+			shader.setVec4("material.specular", this->material.SpecularColor);
+			shader.setFloat("material.shininess", this->material.Shininess);
+			shader.setFloat("material.opacity", this->material.opacity);
+			shader.setFloat("material.reflectivity", this->material.reflectivity);
+			shader.setFloat("material.refractionIndex", this->material.refractionIndex);
 
             // draw mesh
             glBindVertexArray(VAO);
@@ -128,8 +164,8 @@ class Mesh {
 		Mesh & operator = (Mesh const &) = delete;
 
         /*  Render data  */
+		Material material;
         GLuint VAO, VBO, EBO;
-		std::map<GLuint, std::string> textures;
         std::vector<VertexData> vertices;
         std::vector<GLuint> indices;
 };

@@ -1,54 +1,43 @@
 #version 330 core
 
-struct BasicLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32	
-    vec3 position;		// 16	//48	
-};						// 64	//64
-
 struct PointLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32
+    float ambient;		// 4	//0
+    float diffuse;		// 4	//4
+    float specular;		// 4	//8
+    float constant;		// 4	//12
+    float linear;		// 4	//16
+    float quadratic;	// 4	//20
+    vec3 color;			// 16	//32	//move starting point to divisible
     vec3 position;		// 16	//48
-	float fake;
-    float constant;		// 4	//64
-    float linear;		// 4	//68
-    float quadratic;	// 4	//72
-};						// 76 -> 80
+};						// 64
 
 struct SpotLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32
-    vec3 position;		// 16	//48
-	float fake;
+    vec3 color;			// 16	//0
+    vec3 position;		// 16	//16		//move starting point to divisible
+    vec3 direction;		// 16	//32
+    float ambient;		// 4	//34
+    float diffuse;		// 4	//38
+    float specular;		// 4	//62
     float constant;		// 4	//64
     float linear;		// 4	//68
     float quadratic;	// 4	//72
-    vec3 direction;		// 16	//80
-	float fake2;
-    float cutOff;		// 4	//96
-    float outerCutOff;	// 4	//100
-};//size -> with pad	// 104 -> 112
+    float cutOff;		// 4	//76
+    float outerCutOff;	// 4	//80
+};						// 80
 
 struct DirectionLight {
-    vec3 ambient;		// 16	//0
-    vec3 diffuse;		// 16	//16
-    vec3 specular;		// 16	//32	
-	vec3 position;		// 16	//48
-    vec3 direction;		// 16	//64
-	mat4 lightSpaceMatrix;
-};						// 80 -> 80
+    float ambient;		// 4	//0
+    float diffuse;		// 4	//4
+    float specular;		// 4	//8
+    vec3 color;			// 16	//16	//move starting point to divisible
+    vec3 direction;		// 16	//32	//move starting point to divisible
+};						// 48
 
-#define NR_BASIC_LIGHTS 1
 #define NR_POINT_LIGHTS 1
 #define NR_SPOT_LIGHTS 1
 #define NR_DIRECTION_LIGHTS 1
 layout (std140) uniform Lights
 {
-	BasicLight blight[NR_BASIC_LIGHTS]; // basic light
 	PointLight plight[NR_POINT_LIGHTS]; // point light
 	SpotLight slight[NR_SPOT_LIGHTS]; // spot light
 	DirectionLight dlight[NR_DIRECTION_LIGHTS]; // directional light
@@ -94,7 +83,6 @@ vec3 calculateAmbient(vec3 lightAmbient);
 vec3 calculateDiffuse(vec3 lightDirection, vec3 viewDirection, vec3 lightDiffuse);
 vec3 calculateSpecular(vec3 lightDirection, vec3 viewDirection, vec3 normal, vec3 lightSpecular);
 
-vec3 calculateBasicLight(BasicLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -108,11 +96,6 @@ void main()
     vec3 norm = normalize(fs_in.Normal);
 
     vec3 color = vec3(0.0f);
-    for(int i = 0; i < NR_BASIC_LIGHTS; i++) {
-		if (length(blight[i].ambient + blight[i].diffuse + blight[i].specular) > 0){
-			color += calculateBasicLight(blight[i], norm, fs_in.FragPos, viewDir);
-		}
-	}
     for(int i = 0; i < NR_DIRECTION_LIGHTS; i++) {
 		if (length(dlight[i].ambient + dlight[i].diffuse + dlight[i].specular) > 0){
 			color += calculateDirectionLight(dlight[i], norm, fs_in.FragPos, viewDir);
@@ -153,19 +136,6 @@ vec3 calculateSpecular(vec3 lightDirection, vec3 viewDirection, vec3 normal, vec
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 64);
     vec3 specular = lightSpecular * spec * vec3(texture(material.specular, fs_in.TexCoords));
 	return specular;
-}
-
-vec3 calculateBasicLight(BasicLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
-    vec3 lightDir = normalize(light.position - fragPos);
-
-	float shadow = calculateOmniShadows(light.position);
-
-    vec3 ambient = calculateAmbient(light.ambient);
-	vec3 diffuse = calculateDiffuse(lightDir, normal, light.diffuse) * (1 - shadow);
-	vec3 specular = calculateSpecular(lightDir, viewDir, normal, light.specular) * (1 - shadow);
-
-    vec3 finalColor = ambient + diffuse + specular;
-    return finalColor;
 }
 
 vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {

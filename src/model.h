@@ -32,9 +32,7 @@ class Model
 		);
 		//constructor expects vertex data, indices, and textures
 		Model(
-			std::vector<VertexData> vertices,
-			std::vector<GLuint> indices,
-			std::map<GLuint, std::string> textures
+			std::vector<std::unique_ptr<Mesh>> meshes
 		);
 
         // drastd::ws the model, and thus all its meshes
@@ -77,5 +75,5 @@ class Model
 
         // checks all material textures of a given type and loads the textures if they're not loaded yet.
         // the required info is returned as a Texture struct.
-		std::map<GLuint, std::string> loadMaterialTextures(const std::string& path, aiMaterial *mat, aiTextureType type);
+		std::vector<GLuint> loadMaterialTextures(const std::string& path, aiMaterial *mat, aiTextureType type);
 };
