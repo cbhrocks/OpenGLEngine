@@ -64,9 +64,11 @@ Renderer::Renderer(int width, int height) :
 		// lighting
 		{"shadowDepth", Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag")},
 		{"shadowCubeDepth", Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")},
-		{"shadowDebug", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1).Use().setInt("depthMap", 0)},
+		{"shadowDebug2D", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1).Use().setInt("depthMap", 0)},
+		{"shadowCubeDebug", Shader("src/shaders/shadowCubeDebug.vert", "src/shaders/shadowCubeDebug.frag").setUniformBlock("Camera", 1).Use().setInt("depthMap", 1)},
 		{"phongLighting", Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
 		{"directionalShadows", Shader("src/shaders/directionalShadows.vert", "src/shaders/directionalShadows.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2).Use().setInt("shadowMap", 0)},
+		{"pointShadows", Shader("src/shaders/pointShadows.vert", "src/shaders/pointShadows.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2).Use().setInt("shadowCubeMap", 1)},
 		{"blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
 		{"BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)}
 	};
@@ -122,7 +124,7 @@ void Renderer::postRender(Scene* scene)
 
 void Renderer::render(Scene* scene)
 {
-	// render shadows
+	// render shadow depth maps
 	if (this->shadowsEnabled) {
 		this->renderShadowMaps(scene);
 	}
@@ -147,19 +149,27 @@ void Renderer::render(Scene* scene)
 
 		// upload shadow uniforms and bind shadow textures
 		std::vector<ShadowMap*> shadowMaps = scene->getLightManager()->getShadowMaps();
-		int i;
-		for (i = 0; i < shadowMaps.size(); i++) {
+		int textureNum = 0;
+		for (int i = 0; i < shadowMaps.size(); i++) {
 			shadowMaps[i]->uploadUniforms(shader);
-			glActiveTexture(GL_TEXTURE0 + i);
+			glActiveTexture(GL_TEXTURE0 + textureNum++);
 			glBindTexture(GL_TEXTURE_2D, shadowMaps[i]->getTexture());
 		}
 
+		std::vector<ShadowCubeMap*> shadowCubeMaps = scene->getLightManager()->getShadowCubeMaps();
+		for (int i = 0; i < shadowCubeMaps.size(); i++) {
+			shadowCubeMaps[i]->uploadUniforms(shader);
+			glActiveTexture(GL_TEXTURE0 + textureNum++);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMaps[i]->getTexture());
+		}
+
 		model->uploadUniforms(shader);
-		model->Draw(shader, i);
+		model->Draw(shader, textureNum);
 	}
 
+	//draw shadow depth quad
 	//for (ShadowMap* shadowMap : scene->getLightManager()->getShadowMaps()) {
-	//	shadowMap->drawDebugQuad(this->shaders["shadowDebug"]);
+	//	shadowMap->drawDebugQuad(this->shaders["shadowDebug2D"]);
 	//}
 
 	// render lights for debug purposes
@@ -170,12 +180,21 @@ void Renderer::renderShadowMaps(Scene* scene)
 {
 	std::map<std::string, Model*> models = scene->getModels();
 	std::vector<ShadowMap*> shadowMaps = scene->getLightManager()->getShadowMaps();
+	std::vector<ShadowCubeMap*> shadowCubeMaps = scene->getLightManager()->getShadowCubeMaps();
 	for (auto shadowMap : shadowMaps) {
 		shadowMap->setActive();
 		shadowMap->uploadUniforms(this->shaders["shadowDepth"]);
 		for (auto model_it : models) {
 			model_it.second->uploadUniforms(this->shaders["shadowDepth"]);
 			model_it.second->Draw(this->shaders["shadowDepth"]);
+		}
+	}
+	for (auto shadowCubeMap : shadowCubeMaps) {
+		shadowCubeMap->setActive();
+		shadowCubeMap->uploadUniforms(this->shaders["shadowCubeDepth"]);
+		for (auto model_it : models) {
+			model_it.second->uploadUniforms(this->shaders["shadowCubeDepth"]);
+			model_it.second->Draw(this->shaders["shadowCubeDepth"]);
 		}
 	}
 

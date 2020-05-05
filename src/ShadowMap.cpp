@@ -1,7 +1,6 @@
 #include "ShadowMap.h"
-#include "glHelper.h"
 
-ShadowMap::ShadowMap(const glm::vec3& position, const glm::vec3& direction, GLsizei resX, GLsizei resY, GLsizei shadowWidth, GLsizei shadowHeight, float shadowNear, float shadowFar) :
+ShadowMap::ShadowMap(const glm::vec3 position, const glm::vec3 direction, GLsizei resX, GLsizei resY, GLsizei shadowWidth, GLsizei shadowHeight, float shadowNear, float shadowFar) :
 	position(position), direction(direction), shadowResX(resX), shadowResY(resY), shadowWidth(shadowWidth), shadowHeight(shadowHeight), shadowNear(shadowNear), shadowFar(shadowFar)
 {
 	glGenFramebuffers(1, &this->shadowBuffer);
@@ -47,10 +46,42 @@ void ShadowMap::uploadUniforms(const Shader& shader) {
 }
 
 glm::mat4 ShadowMap::getShadowTransform() {
-	glm::mat4 shadowProjection = glm::ortho((float) -this->shadowWidth/2, (float) this->shadowWidth/2, (float) -this->shadowHeight/2, (float) this->shadowHeight/2, this->shadowNear, this->shadowFar);
-	glm::mat4 shadowView = glm::lookAt(this->position, this->position + this->direction, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 shadowProjection = glm::ortho(
+		(float) - this->shadowWidth/2, 
+		(float) this->shadowWidth/2, 
+		(float) - this->shadowHeight/2, 
+		(float) this->shadowHeight/2, 
+		this->shadowNear, 
+		this->shadowFar
+	);
+	glm::mat4 shadowView = glm::lookAt(
+		this->position, 
+		this->position + this->direction, 
+		glm::vec3(0.0f, 1.0f, 0.0f)
+	);
 	glm::mat4 shadowTransform = shadowProjection * shadowView;
 	return shadowTransform;
+}
+
+void ShadowMap::drawDebugCube(const Shader& shader) {
+	if (this->debugCubeVAO == 0)
+    {
+		glGenVertexArrays(1, &this->debugCubeVAO);
+		glGenBuffers(1, &this->debugCubeVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, this->debugCubeVBO);
+		glBufferData(GL_ARRAY_BUFFER, cubePositions.size() * sizeof(glm::vec3), &cubePositions.front(), GL_STATIC_DRAW);
+		glBindVertexArray(this->debugCubeVAO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(0);
+		glBindVertexArray(0);
+    }
+	glm::mat4 ModelMat = glm::mat4(1.0f);
+	ModelMat = glm::scale(glm::translate(ModelMat, this->position), glm::vec3(0.25, 0.25, 0.25));
+	shader.setMat4("Model", ModelMat);
+
+	glBindVertexArray(this->debugCubeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	shader.Use();
 }
 
 void ShadowMap::drawDebugQuad(const Shader& shader) {

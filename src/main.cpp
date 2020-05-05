@@ -425,15 +425,15 @@ int main(int argc, char** argv)
 	);
 	lm->addDirectionLight(directionLight);
 	lm->addShadowMap(new ShadowMap(
-		//glm::vec3(0.0f, 5.0f, 0.0f),
+		//glm::vec3(0.0f, 20.0f, 0.0f),
 		camera->getPositionRef(),
 		directionLight->getDirectionRef(),
 		1080,
 		1080,
-		10,
-		10,
+		20,
+		20,
 		0.1f,
-		20.0f
+		25.0f
 	));
 	PointLight* pointLight = new PointLight(
 		glm::vec3(0.0f, 8.0f, 5.0f),
@@ -445,8 +445,22 @@ int main(int argc, char** argv)
 		0.35f,
 		0.44f
 	);
-	pointLight->addUpdateFunction("rotate", [](PointLight* pl) {
+	lm->addShadowCubeMap(new ShadowCubeMap(
+		pointLight->getPosition(),
+		//glm::vec3(0.0f, 8.0f, 5.0f),
+		1080,
+		1080,
+		0.1f,
+		15.0f
+	));
+	slot.scene->addUpdateFunction("plight-rotate", [](Scene* scene) {
+		PointLight* pl = scene->getLightManager()->getPointLights()[0];
 		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
+	});
+	slot.scene->addUpdateFunction("plight-shadow-follow", [](Scene* scene) {
+		PointLight* pl = scene->getLightManager()->getPointLights()[0];
+		ShadowCubeMap* shadow = scene->getLightManager()->getShadowCubeMaps()[0];
+		shadow->setPosition(pl->getPosition());
 	});
 	lm->addPointLight(pointLight);
 	SpotLight* spotLight = new SpotLight(
@@ -474,7 +488,7 @@ int main(int argc, char** argv)
 	slot.scene->setLightManager(lm);
 
 	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj"), aiProcess_FlipUVs)));
-	slot.render.setModelShader("nanosuit", "blinnPhongLighting");
+	slot.render.setModelShader("nanosuit", "pointShadows");
 
 	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
 	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
@@ -506,7 +520,7 @@ int main(int argc, char** argv)
 	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
 		->setScale(glm::vec3(10))
 	);
-	slot.render.setModelShader("floor", "directionalShadows");
+	slot.render.setModelShader("floor", "pointShadows");
 
 	//slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
 	//	->setPosition(glm::vec3(0, 10, -10))
@@ -515,8 +529,10 @@ int main(int argc, char** argv)
 	//);
 	//slot.render.setModelShader("wall", "BPLightingNorm");
 
-	slot.scene->setModel("backpack", (new Model( std::string("objects/test/Backpack/backpack.obj"))));
-	slot.render.setModelShader("backpack", "BPLightingNorm");
+	slot.scene->setModel("backpack", (new Model( std::string("objects/test/Backpack/backpack.obj")))
+		->setPosition(glm::vec3(0.0f, 2.0f, 3.0f))
+	);
+	slot.render.setModelShader("backpack", "pointShadows");
 
 	//slot.scene.setFBOManager(fbom)
 	//slot.render.setTBM(tbm);
@@ -576,6 +592,10 @@ int main(int argc, char** argv)
 		//Model* nanosuit = slot.scene->getModel("nanosuit");
 		//nanosuit->setRotation(glm::vec3(0.0f, nanosuit->getRotation().x + glfwGetTime() * 10, 0.0f));
 		//printf("nanosuit rotation %f, %f, %f\n", nanosuit->getRotation().x, nanosuit->getRotation().y, nanosuit->getRotation().z);
+
+		for (auto& updateFunction_it : slot.scene->getUpdateFunctions()) {
+			updateFunction_it.second(slot.scene);
+		}
         
         lastTime = currentTime;
         //break;

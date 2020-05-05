@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "shader.h"
+#include "glHelper.h"
+#include "VertexData.h"
 //#include <glm/gtc/type_ptr.hpp>
 
 class ShadowMap {
@@ -18,7 +20,7 @@ public:
 	///<param name="shadowHeight">The height of the orthographic projection matrix used to generate the shadow texture map.</param>
 	///<param name="shadowNear">The near bound of the orthographic projection matrix used to generate the shadow texture map.</param>
 	///<param name="shadowFar">The far bound of the orthographic projection matrix used to generate the shadow texture map.</param>
-	ShadowMap(const glm::vec3& position, const glm::vec3& direction, GLsizei resX, GLsizei resY, GLsizei shadowWidth, GLsizei shadowHeight, float shadowNear, float shadowFar);
+	ShadowMap(const glm::vec3 position, const glm::vec3 direction, GLsizei resX, GLsizei resY, GLsizei shadowWidth, GLsizei shadowHeight, float shadowNear, float shadowFar);
 
 	///<summary>Set the viewport dimensions to that of the shadowMap and bind the shadowbuffer
 	///<para>This should be called before the shadow pass.</para>
@@ -35,14 +37,15 @@ public:
 	///<summary>Get the texture that was created by the shadow pass.</summary>
 	GLuint getTexture() { return this->texture; }
 
+	void drawDebugCube(const Shader& shader);
 	void drawDebugQuad(const Shader& shader);
 
 
 private:
 	GLuint texture;
 	GLuint shadowBuffer;
-	GLuint debugVBO, debugVAO = 0;
+	GLuint debugVBO, debugCubeVBO, debugVAO = 0, debugCubeVAO = 0;
 	GLsizei shadowWidth, shadowHeight, shadowResX, shadowResY;
 	GLfloat shadowFar, shadowNear;
-	const glm::vec3& position, direction;
+	const glm::vec3 position, direction;
 };

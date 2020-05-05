@@ -34,6 +34,12 @@ public:
 	Camera* getActiveCamera() const;
 	void setActiveCamera(const int &activeCamera);
 	void addCamera(Camera* camera);
+	
+	std::unordered_map<std::string, std::function<void(Scene*)>> getUpdateFunctions() { return this->updateFunctions; }
+	void setUpdateFunctions(std::unordered_map<std::string, std::function<void(Scene*)>> updateFunctions) { this->updateFunctions = updateFunctions; }
+
+	void addUpdateFunction(const std::string& name, std::function<void(Scene*)> func) { this->updateFunctions.insert_or_assign(name, func); }
+	std::function<void(Scene*)> getUpdateFunction(const std::string& name) { return this->updateFunctions.at(name); }
 
 	void setSkybox(Skybox* skybox);
 	Skybox* getSkybox();
@@ -48,7 +54,7 @@ private:
 	std::map<std::string, Model*> models;
 	std::vector<std::string> transparentModels;
 	std::vector<std::string> opaqueModels;
-	std::vector<DrawObject*> drawObjects;
 	std::vector<Camera*> cameras;
+	std::unordered_map<std::string, std::function<void(Scene*)>> updateFunctions;
 	int activeCamera;
 };

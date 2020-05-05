@@ -25,12 +25,21 @@ static const GLuint LIGHTS_UNIFORM_BLOCK_BINDING_POINT = 2;
 public:
 	LightManager();
 
+	std::vector<PointLight*> getPointLights() { return this->pointLights; }
 	void addPointLight(PointLight* plight) { this->pointLights.push_back(plight); }
-	void addDirectionLight(DirectionLight* dlight) { this->directionLights.push_back(dlight); }
-	void addSpotLight(SpotLight* slight) { this->spotLights.push_back(slight); }
-	void addShadowMap(ShadowMap* shadowMap) { this->shadowMaps.push_back(shadowMap); }
 
+	void addDirectionLight(DirectionLight* dlight) { this->directionLights.push_back(dlight); }
+	std::vector<DirectionLight*> getDirectionLights() { return this->directionLights; }
+
+	void addSpotLight(SpotLight* slight) { this->spotLights.push_back(slight); }
+	std::vector<SpotLight*> getSpotLights() { return this->spotLights; }
+
+	void addShadowMap(ShadowMap* shadowMap) { this->shadowMaps.push_back(shadowMap); }
 	std::vector<ShadowMap*> getShadowMaps() { return this->shadowMaps; }
+
+	void addShadowCubeMap(ShadowCubeMap* shadowCubeMap) { this->shadowCubeMaps.push_back(shadowCubeMap); }
+	std::vector<ShadowCubeMap*> getShadowCubeMaps() { return this->shadowCubeMaps; }
+
 
 	void drawLights(const Shader& shader);
 

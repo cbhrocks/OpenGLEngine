@@ -67,53 +67,58 @@ struct Material {
 //object data
 uniform Material material;
 
-uniform sampler2D shadowMap;
+uniform samplerCube shadowCubeMap;
+uniform float shadowFar;
 
 in VS_OUT {
 	vec3 FragPos;
 	vec3 Normal;
 	vec2 TexCoords;
-    vec4 FragPosLightSpace;
 } fs_in;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+vec3 sampleOffsetDirections[20] = vec3[] (
+	vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+	vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+	vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+	vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+	vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
+
+float ShadowCalculation(vec3 fragPos, vec3 lightPos)
 {
-	// coords not passed through gl_position, so need to do perspective divide manually
-	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	// transform to range [0, 1]
-	projCoords = projCoords * 0.5 + 0.5;
-
+	// distance and direction from fragment position to light source
+	vec3 fragToLight = fragPos - lightPos;
 	// closest depth of any object retrieved from the shadowmap
-	float closestDepth = texture(shadowMap, projCoords.xy).r;
-	// depth of the current fragment
-	float currentDepth = projCoords.z;
+	float closestDepth = texture(shadowCubeMap, fragToLight).r;
 
-	// prevent shadow acne by applying a bias in the direction of the surface normal.
-	// the bias will change based on the angle between the light and the surface. max of 0.05, min of 0.005
-	float bias = max(0.05 * (1.0 - dot(fs_in.Normal, dlight[0].direction)), 0.005);
-	
+	// transform from texture range [0, 1] to [0, shadowFar].
+	closestDepth *= shadowFar;
+
+	float currentDepth = length(fragToLight);
+
 	//basic shadow calculation below.
+	//float bias = 0.05;
 	//float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
-	// PCF: average shadow texels for smooth shadows.
+	// PCF (percentage-closer filtering) below
 	float shadow = 0.0;
-	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-	for (int x = -1; x <= 1; ++x){
-		for (int y = -1; y <=1; ++y){
-			float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-		}
+	float bias   = 0.15;
+	int samples  = 20;
+	float viewDistance = length(camPos - fragPos);
+	float diskRadius = (1.0 + (viewDistance / shadowFar)) / 25.0; // scale radius based on view distance to object
+	for(int i = 0; i < samples; ++i)
+	{
+		float closestDepth = texture(shadowCubeMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+		closestDepth *= shadowFar;   // Undo mapping [0;1]
+		if(currentDepth - bias > closestDepth)
+			shadow += 1.0;
 	}
-
-	shadow /= 9.0;
-
-	if (projCoords.z > 1.0) {
-		shadow = 0.0;
-	}
-
+	shadow /= float(samples);  
+	
+	// PCF: average shadow texels for smooth shadows.
 	return shadow;
 }
 
@@ -128,13 +133,13 @@ void main()
    
     // get diffuse color for ambient and diffuse
     // final ambient
-    vec3 ambient = dlight[0].ambient * color;
+    vec3 ambient = plight[0].ambient * color;
 
     // light diffuse
-    vec3 lightDir = normalize(-dlight[0].direction);
+    vec3 lightDir = normalize(plight[0].position - fs_in.FragPos);
     float diff = max(dot(lightDir, normal), 0.0);
 	// final diffuse
-    vec3 diffuse = dlight[0].color * dlight[0].diffuse * diff;
+    vec3 diffuse = plight[0].color * plight[0].diffuse * diff;
 
     // light specular 
     vec3 viewDir = normalize(camPos - fs_in.FragPos);
@@ -144,12 +149,11 @@ void main()
 
 	// object specular
 	// final specular
-    vec3 specular = dlight[0].color * dlight[0].specular * spec;
+    vec3 specular = plight[0].color * plight[0].specular * spec;
     //vec3 specular = vec3(0.2) * spec;
 
-	float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
+	float shadow = ShadowCalculation(fs_in.FragPos, plight[0].position);
 	vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
-	//vec3 lighting = (diffuse) * color;
 
     FragColor = vec4(lighting, 1.0);
 }

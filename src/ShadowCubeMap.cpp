@@ -1,8 +1,8 @@
 #include "ShadowCubeMap.h"
 #include "glHelper.h"
 
-ShadowCubeMap::ShadowCubeMap(glm::vec3& position, GLuint width, GLuint height) :
-	position(position), shadowWidth(width), shadowHeight(height) 
+ShadowCubeMap::ShadowCubeMap(const glm::vec3 position, GLsizei resX, GLsizei resY, GLfloat shadowNear, GLfloat shadowFar) :
+	position(position), shadowResX(resX), shadowResY(resY), shadowNear(shadowNear), shadowFar(shadowFar)
 {
 	glGenFramebuffers(1, &this->shadowBuffer);
 	checkGLError("BasicLight::genShadowMap");
@@ -10,7 +10,7 @@ ShadowCubeMap::ShadowCubeMap(glm::vec3& position, GLuint width, GLuint height) :
 	glGenTextures(1, &this->texture);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, this->texture);
 	for (GLuint i = 0; i < 6; ++i) {
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, this->shadowWidth, this->shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, resX, resY, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	}
 	checkGLError("BasicLight::genShadowMap");
 
@@ -35,7 +35,7 @@ ShadowCubeMap::ShadowCubeMap(glm::vec3& position, GLuint width, GLuint height) :
 }
 
 void ShadowCubeMap::setActive() {
-	glViewport(0, 0, this->shadowWidth, this->shadowHeight);
+	glViewport(0, 0, this->shadowResX, this->shadowResY);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadowBuffer);
 	glClear(GL_DEPTH_BUFFER_BIT);
 }
@@ -44,18 +44,16 @@ void ShadowCubeMap::uploadUniforms(const Shader& shader) {
 	shader.Use();
 	std::vector<glm::mat4> transforms = this->getShadowTransforms();
 	for (int i = 0; i < transforms.size(); i++) {
-		shader.setMat4("shadowTransform[" + std::to_string(i) + "]", transforms.at(i));
+		shader.setMat4("shadowTransforms[" + std::to_string(i) + "]", transforms.at(i));
 	}
-	shader.setFloat("far", 25.0f);
-	shader.setVec3("lightPos", position);
+	shader.setFloat("shadowFar", this->shadowFar);
+	shader.setVec3("lightPos", this->position);
 	checkGLError("BasicLight::drawShadowMap -- upload matrices");
 }
 
 std::vector<glm::mat4> ShadowCubeMap::getShadowTransforms() {
-	float aspect = (float)this->shadowWidth / (float)this->shadowHeight;
-	float _near = 1.0f;
-	float _far = 25.0f;
-	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, _near, _far);
+	float aspect = (float)this->shadowResX / (float)this->shadowResY;
+	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, this->shadowNear, this->shadowFar);
 
 	std::vector<glm::mat4> shadowTransforms;
 	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
