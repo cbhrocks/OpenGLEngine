@@ -45,6 +45,18 @@
     <ClCompile Include="src\FBOManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ShadowCubeMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ShadowMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LightManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\counter.h">
@@ -95,6 +107,15 @@
     <ClInclude Include="src\FBOManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ShadowCubeMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ShadowMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\LightManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\basic.frag">
@@ -110,18 +131,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="src\shaders\light.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\light.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\normal.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\normal.geom">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\normal.vert">
       <Filter>Resource Files</Filter>
     </None>
     <None Include=".gitignore" />
@@ -173,15 +182,6 @@
     <None Include="src\shaders\explode.geom">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="src\shaders\faceNormal.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\faceNormal.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\faceNormal.geom">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="src\shaders\phongLighting.frag">
       <Filter>Resource Files</Filter>
     </None>
@@ -227,15 +227,6 @@
     <None Include="src\shaders\hdr2D.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="src\shaders\tbn.geom">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\tbn.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\tbn.vert">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="src\shaders\gaussianBlur2D.frag">
       <Filter>Resource Files</Filter>
     </None>
@@ -246,6 +237,54 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="src\shaders\bloom2D.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="BPLightingShadows.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\tbnLines.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\tbnLines.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\tbnLines.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\vertexNormalLines.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\vertexNormalLines.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\vertexNormalLines.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\faceNormalLines.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\faceNormalLines.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\faceNormalLines.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\gBuffer.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\deferred_shading.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\deferred_shading.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\gBuffer.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\directionalShadows.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\directionalShadows.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

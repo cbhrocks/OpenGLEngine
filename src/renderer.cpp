@@ -26,6 +26,9 @@ Renderer::Renderer(int width, int height) :
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
+
+	glViewport(0, 0, width, height);
+
 	checkGLError("Renderer::initialize");
 
 	this->setupUbo();
@@ -61,8 +64,9 @@ Renderer::Renderer(int width, int height) :
 		// lighting
 		{"shadowDepth", Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag")},
 		{"shadowCubeDepth", Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")},
-		{"shadowDebug", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1)},
+		{"shadowDebug", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1).Use().setInt("depthMap", 0)},
 		{"phongLighting", Shader("src/shaders/lighting.vert", "src/shaders/phongLighting.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
+		{"directionalShadows", Shader("src/shaders/directionalShadows.vert", "src/shaders/directionalShadows.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2).Use().setInt("shadowMap", 0)},
 		{"blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
 		{"BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)}
 	};
@@ -119,9 +123,10 @@ void Renderer::postRender(Scene* scene)
 void Renderer::render(Scene* scene)
 {
 	// render shadows
-	//if (this->shadowsEnabled) {
-	//	this->renderShadows(scene);
-	//}
+	if (this->shadowsEnabled) {
+		this->renderShadowMaps(scene);
+	}
+
 	// render all the models without forward rendering enabled
 	auto models = scene->getModels();
 
@@ -134,52 +139,49 @@ void Renderer::render(Scene* scene)
 	}
 	this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
 	this->gBuffer->copyDepth(0, this->width, this->height);
+
 	// render the models with forward rendering
 	for (auto &it : this->forwardRenderModels) {
 		Model* model = models.at(it.first);
 		const Shader& shader = this->shaders.at(it.second);
+
+		// upload shadow uniforms and bind shadow textures
+		std::vector<ShadowMap*> shadowMaps = scene->getLightManager()->getShadowMaps();
+		int i;
+		for (i = 0; i < shadowMaps.size(); i++) {
+			shadowMaps[i]->uploadUniforms(shader);
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, shadowMaps[i]->getTexture());
+		}
+
 		model->uploadUniforms(shader);
-		model->Draw(shader);
+		model->Draw(shader, i);
 	}
+
+	//for (ShadowMap* shadowMap : scene->getLightManager()->getShadowMaps()) {
+	//	shadowMap->drawDebugQuad(this->shaders["shadowDebug"]);
+	//}
+
 	// render lights for debug purposes
 	scene->getLightManager()->drawLights(this->shaders["light"]);
 }
 
-void Renderer::renderShadows(Scene* scene)
-{
-	scene->getLightManager()->drawShadowMaps([&, scene](const Shader& shader) {
-		std::map<std::string, Model*> models = scene->getModels();
-		for (auto &it = models.begin(); it != models.end(); ++it) {
-			it->second->uploadUniforms(shader);
-			it->second->Draw(shader);
-		}
-	});
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-}
-
-void Renderer::renderModels(Scene* scene)
+void Renderer::renderShadowMaps(Scene* scene)
 {
 	std::map<std::string, Model*> models = scene->getModels();
+	std::vector<ShadowMap*> shadowMaps = scene->getLightManager()->getShadowMaps();
+	for (auto shadowMap : shadowMaps) {
+		shadowMap->setActive();
+		shadowMap->uploadUniforms(this->shaders["shadowDepth"]);
+		for (auto model_it : models) {
+			model_it.second->uploadUniforms(this->shaders["shadowDepth"]);
+			model_it.second->Draw(this->shaders["shadowDepth"]);
+		}
+	}
 
-	std::map<float, Model*> sortedTransModels;
-	// draw all opaque models, remove translucent to sorted map
-	for (auto &it : models) {
-		if (it.second->getTransparent()) {
-			float distance = glm::length(scene->getActiveCamera()->getPosition() - it.second->getPosition());
-			sortedTransModels.insert(std::make_pair(distance, it.second));
-		}
-		else {
-			it.second->uploadUniforms();
-			it.second->Draw();
-		}
-	}
-	// draw all translucent models from back to front
-	for (auto &it = sortedTransModels.rbegin(); it != sortedTransModels.rend(); ++it) {
-		it->second->uploadUniforms();
-		it->second->Draw();
-	}
+	glViewport(0, 0, this->width, this->height);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void Renderer::renderLights(Scene* scene)

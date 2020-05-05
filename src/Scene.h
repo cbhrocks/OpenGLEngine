@@ -10,6 +10,7 @@
 #include "TextureManager.h"
 #include "FBOManager.h"
 #include "camera.h"
+#include "LightManager.h"
 
 class Scene {
 public:

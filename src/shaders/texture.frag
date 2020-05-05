@@ -1,10 +1,10 @@
 #version 330
 
 struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-	sampler2D normal;
-	sampler2D height;
+    sampler2D texture_diffuse;
+    sampler2D texture_specular;
+	sampler2D texture_normal;
+	sampler2D texture_height;
 };
 
 uniform Material material;
@@ -15,5 +15,5 @@ out vec4 FragColor;
 
 void main()
 {
-	FragColor = texture(material.diffuse, TexCoords);
+	FragColor = texture(material.texture_diffuse, TexCoords);
 }

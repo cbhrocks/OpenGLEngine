@@ -17,7 +17,7 @@ class Shader
 		Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath = nullptr);
 
         // Uses the current shader
-		const void Use() const;
+		const Shader& Use() const;
 		const GLuint getId() const;
 
 		// utility uniform functions

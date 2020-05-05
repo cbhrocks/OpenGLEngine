@@ -28,7 +28,8 @@ class Model
         // constructor, expects a filepath to a 3D model.
         // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 		Model(
-			std::string const path
+			std::string const path,
+			unsigned int assimp_flags = 0
 		);
 		//constructor expects vertex data, indices, and textures
 		Model(
@@ -36,12 +37,7 @@ class Model
 		);
 
         // drastd::ws the model, and thus all its meshes
-		void Draw();
-
-		void Draw(const Shader& shader);
-
-		void uploadUniforms();
-
+		void Draw(const Shader& shader, GLuint baseUnit = 0);
 		void uploadUniforms(const Shader& shader);
 
 		const Shader* getShader();

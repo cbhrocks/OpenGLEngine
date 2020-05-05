@@ -19,6 +19,8 @@
 #include "glHelper.h"
 #include "vertexData.h"
 #include "TextureManager.h"
+#include "ShadowMap.h"
+#include "ShadowCubeMap.h"
 
 class ILight {
 public:
@@ -113,6 +115,7 @@ class DirectionLight : public Light
 		);
 
 		glm::vec3 getDirection() const { return this->direction; }
+		const glm::vec3& getDirectionRef() const { return this->direction; }
 		void setDirection(glm::vec3 direction) { this->direction = direction; }
 
 		void addUpdateFunction(const std::string& name, std::function<void(DirectionLight*)> lf);
@@ -170,35 +173,3 @@ private:
 };
 
 
-class LightManager
-{
-static const GLuint LIGHTS_UNIFORM_BLOCK_BINDING_POINT = 2;
-public:
-	GLuint ubo;
-	GLuint VAO = 0, VBO;
-	std::vector<PointLight> pointLights;
-	std::vector<DirectionLight> directionLights;
-	std::vector<SpotLight> spotLights;
-	Texture shadowDirectionText;
-	Texture shadowCubeText;
-
-	LightManager();
-
-	void addPointLight(PointLight& plight);
-
-	void addDirectionLight(DirectionLight& dlight);
-
-	void addSpotLight(SpotLight& slight);
-
-	void drawLights(const Shader& shader);
-
-	void uploadLightUniforms(Shader shader);
-
-	void createUniformBlock();
-
-	void updateUniformBlock();
-
-	void runUpdateFuncs();
-
-	void drawShadowMaps(std::function<void (const Shader& shader)> draw);
-};

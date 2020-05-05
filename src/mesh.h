@@ -100,10 +100,10 @@ class Mesh {
         }
 
         // render the mesh
-        void Draw(const Shader& shader) 
+        void Draw(const Shader& shader, GLuint baseUnit = 0) 
         {
             // bind appropriate textures
-			GLuint unit = 0;
+			GLuint unit = baseUnit;
 			GLuint ambientNr = 0;
 			GLuint diffuseNr = 0;
 			GLuint specularNr = 0;
@@ -140,7 +140,7 @@ class Mesh {
                 glBindTexture(GL_TEXTURE_2D, texture);
 				shader.setInt("material.texture_reflect" + (reflectNr++ > 0 ? std::to_string(reflectNr) : ""), unit++);
 			}
-			checkGLError("Draw bind textures");
+			checkGLError("Mesh::Draw bind textures");
 
 
 			// set material coefficiants
@@ -151,6 +151,7 @@ class Mesh {
 			shader.setFloat("material.opacity", this->material.opacity);
 			shader.setFloat("material.reflectivity", this->material.reflectivity);
 			shader.setFloat("material.refractionIndex", this->material.refractionIndex);
+			checkGLError("Mesh::Draw bind constants");
 
             // draw mesh
             glBindVertexArray(VAO);

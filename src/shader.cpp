@@ -104,9 +104,10 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
 }
 
 // Uses the current shader
-const void Shader::Use() const
+const Shader& Shader::Use() const
 {
 	glUseProgram(this->Program);
+	return *this;
 }
 const GLuint Shader::getId() const
 {

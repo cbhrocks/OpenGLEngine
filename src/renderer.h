@@ -20,7 +20,7 @@ class Renderer
 		void preRender(Scene* scene);
 		void postRender(Scene* scene);
 		void render(Scene* scene);
-		void renderShadows(Scene* scene);
+		void renderShadowMaps(Scene* scene);
 		void renderModels(Scene* scene);
 		void renderLights(Scene* scene);
 		void renderSkybox(Scene* scene);

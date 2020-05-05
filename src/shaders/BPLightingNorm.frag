@@ -111,11 +111,12 @@ void main()
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
 	// object specular
-	vec3 specMap = texture(material.texture_specular, fs_in.TexCoords).rgb;
+	float specMap = texture(material.texture_specular, fs_in.TexCoords).r;
 	// final specular
-    vec3 specular = vec3(plight[0].specular) * specMap * spec;
+    vec3 specular = plight[0].color * plight[0].specular * specMap * spec;
     //vec3 specular = vec3(0.2) * spec;
 
     FragColor = vec4(ambient + diffuse + specular, 1.0);
     //FragColor = normalize(vec4(fs_in.TBN*normal, 1.0));
+    //FragColor = vec4(specMap, 1.0);
 }

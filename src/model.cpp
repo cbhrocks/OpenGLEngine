@@ -3,11 +3,12 @@
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
 Model::Model(
-	std::string const path
+	std::string const path,
+	unsigned int assimp_flags
 ) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | assimp_flags);
 	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 	{
@@ -26,23 +27,12 @@ Model::Model(
 }
 
 // draws the model, and thus all its meshes
-void Model::Draw()
-{
-	this->Draw(*this->shader);
-}
-
-void Model::Draw(const Shader& shader)
+void Model::Draw(const Shader& shader, GLuint baseUnit)
 {
 	shader.Use();
 	for (unsigned int i = 0; i < meshes.size(); i++)
-		meshes[i]->Draw(shader);
+		meshes[i]->Draw(shader, baseUnit);
 }
-
-void Model::uploadUniforms()
-{
-	this->uploadUniforms(*this->shader);
-}
-
 void Model::uploadUniforms(const Shader& shader)
 {
 	checkGLError("Model::uploadUniforms -- start");
@@ -243,6 +233,7 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 std::vector<GLuint> Model::loadMaterialTextures(const std::string& path, aiMaterial *material, aiTextureType type)
 {
 	//std::vector<Texture> textures;
+	stbi_set_flip_vertically_on_load(false);
 	std::vector<GLuint> textures;
 	for (unsigned int i = 0; i < material->GetTextureCount(type); i++)
 	{
@@ -270,7 +261,7 @@ std::vector<GLuint> Model::loadMaterialTextures(const std::string& path, aiMater
 
 			switch (channel_num)
 			{
-				case 1: format = GL_ALPHA;     break;
+				case 1: format = GL_RED;     break;
 				//case 2 : format = GL_LUMINANCE; break;
 				case 3: format = GL_RGB;       break;
 				case 4: format = GL_RGBA;      break;
@@ -280,7 +271,7 @@ std::vector<GLuint> Model::loadMaterialTextures(const std::string& path, aiMater
 			glBindTexture(GL_TEXTURE_2D, textureId);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 

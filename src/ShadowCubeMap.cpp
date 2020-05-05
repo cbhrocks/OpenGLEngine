@@ -1,8 +1,8 @@
 #include "ShadowCubeMap.h"
 #include "glHelper.h"
 
-ShadowCubeMap::ShadowCubeMap(GLuint width, GLuint height, PointLight& light) :
-	shadowWidth(width), shadowHeight(height), light(light)
+ShadowCubeMap::ShadowCubeMap(glm::vec3& position, GLuint width, GLuint height) :
+	position(position), shadowWidth(width), shadowHeight(height) 
 {
 	glGenFramebuffers(1, &this->shadowBuffer);
 	checkGLError("BasicLight::genShadowMap");
@@ -47,7 +47,7 @@ void ShadowCubeMap::uploadUniforms(const Shader& shader) {
 		shader.setMat4("shadowTransform[" + std::to_string(i) + "]", transforms.at(i));
 	}
 	shader.setFloat("far", 25.0f);
-	shader.setVec3("lightPos", this->light.getPosition());
+	shader.setVec3("lightPos", position);
 	checkGLError("BasicLight::drawShadowMap -- upload matrices");
 }
 
@@ -58,11 +58,11 @@ std::vector<glm::mat4> ShadowCubeMap::getShadowTransforms() {
 	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, _near, _far);
 
 	std::vector<glm::mat4> shadowTransforms;
-	shadowTransforms.push_back(shadowProj * glm::lookAt(this->light.getPosition(), this->light.getPosition() + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
-	shadowTransforms.push_back(shadowProj * glm::lookAt(this->light.getPosition(), this->light.getPosition() + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
-	shadowTransforms.push_back(shadowProj * glm::lookAt(this->light.getPosition(), this->light.getPosition() + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
-	shadowTransforms.push_back(shadowProj * glm::lookAt(this->light.getPosition(), this->light.getPosition() + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)));
-	shadowTransforms.push_back(shadowProj * glm::lookAt(this->light.getPosition(), this->light.getPosition() + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
-	shadowTransforms.push_back(shadowProj * glm::lookAt(this->light.getPosition(), this->light.getPosition() + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)));
+	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(shadowProj * glm::lookAt(this->position, this->position + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
 	return shadowTransforms;
 }

@@ -3,12 +3,13 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "light.h"
+#include "shader.h"
 //#include <glm/gtc/type_ptr.hpp>
 
 class ShadowCubeMap {
 public:
-	ShadowCubeMap(GLuint width, GLuint height, PointLight& light);
+
+	ShadowCubeMap(glm::vec3& position, GLuint width, GLuint height);
 
 	///<summary>Set the viewport dimensions to that of the shadowMap and bind the shadowbuffer
 	///<para>This should be called before the shadow pass.</para>
@@ -25,7 +26,7 @@ private:
 	GLuint texture;
 	GLuint shadowBuffer;
 	GLsizei shadowWidth, shadowHeight;
-	PointLight& light;
+	glm::vec3& position;
 
 	///<summary>return a vector of all the transforms that need to be applied to the shadowmap based on its light's position.</summary>
 	std::vector<glm::mat4> getShadowTransforms();
