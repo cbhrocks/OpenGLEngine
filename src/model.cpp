@@ -20,7 +20,7 @@ Model::Model(
 }
 
 Model::Model(
-	std::vector<std::unique_ptr<Mesh>> meshes
+	std::vector<std::unique_ptr<IDrawObj>>& meshes
 ) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
 	std::move(meshes.begin(), meshes.end(), std::back_inserter(this->meshes));
@@ -225,7 +225,7 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 	mat.textureHeight = loadMaterialTextures(path, material, aiTextureType_AMBIENT);
 
 	// return a mesh object created from the extracted mesh data
-	meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, mat)));
+	meshes.push_back(std::unique_ptr<IDrawObj>((IDrawObj*)new Mesh(vertices, indices, mat)));
 }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.

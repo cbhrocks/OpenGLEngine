@@ -97,16 +97,3 @@ void LightManager::updateUniformBlock()
 		size = this->directionLights.at(i)->updateUniformBlock(this->ubo, size);
 	}
 }
-
-void LightManager::runUpdateFuncs()
-{
-	for (int i = 0; i < this->pointLights.size(); i++) {
-		this->pointLights.at(i)->runUpdateFuncs();
-	}
-	for (int i = 0; i < this->spotLights.size(); i++) {
-		this->spotLights.at(i)->runUpdateFuncs();
-	}
-	for (int i = 0; i < this->directionLights.size(); i++) {
-		this->directionLights.at(i)->runUpdateFuncs();
-	}
-}

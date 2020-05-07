@@ -19,8 +19,56 @@
 #include "Scene.h"
 #include "LightManager.h"
 #include "counter.h"
+#include "DrawObj.h"
+#include "Sphere.h"
 
-using namespace std;
+// opengl function for handling debug output
+void APIENTRY glDebugOutput(GLenum source, 
+                            GLenum type, 
+                            unsigned int id, 
+                            GLenum severity, 
+                            GLsizei length, 
+                            const char *message, 
+                            const void *userParam)
+{
+    // ignore non-significant error/warning codes
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+
+    std::cout << "---------------" << std::endl;
+    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+
+    switch (source)
+    {
+        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+    } std::cout << std::endl;
+
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
+        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+    } std::cout << std::endl;
+    
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+    } std::cout << std::endl;
+    std::cout << std::endl;
+}
 
 typedef struct
 {
@@ -321,20 +369,16 @@ int main(int argc, char** argv)
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// initialize opengl version
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    //scene.currentRes[0] = RESOLUTION;
-    //scene.currentRes[1] = RESOLUTION;
-
-    //printf("res: %d x %d\n", scene.currentRes[0], scene.currentRes[1]);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
     glfwSetMonitorCallback(monitor_callback);
 
     monitor = glfwGetPrimaryMonitor();
-
     if (false)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -376,12 +420,20 @@ int main(int argc, char** argv)
     glfwMakeContextCurrent(window);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        cout << "Failed to initialize GLAD" << std::endl;
+        std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-    cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << endl;
-    cout << "opengl version: " << glGetString(GL_VERSION) << endl;
+    std::cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << std::endl;
+    std::cout << "opengl version: " << glGetString(GL_VERSION) << std::endl;
 
+	// initialize debug output must be after glad has been loaded
+	GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	}
 
     glfwSwapInterval(1);
 
@@ -424,9 +476,8 @@ int main(int argc, char** argv)
 		1.0f
 	);
 	lm->addDirectionLight(directionLight);
-	lm->addShadowMap(new ShadowMap(
-		//glm::vec3(0.0f, 20.0f, 0.0f),
-		camera->getPositionRef(),
+	ShadowMap* shadowMap = new ShadowMap(
+		glm::vec3(0.0f, 20.0f, 0.0f),
 		directionLight->getDirectionRef(),
 		1080,
 		1080,
@@ -434,7 +485,8 @@ int main(int argc, char** argv)
 		20,
 		0.1f,
 		25.0f
-	));
+	);
+	lm->addShadowMap(shadowMap);
 	PointLight* pointLight = new PointLight(
 		glm::vec3(0.0f, 8.0f, 5.0f),
 		glm::vec3(1, 1, 1),
@@ -476,8 +528,9 @@ int main(int argc, char** argv)
 		glm::cos(glm::radians(12.5f)),
 		glm::cos(glm::radians(17.5f))
 	);
-	spotLight->addUpdateFunction("followCamera", [&, slot](SpotLight* sl) {
-		Camera* camera = slot.scene->getActiveCamera();
+	slot.scene->addUpdateFunction("slight-follow-camera", [](Scene* scene) {
+		SpotLight* sl = scene->getLightManager()->getSpotLights()[0];
+		Camera* camera = scene->getActiveCamera();
 		sl->setPosition(camera->position);
 		sl->setDirection(camera->front);
 	});
@@ -488,7 +541,7 @@ int main(int argc, char** argv)
 	slot.scene->setLightManager(lm);
 
 	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj"), aiProcess_FlipUVs)));
-	slot.render.setModelShader("nanosuit", "pointShadows");
+	slot.render.setModelShader("nanosuit", "directionalShadows");
 
 	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
 	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
@@ -520,19 +573,27 @@ int main(int argc, char** argv)
 	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
 		->setScale(glm::vec3(10))
 	);
-	slot.render.setModelShader("floor", "pointShadows");
+	slot.render.setModelShader("floor", "directionalShadows");
 
-	//slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
-	//	->setPosition(glm::vec3(0, 10, -10))
-	//	->setScale(glm::vec3(10))
-	//	->setRotation(glm::vec3(90, 0, 0))
-	//);
+	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
+		->setPosition(glm::vec3(0, 10, -10))
+		->setScale(glm::vec3(10))
+		->setRotation(glm::vec3(90, 0, 0))
+	);
 	//slot.render.setModelShader("wall", "BPLightingNorm");
 
 	slot.scene->setModel("backpack", (new Model( std::string("objects/test/Backpack/backpack.obj")))
 		->setPosition(glm::vec3(0.0f, 2.0f, 3.0f))
 	);
-	slot.render.setModelShader("backpack", "pointShadows");
+	slot.render.setModelShader("backpack", "directionalShadows");
+
+	std::vector<std::unique_ptr<IDrawObj>> sphereMeshes;
+	sphereMeshes.push_back(std::make_unique<Sphere>());
+	Model* sphere = new Model(sphereMeshes);
+	sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
+
+	slot.scene->setModel("Sphere", sphere);
+	slot.render.setModelShader("Sphere", "basic");
 
 	//slot.scene.setFBOManager(fbom)
 	//slot.render.setTBM(tbm);
@@ -584,6 +645,7 @@ int main(int argc, char** argv)
 		//slot.render.renderFaceNormalLines(slot.scene);
 		//slot.render.renderTBNLines(slot.scene);
 		//slot.render.renderDepth(slot.scene);
+		slot.render.renderDebugTexture(gBuffer->gNormal);
 
         glfwSwapBuffers(slot.window);
 

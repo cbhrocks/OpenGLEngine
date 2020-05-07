@@ -32,17 +32,10 @@ PointLight::PointLight(
 	this->color = color;
 }
 
-void PointLight::addUpdateFunction(const std::string& name, std::function<void(PointLight*)> lf)
-{
-	this->updateFuncs[name] = lf;
-}
-
-void PointLight::runUpdateFuncs()
-{
-	for (std::map<std::string, std::function<void(PointLight*)>>::iterator it = this->updateFuncs.begin(); it != this->updateFuncs.end(); ++it)
-	{
-		it->second(this);
-	}
+const float PointLight::getRadius() {
+	float lightMax = std::fmaxf(std::fmaxf(this->color.r, this->color.g), this->color.b);
+	float radius = (-this->linear + std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * lightMax))) / (2 * quadratic);
+	return radius;
 }
 
 void PointLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
@@ -94,19 +87,6 @@ DirectionLight::DirectionLight(
 {
 }
 
-void DirectionLight::addUpdateFunction(const std::string& name, std::function<void(DirectionLight*)> lf)
-{
-	this->updateFuncs[name] = lf;
-}
-
-void DirectionLight::runUpdateFuncs()
-{
-	for (std::map<std::string, std::function<void(DirectionLight*)>>::iterator it = this->updateFuncs.begin(); it != this->updateFuncs.end(); ++it)
-	{
-		it->second(this);
-	}
-}
-
 void DirectionLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
 {
 	shader.setVec3((this->prefix + "light[" + lightNum + "].color"), this->color);
@@ -152,19 +132,6 @@ SpotLight::SpotLight(
 	PointLight(position, color, ambient, diffuse, specular, constant, linear, quadratic, prefix),
 	direction(direction), cutOff(cutOff), outerCutOff(outerCutOff)
 {
-}
-
-void SpotLight::addUpdateFunction(const std::string& name, std::function<void(SpotLight*)> lf)
-{
-	this->updateFuncs[name] = lf;
-}
-
-void SpotLight::runUpdateFuncs()
-{
-	for (std::map<std::string, std::function<void(SpotLight*)>>::iterator it = this->updateFuncs.begin(); it != this->updateFuncs.end(); ++it)
-	{
-		it->second(this);
-	}
 }
 
 void SpotLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const

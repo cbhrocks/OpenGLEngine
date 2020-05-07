@@ -17,9 +17,11 @@
 #include <vector>
 
 #include "stb_image.h"
-#include "mesh.h"
+#include "glHelper.h"
 #include "shader.h"
 #include "TextureManager.h"
+#include "DrawObj.h"
+#include "mesh.h"
 
 class Model 
 {
@@ -33,7 +35,7 @@ class Model
 		);
 		//constructor expects vertex data, indices, and textures
 		Model(
-			std::vector<std::unique_ptr<Mesh>> meshes
+			std::vector<std::unique_ptr<IDrawObj>>& meshes
 		);
 
         // drastd::ws the model, and thus all its meshes
@@ -56,7 +58,7 @@ class Model
 		Model* setRotation(glm::vec3 rotation);
 
     private:
-        std::vector<std::unique_ptr<Mesh>> meshes;
+        std::vector<std::unique_ptr<IDrawObj>> meshes;
         std::map<std::string, Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
         std::string directory; //the directory that the model is loaded from.
 		glm::vec3 position, scale, rotation; //the world location attributes of the model.

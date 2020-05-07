@@ -59,7 +59,6 @@ class Light: public ILight
 		const std::string prefix;
 		GLuint shadowFBO;
 		Texture shadowTexture;
-		std::map<std::string, std::function<void(Light*)>> updateFuncs;
 };
 
 class PointLight : public Light
@@ -89,8 +88,10 @@ class PointLight : public Light
 		const Model* getModel() { return this->model; }
 		void setModel(Model* model) { this->model = model; }
 
-		void addUpdateFunction(const std::string& name, std::function<void(PointLight*)> lf);
-		void runUpdateFuncs();
+		///<summary>gets the radius of sphere affected by this point light.
+		///<para>This is done by solving for when the attenuation function is equal to a number close to 0. 
+		///</summary>
+		const float getRadius();
 
 		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 		GLuint updateUniformBlock(GLuint ubo, GLuint start);
@@ -117,9 +118,6 @@ class DirectionLight : public Light
 		glm::vec3 getDirection() const { return this->direction; }
 		const glm::vec3& getDirectionRef() const { return this->direction; }
 		void setDirection(glm::vec3 direction) { this->direction = direction; }
-
-		void addUpdateFunction(const std::string& name, std::function<void(DirectionLight*)> lf);
-		void runUpdateFuncs();
 
 		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 		GLuint updateUniformBlock(GLuint ubo, GLuint start);
@@ -159,10 +157,6 @@ class SpotLight : public PointLight
 
 		float getOuterCutOff() const { return this->outerCutOff; }
 		void setOuterCutOff(float outerCutOff) { this->outerCutOff = outerCutOff; }
-
-		void addUpdateFunction(const std::string& name, std::function<void(SpotLight*)> lf);
-
-		void runUpdateFuncs();
 
 		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
 

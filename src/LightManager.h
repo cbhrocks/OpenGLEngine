@@ -49,8 +49,6 @@ public:
 
 	void updateUniformBlock();
 
-	void runUpdateFuncs();
-
 private:
 	GLuint ubo;
 	GLuint VAO = 0, VBO;

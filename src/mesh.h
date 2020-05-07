@@ -1,5 +1,4 @@
-#ifndef MESH_H
-#define MESH_H
+#pragma once
 
 #include <glad/glad.h> // holds all OpenGL type declarations
 
@@ -14,41 +13,10 @@
 
 #include "shader.h"
 #include "glHelper.h"
-#include "TextureManager.h"
+#include "vertexData.h"
+#include "DrawObj.h"
 
-// A great thing about structs is that their memory layout is sequential for all its items.
-// The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
-// again translates to 3/2 floats which translates to a byte array.
-struct VertexData {
-    // position
-    glm::vec3 Position;
-    // normal
-    glm::vec3 Normal;
-    // texCoords
-    glm::vec2 uv;
-    // tangent
-    glm::vec3 Tangent;
-    // bitangent
-    glm::vec3 Bitangent;
-};
-
-struct Material {
-	glm::vec4 AmbientColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 DiffuseColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 SpecularColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	float Shininess = 0.0f;
-	float opacity = 1.0f;
-	float reflectivity = 0.0f;
-	float refractionIndex = 1.0;
-	std::vector<GLuint> textureAmbient;
-	std::vector<GLuint> textureDiffuse;
-	std::vector<GLuint> textureSpecular;
-	std::vector<GLuint> textureNormal;
-	std::vector<GLuint> textureHeight;
-	std::vector<GLuint> textureReflect;
-};
-
-class Mesh {
+class Mesh : public IDrawObj {
     public:
 
         /*  Functions  */
@@ -156,6 +124,11 @@ class Mesh {
             // draw mesh
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+			for (int i = baseUnit; i <= unit; i++) {
+				glActiveTexture(GL_TEXTURE0 + unit);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
             checkGLError("Mesh::Draw draw VAO");
         }
 
@@ -170,4 +143,3 @@ class Mesh {
         std::vector<VertexData> vertices;
         std::vector<GLuint> indices;
 };
-#endif

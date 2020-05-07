@@ -33,30 +33,35 @@ class Renderer
 		void renderTBNLines(Scene* scene);
 		void renderVertexFaceLines(Scene* scene);
 		void renderDepth(Scene* scene);
+		void renderDebugTexture(GLuint texture);
 
 		void toggleWireframeMode();
 
-		// getter and setters
-		FBOManagerI* getTBM() const;
-		void setTBM(FBOManagerI* tbm);
-
-		GBuffer* getGBuffer() const;
-		void setGBuffer(GBuffer* gBuffer);
-
-		void setTime(float time);
-		float getTime() const;
-
-		void setGammaCorrection(bool gamma);
-		bool getGammaCorrection() const;
-
-		void setExposure(float exposure);
-		float getExposure() const;
-
-		void setBloom(bool bloom);
-		bool getBloom() const;
-
-		void setRes(int width, int height);
 		void updateUbo();
+
+		// getter and setters
+		FBOManagerI* getTBM() const { return this->tbm; };
+		void setTBM(FBOManagerI* tbm) { this->tbm = tbm; };
+
+		GBuffer* getGBuffer() const { return this->gBuffer; };
+		void setGBuffer(GBuffer* gBuffer) { this->gBuffer = gBuffer; };
+
+		void setTime(float time) { this->time = time; }
+		float getTime() const { return this->time; }
+
+		void setGammaCorrection(bool gamma) { this->gammaCorrection = gamma; }
+		bool getGammaCorrection() const { return this->gammaCorrection; }
+
+		void setExposure(float exposure) { this->exposure = exposure; }
+		float getExposure() const { return this->exposure; }
+
+		void setBloom(bool bloom) { this->bloom = bloom; }
+		bool getBloom() const { return this->bloom; }
+
+		void setRes(int width, int height) {
+			glViewport(0, 0, this->width, this->height);
+			//this->tbm->setDimensions(width, height);
+		}
 
 		void setModelShader(std::string model, std::string shader) {
 			this->forwardRenderModels.insert_or_assign(model, shader);
@@ -64,6 +69,7 @@ class Renderer
 
     private:
 		GLuint ubo;
+		GLuint debugVAO = 0, debugVBO;
 		FBOManagerI* tbm;
 		GBuffer* gBuffer;
 		std::unordered_map<std::string, const Shader> shaders;

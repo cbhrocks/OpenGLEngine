@@ -39,6 +39,7 @@ Renderer::Renderer(int width, int height) :
 		{"faceNormalLines", Shader("src/shaders/faceNormalLines.vert", "src/shaders/faceNormalLines.frag", "src/shaders/faceNormalLines.geom").setUniformBlock("Camera", 1) },
 		{"tbnLines", Shader("src/shaders/tbnLines.vert", "src/shaders/tbnLines.frag", "src/shaders/tbnLines.geom").setUniformBlock("Camera", 1)},
 		{"depth", Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1)},
+		{"debugTextureQuad", Shader("src/shaders/debugTextureQuad.vert", "src/shaders/debugTextureQuad.frag").Use().setInt("textureUnit", 0)},
 		// post processing
 		{"shader2D", Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0)},
 		{"gBlur2D", Shader("src/shaders/gaussianBlur2D.vert", "src/shaders/gaussianBlur2D.frag").setUniformBlock("Scene", 0)},
@@ -106,10 +107,7 @@ Renderer::Renderer(int width, int height) :
 void Renderer::preRender(Scene* scene)
 {
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	// run any functions to update position based on time
-	scene->getLightManager()->runUpdateFuncs();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// update uniform block objects for use during shaders
 	this->updateUbo();
@@ -132,15 +130,15 @@ void Renderer::render(Scene* scene)
 	// render all the models without forward rendering enabled
 	auto models = scene->getModels();
 
-	this->gBuffer->setActive();
-	for (auto &it : models) {
-		if (this->forwardRenderModels.count(it.first) < 1) {
-			it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
-			it.second->Draw(this->shaders["gBufferGeometry"]);
-		}
-	}
-	this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
-	this->gBuffer->copyDepth(0, this->width, this->height);
+	//this->gBuffer->setActive();
+	//for (auto &it : models) {
+	//	if (this->forwardRenderModels.count(it.first) < 1) {
+	//		it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
+	//		it.second->Draw(this->shaders["gBufferGeometry"]);
+	//	}
+	//}
+	//this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
+	//this->gBuffer->copyDepth(0, this->width, this->height);
 
 	// render the models with forward rendering
 	for (auto &it : this->forwardRenderModels) {
@@ -166,11 +164,6 @@ void Renderer::render(Scene* scene)
 		model->uploadUniforms(shader);
 		model->Draw(shader, textureNum);
 	}
-
-	//draw shadow depth quad
-	//for (ShadowMap* shadowMap : scene->getLightManager()->getShadowMaps()) {
-	//	shadowMap->drawDebugQuad(this->shaders["shadowDebug2D"]);
-	//}
 
 	// render lights for debug purposes
 	scene->getLightManager()->drawLights(this->shaders["light"]);
@@ -200,7 +193,7 @@ void Renderer::renderShadowMaps(Scene* scene)
 
 	glViewport(0, 0, this->width, this->height);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Renderer::renderLights(Scene* scene)
@@ -255,6 +248,39 @@ void Renderer::renderDepth(Scene* scene) {
 	}
 }
 
+void Renderer::renderDebugTexture(GLuint textureID) {
+	if (this->debugVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &this->debugVAO);
+        glGenBuffers(1, &this->debugVBO);
+        glBindVertexArray(this->debugVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, this->debugVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		//cleanup
+		//glDeleteBuffers(1, &quadVBO);
+    }
+	this->shaders["debugTextureQuad"].Use();
+	glViewport(this->width * 0.7, this->height * 0.1, this->width * 0.2, this->height * 0.2);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+    glBindVertexArray(this->debugVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+	glViewport(0, 0, this->width, this->height);
+}
+
 void Renderer::toggleWireframeMode()
 {
 	GLint polyMode;
@@ -273,29 +299,6 @@ void Renderer::toggleWireframeMode()
 }
 
 // getter and setters
-
-FBOManagerI* Renderer::getTBM() const { return this->tbm; }
-void Renderer::setTBM(FBOManagerI* tbm) { this->tbm = tbm; }
-
-GBuffer* Renderer::getGBuffer() const { return this->gBuffer; }
-void Renderer::setGBuffer(GBuffer* gBuffer) { this->gBuffer = gBuffer; }
-
-void Renderer::setTime(float time) { this->time = time; }
-float Renderer::getTime() const { return this->time; }
-
-void Renderer::setGammaCorrection(bool gamma) { this->gammaCorrection = gamma; }
-bool Renderer::getGammaCorrection() const { return this->gammaCorrection; }
-
-void Renderer::setExposure(float exposure) { this->exposure = exposure; }
-float Renderer::getExposure() const { return this->exposure; }
-
-void Renderer::setBloom(bool bloom) { this->bloom = bloom; }
-bool Renderer::getBloom() const { return this->bloom; }
-
-void Renderer::setRes(int width, int height) {
-	glViewport(0, 0, this->width, this->height);
-	this->tbm->setDimensions(width, height);
-}
 
 void Renderer::updateUbo() {
 	glBindBuffer(GL_UNIFORM_BUFFER, this->ubo);
