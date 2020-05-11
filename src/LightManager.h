@@ -43,8 +43,6 @@ public:
 
 	void drawLights(const Shader& shader);
 
-	void uploadLightUniforms(Shader shader);
-
 	void createUniformBlock();
 
 	void updateUniformBlock();

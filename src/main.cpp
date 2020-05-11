@@ -21,6 +21,7 @@
 #include "counter.h"
 #include "DrawObj.h"
 #include "Sphere.h"
+#include "Icosphere.h"
 
 // opengl function for handling debug output
 void APIENTRY glDebugOutput(GLenum source, 
@@ -187,6 +188,12 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
            //get_button_name(button),
            get_mods_name(mods),
            get_action_name(action));
+
+	switch (button) {
+	case GLFW_MOUSE_BUTTON_1:
+		if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
 }
 
 static void scroll_callback(GLFWwindow* window, double x, double y)
@@ -541,7 +548,7 @@ int main(int argc, char** argv)
 	slot.scene->setLightManager(lm);
 
 	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj"), aiProcess_FlipUVs)));
-	slot.render.setModelShader("nanosuit", "directionalShadows");
+	//slot.render.setModelShader("nanosuit", "directionalShadows");
 
 	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
 	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
@@ -587,13 +594,17 @@ int main(int argc, char** argv)
 	);
 	slot.render.setModelShader("backpack", "directionalShadows");
 
-	std::vector<std::unique_ptr<IDrawObj>> sphereMeshes;
-	sphereMeshes.push_back(std::make_unique<Sphere>());
-	Model* sphere = new Model(sphereMeshes);
-	sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
+	//std::vector<std::unique_ptr<IDrawObj>> sphereMeshes;
+	//sphereMeshes.push_back(std::make_unique<Sphere>(1, 36, 18, false));
+	//Model* sphere = new Model(sphereMeshes);
+	//sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
+	//slot.scene->setModel("Sphere", sphere);
+	//slot.render.setModelShader("Sphere", "material");
 
+	Model* sphere = new Model(std::make_unique<Icosphere>(1.0f, 2, true));
+	sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
 	slot.scene->setModel("Sphere", sphere);
-	slot.render.setModelShader("Sphere", "basic");
+	slot.render.setModelShader("Sphere", "material");
 
 	//slot.scene.setFBOManager(fbom)
 	//slot.render.setTBM(tbm);
@@ -645,7 +656,7 @@ int main(int argc, char** argv)
 		//slot.render.renderFaceNormalLines(slot.scene);
 		//slot.render.renderTBNLines(slot.scene);
 		//slot.render.renderDepth(slot.scene);
-		slot.render.renderDebugTexture(gBuffer->gNormal);
+		slot.render.renderDebugTexture(gBuffer->getNormalTexture());
 
         glfwSwapBuffers(slot.window);
 

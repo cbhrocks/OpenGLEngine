@@ -122,7 +122,7 @@ float ShadowCalculation(vec3 fragPos, vec3 lightPos)
 	return shadow;
 }
 
-// uses basic phong lighting algorithm
+// uses basic blinn phong lighting algorithm
 void main()
 {
 	// obtain normal from normal map in range [0,1]

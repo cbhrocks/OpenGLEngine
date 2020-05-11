@@ -48,21 +48,6 @@ void LightManager::drawLights(const Shader& shader) {
 	//}
 }
 
-void LightManager::uploadLightUniforms(Shader shader) {
-	for (int i = 0; i < this->pointLights.size(); i++) {
-		std::string lightNum = std::to_string(i);
-		this->pointLights[i]->uploadUniforms(shader, lightNum);
-	}
-	for (int i = 0; i < this->directionLights.size(); i++) {
-		std::string lightNum = std::to_string(i);
-		this->directionLights[i]->uploadUniforms(shader, lightNum);
-	}
-	for (int i = 0; i < this->spotLights.size(); i++) {
-		std::string lightNum = std::to_string(i);
-		this->spotLights[i]->uploadUniforms(shader, lightNum);
-	}
-}
-
 void LightManager::createUniformBlock()
 {
 	GLuint pointLightSize = 64;

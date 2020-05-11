@@ -24,7 +24,7 @@
 
 class ILight {
 public:
-	virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const = 0;
+	virtual void uploadUniforms(const Shader& shader) const = 0;
 	virtual GLuint updateUniformBlock(GLuint ubo, GLuint start) = 0;
 };
 
@@ -48,7 +48,7 @@ class Light: public ILight
 		const float getSpecular() const { return this->specular; }
 		void setSpecular(const float& specular) { this->specular = specular; }
 		
-		virtual void uploadUniforms(const Shader& shader, const std::string& lightNum) const = 0;
+		virtual void uploadUniforms(const Shader& shader) const = 0;
 		virtual GLuint updateUniformBlock(GLuint ubo, GLuint start) = 0;
 
     protected:
@@ -93,7 +93,7 @@ class PointLight : public Light
 		///</summary>
 		const float getRadius();
 
-		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
+		void uploadUniforms(const Shader& shader) const;
 		GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
 protected:
@@ -119,7 +119,7 @@ class DirectionLight : public Light
 		const glm::vec3& getDirectionRef() const { return this->direction; }
 		void setDirection(glm::vec3 direction) { this->direction = direction; }
 
-		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
+		void uploadUniforms(const Shader& shader) const;
 		GLuint updateUniformBlock(GLuint ubo, GLuint start);
 
 protected:
@@ -158,7 +158,7 @@ class SpotLight : public PointLight
 		float getOuterCutOff() const { return this->outerCutOff; }
 		void setOuterCutOff(float outerCutOff) { this->outerCutOff = outerCutOff; }
 
-		void uploadUniforms(const Shader& shader, const std::string& lightNum) const;
+		void uploadUniforms(const Shader& shader) const;
 
 		GLuint updateUniformBlock(GLuint ubo, GLuint start) override;
 

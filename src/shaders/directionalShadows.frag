@@ -128,7 +128,7 @@ void main()
    
     // get diffuse color for ambient and diffuse
     // final ambient
-    vec3 ambient = dlight[0].ambient * color;
+    vec3 ambient = dlight[0].color * dlight[0].ambient * color;
 
     // light diffuse
     vec3 lightDir = normalize(-dlight[0].direction);

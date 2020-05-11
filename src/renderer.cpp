@@ -52,7 +52,8 @@ Renderer::Renderer(int width, int height) :
 		{"bloom2D", Shader("src/shaders/bloom2D.vert", "src/shaders/bloom2D.frag").setUniformBlock("Scene", 0)},
 		//gbuffer
 		{"gBufferGeometry", Shader("src/shaders/gBuffer.vert", "src/shaders/gBuffer.frag").setUniformBlock("Camera", 1)},
-		{"gBufferDeferred", Shader("src/shaders/deferred_shading.vert", "src/shaders/deferred_shading.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
+		{"gBufferDLight", Shader("src/shaders/ds_dlight_pass.vert", "src/shaders/ds_dlight_pass.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2).Use().setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2)},
+		{"gBufferPLight", Shader("src/shaders/ds_plight_pass.vert", "src/shaders/ds_plight_pass.frag").setUniformBlock("Camera", 1).Use().setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2)},
 		// drawing
 		{"basic", Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1)},
 		{"texture", Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1)},
@@ -63,6 +64,7 @@ Renderer::Renderer(int width, int height) :
 		{"explode", Shader("src/shaders/explode.vert", "src/shaders/texture.frag", "src/shaders/explode.geom").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1)},
 		{"light", Shader("src/shaders/basic.vert", "src/shaders/light.frag").setUniformBlock("Camera", 1)},
 		// lighting
+		{"material", Shader("src/shaders/material.vert", "src/shaders/material.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
 		{"shadowDepth", Shader("src/shaders/shadowDepth.vert", "src/shaders/shadowDepth.frag")},
 		{"shadowCubeDepth", Shader("src/shaders/shadowDepthCube.vert", "src/shaders/shadowDepthCube.frag", "src/shaders/shadowDepthCube.geom")},
 		{"shadowDebug2D", Shader("src/shaders/shadowDebug.vert", "src/shaders/shadowDebug.frag").setUniformBlock("Camera", 1).Use().setInt("depthMap", 0)},
@@ -73,32 +75,6 @@ Renderer::Renderer(int width, int height) :
 		{"blinnPhongLighting", Shader("src/shaders/lighting.vert", "src/shaders/blinnPhongLighting.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)},
 		{"BPLightingNorm", Shader("src/shaders/BPLightingNorm.vert", "src/shaders/BPLightingNorm.frag").setUniformBlock("Scene", 0).setUniformBlock("Camera", 1).setUniformBlock("Lights", 2)}
 	};
-	checkGLError("Renderer::initialize -- shaders");
-	this->shaders["gBufferDeferred"].Use();
-	this->shaders["gBufferDeferred"].setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2);
-
-	GLchar* names[] = {
-		"plight[0].ambient",
-		"plight[0].diffuse",
-		"plight[0].specular",
-		"plight[0].constant",
-		"plight[0].linear",
-		"plight[0].quadratic",
-		"plight[0].color",
-		"plight[0].position"
-	};
-	GLuint index;
-	GLuint prog_id = this->shaders["gBufferDeferred"].getId();
-	GLint offset, singleSize;
-
-	glGetUniformIndices(prog_id, 1, &names[6], &index);
-	glGetActiveUniformsiv(prog_id, 1, &index,
-		GL_UNIFORM_OFFSET, &offset);
-
-	glGetActiveUniformsiv(prog_id, 1, &index,
-		GL_UNIFORM_SIZE, &singleSize);
-
-	GLuint LightsUBSize = this->shaders["gBufferDeferred"].getUniformBlockSize("Lights");
 	checkGLError("Renderer::initialize -- shaders");
 }
 
@@ -130,15 +106,24 @@ void Renderer::render(Scene* scene)
 	// render all the models without forward rendering enabled
 	auto models = scene->getModels();
 
-	//this->gBuffer->setActive();
-	//for (auto &it : models) {
-	//	if (this->forwardRenderModels.count(it.first) < 1) {
-	//		it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
-	//		it.second->Draw(this->shaders["gBufferGeometry"]);
-	//	}
-	//}
-	//this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
-	//this->gBuffer->copyDepth(0, this->width, this->height);
+	this->gBuffer->setActive();
+	for (auto &it : models) {
+		if (this->forwardRenderModels.count(it.first) < 1) {
+			it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
+			it.second->Draw(this->shaders["gBufferGeometry"]);
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	this->gBuffer->BeginLightPasses();
+	this->gBuffer->DSDirectionLightPass(this->shaders["gBufferDLight"]);
+	this->gBuffer->DSPointLightPass(this->shaders["gBufferPLight"], scene->getLightManager()->getPointLights());
+
+	// disable blending that was used to add direction and point lighting to the scene
+	glDisable(GL_BLEND);
+
+	this->gBuffer->copyDepth(0, this->width, this->height);
 
 	// render the models with forward rendering
 	for (auto &it : this->forwardRenderModels) {
@@ -216,7 +201,7 @@ void Renderer::renderToGBuffer(Scene* scene) {
 		it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
 		it.second->Draw(this->shaders["gBufferGeometry"]);
 	}
-	this->gBuffer->Draw(this->shaders["gBufferDeferred"]);
+	this->gBuffer->DSDirectionLightPass(this->shaders["gBufferDeferred"]);
 }
 
 void Renderer::renderVertexNormalLines(Scene* scene) { 
@@ -268,8 +253,10 @@ void Renderer::renderDebugTexture(GLuint textureID) {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
 		//cleanup
-		//glDeleteBuffers(1, &quadVBO);
+		glBindVertexArray(0);
+		glDeleteBuffers(1, &debugVBO);
     }
 	this->shaders["debugTextureQuad"].Use();
 	glViewport(this->width * 0.7, this->height * 0.1, this->width * 0.2, this->height * 0.2);

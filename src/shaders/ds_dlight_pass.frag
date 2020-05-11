@@ -59,7 +59,7 @@ layout (std140) uniform Camera
 };
 
 void main()
-{             
+{
     // retrieve data from G-buffer
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
     vec3 Normal = texture(gNormal, TexCoords).rgb;
@@ -69,21 +69,16 @@ void main()
     // then calculate lighting as usual
     vec3 lighting = Albedo * 0.1; // hard-coded ambient component
     vec3 viewDir = normalize(camPos - FragPos);
-    for(int i = 0; i < NR_POINT_LIGHTS; ++i)
+    for(int i = 0; i < NR_DIRECTION_LIGHTS; ++i)
     {
         // diffuse
-        vec3 lightDir = normalize(plight[i].position - FragPos);
-        vec3 diffuse = plight[i].color * plight[i].diffuse * max(dot(Normal, lightDir), 0.0) * Albedo;
+        vec3 lightDir = normalize(-dlight[i].direction);
+        vec3 diffuse = dlight[i].color * dlight[i].diffuse * max(dot(Normal, lightDir), 0.0) * Albedo;
 		// specular
 		vec3 halfwayDir = normalize(lightDir + viewDir);
 		float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-		vec3 specular = plight[i].color * plight[i].specular * spec * Specular;
-		// attenuation
-		float distance = length(plight[i].position - FragPos);
-		float attenuation = 1.0 / (1.0 + plight[i].linear * distance + plight[i].quadratic * distance * distance);
+		vec3 specular = dlight[i].color * dlight[i].specular * spec * Specular;
 
-		diffuse *= attenuation;
-		specular *= attenuation;
 		lighting += diffuse + specular;
     }
     

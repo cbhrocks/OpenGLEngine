@@ -61,7 +61,7 @@ void Sphere::setSmooth(bool smooth) {
 void Sphere::buildVerticesSmooth() {
 	this->clearData();
 
-	float xy_dist, z_dist, lengthInv = 1.0f / radius;
+	float xz_dist, y_dist, lengthInv = 1.0f / radius;
 	glm::vec3 pos;
 	glm::vec3 normal;
 	glm::vec2 texCoord;
@@ -72,58 +72,39 @@ void Sphere::buildVerticesSmooth() {
 
 	for (int i = 0; i <= this->stackCount; ++i) { 
 		stackAngle = M_PI / 2 - i * stackStep;				// stack angle goes from -pi/2 to pi/2.
-		float xy_dist = this->radius * cosf(stackAngle);	// r * cos(u)  this is the distance in the xy plane from the center of the circle
-		float z_dist = this->radius * sinf(stackAngle);		// r * sin(y)	this is the distance in the z direction from the center of the circle
+		float xz_dist = this->radius * cosf(stackAngle);	// r * cos(theta)  this is the distance in the xz plane from the center of the circle
+		float y_dist = this->radius * sinf(stackAngle);		// r * sin(phi)	this is the distance in the y direction from the center of the circle
 
 		// add sectorCount + 1 vertices per stack.
 		// first and last vertices have same position and normal but different texture coords
 		for (int j = 0; j <= this->sectorCount; ++j) {
 			sectorAngle = j * sectorStep; // sector angle goes from 0 to 2pi
 
-			pos.x = xy_dist * cosf(sectorAngle);	// x = r * cos(u) * cos(v)
-			pos.y = xy_dist * sinf(sectorAngle);	// y = r * cos(u) * sin(v)
-			pos.z = z_dist;							// z = r * sin(u)
+			pos.x = xz_dist * sinf(sectorAngle);	// x = r * cos(theta) * cos(phi)
+			pos.y = y_dist;							// z = r * sin(theta)
+			pos.z = xz_dist * cosf(sectorAngle);	// y = r * cos(theta) * sin(phi)
 			this->vertices.push_back(pos);
 
-			normal.x = pos.x * lengthInv;
-			normal.y = pos.y * lengthInv;
-			normal.z = pos.z * lengthInv;
-			this->normals.push_back(normal);
+			this->normals.push_back(glm::normalize(pos)); // because circle is centered on origin position is also direction of normal
 
-			texCoord.s = (float)j / this->sectorCount;
-			texCoord.t = (float)i / this->stackCount;
+			texCoord.s = (float)j / (float)this->sectorCount;
+			texCoord.t = (float)i / (float)this->stackCount;
 			this->texCoords.push_back(texCoord);
 		}
 	}
 
-	// indices
-	//  k1--k1+1
-	//  |  / |
-	//  | /  |
-	//  k2--k2+1
-	unsigned int k1, k2;
+	bool oddRow = false;
 	for (int i = 0; i < this->stackCount; ++i) {
-		k1 = i * (this->sectorCount + 1);	// first vertice for a particular stack
-		k2 = k1 + this->sectorCount + 1;	// vertice directly below the last
-
-		for (int j = 0; j < this->sectorCount; ++j, ++k1, ++k2) {
-			if (i != 0) {
-				this->indices.push_back(k1);
-				this->indices.push_back(k2);
-				this->indices.push_back(k1 + 1);
+		if (!oddRow) {
+			for (int j = 0; j <= this->sectorCount; ++j) {
+				this->indices.push_back(i * (sectorCount + 1) + j);
+				this->indices.push_back((i + 1) * (sectorCount + 1) + j);
 			}
-
-			if (i != (this->stackCount - 1)) {
-				this->indices.push_back(k1 + 1);
-				this->indices.push_back(k2);
-				this->indices.push_back(k2 + 1);
-			}
-
-			lineIndices.push_back(k1);
-			lineIndices.push_back(k2);
-			if (i != 0) {	// include horizontal lines for all but last stack
-				lineIndices.push_back(k1);
-				lineIndices.push_back(k1 + 1);
+		}
+		else {
+			for (int j = this->sectorCount; j >= 0; --j) {
+				this->indices.push_back((i + 1) * (sectorCount + 1) + j);
+				this->indices.push_back(i * (sectorCount + 1) + j);
 			}
 		}
 	}
@@ -144,8 +125,8 @@ void Sphere::buildVerticesFlat() {
 
 	for (int i = 0; i <= stackCount; ++i) {
 		stackAngle = M_PI / 2 - i * stackStep; // stack angle goes from -pi/2 to pi/2.
-		float xy_dist = this->radius * cosf(stackAngle); // r * cos(u)  this is the distance in the xy plane from the center of the circle
-		float z_dist = this->radius * sinf(stackAngle); // r * sin(y)	this is the distance in the z direction from the center of the circle
+		float xz_dist = this->radius * cosf(stackAngle); // r * cos(u)  this is the distance in the xy plane from the center of the circle
+		float y_dist = this->radius * sinf(stackAngle); // r * sin(y)	this is the distance in the z direction from the center of the circle
 
 		// add sectorCount + 1 vertices per stack.
 		// first and last vertices have same position and normal but different texture coords
@@ -153,9 +134,9 @@ void Sphere::buildVerticesFlat() {
 			sectorAngle = j * sectorStep; // sector angle goes from 0 to 2pi
 
 			Vertex vertex;
-			vertex.x = xy_dist * cosf(sectorAngle);	// x = r * cos(u) * cos(v)
-			vertex.y = xy_dist * sinf(sectorAngle);	// y = r * cos(u) * sin(v)
-			vertex.z = z_dist;						// z = r * sin(u)
+			vertex.x = xz_dist * sinf(sectorAngle);	// x = r * cos(u) * cos(v)
+			vertex.y = y_dist;						// y = r * sin(u)
+			vertex.z = xz_dist * cosf(sectorAngle);	// z = r * cos(u) * sin(v)
 			vertex.s = (float)j / sectorCount;
 			vertex.t = (float)i / stackCount;
 			tmpVertices.push_back(vertex);
@@ -378,8 +359,17 @@ void Sphere::Draw(const Shader& shader, GLuint baseUnit) {
 	if (this->VAO == 0) {
 		this->genVAO();
 	}
+
+	shader.setVec4("material.ambient", this->material.AmbientColor);
+	shader.setVec4("material.diffuse", this->material.DiffuseColor);
+	shader.setVec4("material.specular", this->material.SpecularColor);
+	shader.setFloat("material.shininess", this->material.Shininess);
+	shader.setFloat("material.opacity", this->material.opacity);
+	shader.setFloat("material.reflectivity", this->material.reflectivity);
+	shader.setFloat("material.refractionIndex", this->material.refractionIndex);
+
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(this->smooth ? GL_TRIANGLE_STRIP : GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
 
 void Sphere::genLineVAO() {

@@ -38,15 +38,16 @@ const float PointLight::getRadius() {
 	return radius;
 }
 
-void PointLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
+void PointLight::uploadUniforms(const Shader& shader) const
 {
-	shader.setVec3((this->prefix + "light[" + lightNum + "].color"), this->color);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].ambient"), this->ambient);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].diffuse"), this->diffuse);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].specular"), this->specular);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].constant"), this->constant);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].linear"), this->linear);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].quadratic"), this->quadratic);
+	shader.setFloat(this->prefix + "light.ambient", this->ambient);
+	shader.setFloat(this->prefix + "light.diffuse", this->diffuse);
+	shader.setFloat(this->prefix + "light.specular", this->specular);
+	shader.setFloat(this->prefix + "light.constant", this->constant);
+	shader.setFloat(this->prefix + "light.linear", this->linear);
+	shader.setFloat(this->prefix + "light.quadratic", this->quadratic);
+	shader.setVec3(this->prefix + "light.color", this->color);
+	shader.setVec3(this->prefix + "light.position", this->position);
 }
 
 GLuint PointLight::updateUniformBlock(GLuint ubo, GLuint start)
@@ -87,13 +88,13 @@ DirectionLight::DirectionLight(
 {
 }
 
-void DirectionLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
+void DirectionLight::uploadUniforms(const Shader& shader) const
 {
-	shader.setVec3((this->prefix + "light[" + lightNum + "].color"), this->color);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].ambient"), this->ambient);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].diffuse"), this->diffuse);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].specular"), this->specular);
-	shader.setVec3((this->prefix + "light[" + lightNum + "].direction").c_str(), this->direction);
+	shader.setVec3((this->prefix + "light.color"), this->color);
+	shader.setFloat((this->prefix + "light.ambient"), this->ambient);
+	shader.setFloat((this->prefix + "light.diffuse"), this->diffuse);
+	shader.setFloat((this->prefix + "light.specular"), this->specular);
+	shader.setVec3((this->prefix + "light.direction"), this->direction);
 }
 
 GLuint DirectionLight::updateUniformBlock(GLuint ubo, GLuint start)
@@ -134,12 +135,12 @@ SpotLight::SpotLight(
 {
 }
 
-void SpotLight::uploadUniforms(const Shader& shader, const std::string& lightNum) const
+void SpotLight::uploadUniforms(const Shader& shader) const
 {
-	PointLight::uploadUniforms(shader, lightNum);
-	shader.setVec3((this->prefix + "light[" + lightNum + "].direction").c_str(), this->direction);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].cutOff").c_str(), this->cutOff);
-	shader.setFloat((this->prefix + "light[" + lightNum + "].outerCutOff").c_str(), this->outerCutOff);
+	PointLight::uploadUniforms(shader);
+	shader.setVec3((this->prefix + "light.direction").c_str(), this->direction);
+	shader.setFloat((this->prefix + "light.cutOff").c_str(), this->cutOff);
+	shader.setFloat((this->prefix + "light.outerCutOff").c_str(), this->outerCutOff);
 }
 
 GLuint SpotLight::updateUniformBlock(GLuint ubo, GLuint start)

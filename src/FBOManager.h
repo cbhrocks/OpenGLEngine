@@ -4,6 +4,8 @@
 #include "vertexData.h"
 #include "shader.h"
 #include "glHelper.h"
+#include "Icosphere.h"
+#include "light.h"
 
 class FBOManagerI {
 public:
@@ -75,24 +77,26 @@ public:
 
 class GBuffer {
 public:
-	// textures used by gBuffer. gPosition: world space position, gNormal: world space surface normal, gAlbedoSpec: albedo color with specular intensity alpha channel
-	GLuint gPosition, gNormal, gAlbedoSpec; 
-	GLuint gBuffer; // fbo
-	GLuint depthBuffer; // rbo
-	GLuint quadVBO, quadVAO = 0; // vao for drawing 2d scene
-	GLsizei width, height;
-
 	GBuffer(GLsizei width, GLsizei height);
 
-	/*
-	set the gBuffer active so that everything drawn will be drawn into it
-	*/
+	GLuint getPositionTexture() { return this->gPosition; }
+	GLuint getNormalTexture() { return this->gNormal; }
+	GLuint gAlbedoSpecTexture() { return this->gAlbedoSpec; }
+
+	///<summary>set the gBuffer active so that everything drawn will be drawn into it</summary>
 	void setActive();
 
-	/*
-	Draw the quad with textures gathered from the gbuffer pass.
-	*/
-	void Draw(const Shader& shader);
+	void BeginLightPasses();
+
+	///<summary>using a quad set to teh size of the entire screen, all data stored in the geometry buffers is rendered.
+	///</summary>
+	void DSDirectionLightPass(const Shader& shader);
+
+	///<summary>renders a sphere for each point light with radius set to the effective lighting range of the light. This will prevent unecessary lighting calculations from being applied to geometry in the scene. 
+	///</summary>
+	///<param name="shader">The deferred shading point light shader. should have at least three inputs: gPosition, gNormal, gAlbedoSpec</param>
+	///<param name="plgiths">A deferred shading point light shader.</param>
+	void DSPointLightPass(const Shader& shader, std::vector<PointLight*> plights);
 
 	///<summary>copies the gBuffer depth data into the specified frame buffer object.
 	///<para>This is useful for combining forward rendering with deferred rendering, as you can get proper visual occlusion on objects that are forward rendered.</para>
@@ -103,6 +107,16 @@ public:
 	void copyDepth(GLuint fbo, GLsizei width, GLsizei height);
 
 private:
+	// textures used by gBuffer. gPosition: world space position, gNormal: world space surface normal, gAlbedoSpec: albedo color with specular intensity alpha channel
+	GLuint gPosition, gNormal, gAlbedoSpec; 
+	GLuint gBuffer; // fbo
+	GLuint depthBuffer; // rbo
+	GLuint quadVBO, quadVAO = 0; // vao for drawing 2d scene
+	GLsizei width, height;
+
+	///<summary>the sphere used to set the boudries for point light shading</summary>
+	Model* pLightSphere;
+
 	/*
 	if the quad VAO has not been created, create it.
 	draw the quad.

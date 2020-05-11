@@ -38,12 +38,13 @@ class Model
 			std::vector<std::unique_ptr<IDrawObj>>& meshes
 		);
 
+		Model(
+			std::unique_ptr<IDrawObj> meshes
+		);
+
         // drastd::ws the model, and thus all its meshes
 		void Draw(const Shader& shader, GLuint baseUnit = 0);
 		void uploadUniforms(const Shader& shader);
-
-		const Shader* getShader();
-		Model* setShader(const Shader* shader);
 
 		const bool getTransparent() const;
 		Model* setTransparent(bool isTransparent);
@@ -62,7 +63,6 @@ class Model
         std::map<std::string, Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
         std::string directory; //the directory that the model is loaded from.
 		glm::vec3 position, scale, rotation; //the world location attributes of the model.
-		const Shader* shader; //the shader used to render the model in forward rendering.
 		bool isTransparent; //whether or not the model has transparent textures.
 
         /*  Functions   */

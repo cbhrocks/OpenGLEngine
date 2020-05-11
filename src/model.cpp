@@ -26,6 +26,13 @@ Model::Model(
 	std::move(meshes.begin(), meshes.end(), std::back_inserter(this->meshes));
 }
 
+Model::Model(
+	std::unique_ptr<IDrawObj> meshe
+) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
+{
+	this->meshes.push_back(std::move(meshe));
+}
+
 // draws the model, and thus all its meshes
 void Model::Draw(const Shader& shader, GLuint baseUnit)
 {
@@ -88,17 +95,6 @@ const glm::vec3 Model::getRotation() const {
 
 Model* Model::setRotation(glm::vec3 rotation) {
 	this->rotation = rotation;
-	return this;
-}
-
-const Shader* Model::getShader()
-{
-	return this->shader;
-}
-
-Model* Model::setShader(const Shader* shader)
-{
-	this->shader = shader;
 	return this;
 }
 

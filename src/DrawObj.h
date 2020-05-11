@@ -6,9 +6,9 @@
 #include "shader.h"
 
 struct Material {
-	glm::vec4 AmbientColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 DiffuseColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 SpecularColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 AmbientColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	glm::vec4 DiffuseColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	glm::vec4 SpecularColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	float Shininess = 0.0f;
 	float opacity = 1.0f;
 	float reflectivity = 0.0f;
@@ -26,4 +26,5 @@ class IDrawObj {
         /*  Mesh Data  */
         // render the mesh
 		virtual void Draw(const Shader& shader, GLuint baseUnit = 0) = 0;
+		Material material;
 };
