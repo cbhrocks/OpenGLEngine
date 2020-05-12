@@ -106,7 +106,7 @@ void Renderer::render(Scene* scene)
 	// render all the models without forward rendering enabled
 	auto models = scene->getModels();
 
-	this->gBuffer->setActive();
+	this->gBuffer->BindForWriting();
 	for (auto &it : models) {
 		if (this->forwardRenderModels.count(it.first) < 1) {
 			it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
@@ -114,11 +114,12 @@ void Renderer::render(Scene* scene)
 		}
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	this->gBuffer->BeginLightPasses();
+	this->gBuffer->BindForReading();
 	this->gBuffer->DSDirectionLightPass(this->shaders["gBufferDLight"]);
 	this->gBuffer->DSPointLightPass(this->shaders["gBufferPLight"], scene->getLightManager()->getPointLights());
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 
 	// disable blending that was used to add direction and point lighting to the scene
 	glDisable(GL_BLEND);
@@ -196,7 +197,7 @@ void Renderer::renderSkybox(Scene* scene)
 // deferred rendering
 
 void Renderer::renderToGBuffer(Scene* scene) {
-	this->gBuffer->setActive();
+	this->gBuffer->BindForWriting();
 	for (auto &it : scene->getModels()) {
 		it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
 		it.second->Draw(this->shaders["gBufferGeometry"]);

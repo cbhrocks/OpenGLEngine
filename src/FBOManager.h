@@ -84,7 +84,9 @@ public:
 	GLuint gAlbedoSpecTexture() { return this->gAlbedoSpec; }
 
 	///<summary>set the gBuffer active so that everything drawn will be drawn into it</summary>
-	void setActive();
+	void BindForWriting();
+
+	void BindForReading();
 
 	void BeginLightPasses();
 

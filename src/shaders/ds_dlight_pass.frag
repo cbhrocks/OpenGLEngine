@@ -67,10 +67,11 @@ void main()
     float Specular = texture(gAlbedoSpec, TexCoords).a;
     
     // then calculate lighting as usual
-    vec3 lighting = Albedo * 0.1; // hard-coded ambient component
+    vec3 lighting = vec3(0); // hard-coded ambient component
     vec3 viewDir = normalize(camPos - FragPos);
     for(int i = 0; i < NR_DIRECTION_LIGHTS; ++i)
     {
+		vec3 ambient = dlight[i].color * dlight[i].ambient * Albedo; // hard-coded ambient component
         // diffuse
         vec3 lightDir = normalize(-dlight[i].direction);
         vec3 diffuse = dlight[i].color * dlight[i].diffuse * max(dot(Normal, lightDir), 0.0) * Albedo;
@@ -79,7 +80,7 @@ void main()
 		float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
 		vec3 specular = dlight[i].color * dlight[i].specular * spec * Specular;
 
-		lighting += diffuse + specular;
+		lighting += ambient + diffuse + specular;
     }
     
     FragColor = vec4(lighting, 1.0f);

@@ -315,61 +315,50 @@ GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height), p
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GBuffer::setActive()
+void GBuffer::BindForWriting()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, this->gBuffer);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GBuffer::BeginLightPasses() {
+void GBuffer::BindForReading()
+{
+	//disable depth testing and depth mask so the lighting pass cannot write to the depth buffer
+	glDepthMask(GL_FALSE);
+	glDisable(GL_DEPTH_TEST);
+
 	// enable blending so that we can handle directional and point lighting in different passes.
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
 
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, this->gPosition);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, this->gNormal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, this->gAlbedoSpec);
+
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void GBuffer::DSDirectionLightPass(const Shader& shader)
 {
-	//glDisable(GL_DEPTH_TEST);
-	checkGLError("FBOManager::Draw -- prep opengl");
-
 	shader.Use();
-
-	checkGLError("FBOManager::Draw -- upload uniforms");
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, this->gPosition);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, this->gNormal);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, this->gAlbedoSpec);
-	checkGLError("FBOManager::Draw -- bind texture");
 
 	this->drawQuad();
 	checkGLError("FBOManager::Draw -- draw");
-
-	//glEnable(GL_DEPTH_TEST);
-	checkGLError("FBOManager::Draw");
 }
+
 void GBuffer::DSPointLightPass(const Shader& shader, std::vector<PointLight*> plights) {
 	// cull the back face to allow lighting when view position is in sphere
 	glCullFace(GL_FRONT);
 
 	shader.Use();
-
-	// use textures gathered from geometry pass to create output
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, this->gPosition);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, this->gNormal);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, this->gAlbedoSpec);
 
 	// for each light move the sphere to it's location and set radius its max attenuation distance. then draw the sphere.
 	for (PointLight* plight : plights) {
@@ -414,7 +403,8 @@ void GBuffer::drawQuad() {
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 		//cleanup
-		//glDeleteBuffers(1, &quadVBO);
+		glBindVertexArray(0);
+		glDeleteBuffers(1, &quadVBO);
     }
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
