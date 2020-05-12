@@ -27,10 +27,10 @@ Model::Model(
 }
 
 Model::Model(
-	std::unique_ptr<IDrawObj> meshe
+	std::unique_ptr<IDrawObj> mesh
 ) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
-	this->meshes.push_back(std::move(meshe));
+	this->meshes.push_back(std::move(mesh));
 }
 
 // draws the model, and thus all its meshes

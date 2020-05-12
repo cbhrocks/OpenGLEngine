@@ -1,10 +1,12 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 #include "vertexData.h"
 #include "shader.h"
 #include "glHelper.h"
 #include "Icosphere.h"
+#include "sphere.h"
 #include "light.h"
 
 class FBOManagerI {
@@ -86,19 +88,15 @@ public:
 	///<summary>set the gBuffer active so that everything drawn will be drawn into it</summary>
 	void BindForWriting();
 
-	void BindForReading();
-
-	void BeginLightPasses();
-
-	///<summary>using a quad set to teh size of the entire screen, all data stored in the geometry buffers is rendered.
+	///<summary>renders the scene to the final color texture. this consists of two stages: point lighting and directional lighting
+	///<para>Point lighting: renders a sphere for each point light with radius set to the effective lighting range of the light. This will prevent unecessary lighting calculations from being applied to geometry in the scene. </para>
+	///<para>Direction lighting: renders a quad filling the entire screen. This is appropriate since directional lighting applies to all objects in the scene.</para>
 	///</summary>
-	void DSDirectionLightPass(const Shader& shader);
-
-	///<summary>renders a sphere for each point light with radius set to the effective lighting range of the light. This will prevent unecessary lighting calculations from being applied to geometry in the scene. 
-	///</summary>
-	///<param name="shader">The deferred shading point light shader. should have at least three inputs: gPosition, gNormal, gAlbedoSpec</param>
-	///<param name="plgiths">A deferred shading point light shader.</param>
-	void DSPointLightPass(const Shader& shader, std::vector<PointLight*> plights);
+	///<param name="directionShader">The directional light shader. should have at least three inputs: gPosition, gNormal, gAlbedoSpec</param>
+	///<param name="pointShader">The point light shader. should have at least three inputs: gPosition, gNormal, gAlbedoSpec</param>
+	///<param name="depthShader">The depth shader. this is only used for object depth in relation to camera.</param>
+	///<param name="plights">a vector containing all point lights in the scene that will have impact on the shading</param>
+	void DSLightingPass(const Shader& directionShader, const Shader& pointShader, const Shader& depthShader, std::vector<PointLight*> plights);
 
 	///<summary>copies the gBuffer depth data into the specified frame buffer object.
 	///<para>This is useful for combining forward rendering with deferred rendering, as you can get proper visual occlusion on objects that are forward rendered.</para>
@@ -110,7 +108,7 @@ public:
 
 private:
 	// textures used by gBuffer. gPosition: world space position, gNormal: world space surface normal, gAlbedoSpec: albedo color with specular intensity alpha channel
-	GLuint gPosition, gNormal, gAlbedoSpec; 
+	GLuint gPosition, gNormal, gAlbedoSpec, gFinal;
 	GLuint gBuffer; // fbo
 	GLuint depthBuffer; // rbo
 	GLuint quadVBO, quadVAO = 0; // vao for drawing 2d scene

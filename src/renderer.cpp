@@ -38,7 +38,7 @@ Renderer::Renderer(int width, int height) :
 		{"vertexNormalLines", Shader("src/shaders/vertexNormalLines.vert", "src/shaders/vertexNormalLines.frag", "src/shaders/vertexNormalLines.geom").setUniformBlock("Camera", 1) },
 		{"faceNormalLines", Shader("src/shaders/faceNormalLines.vert", "src/shaders/faceNormalLines.frag", "src/shaders/faceNormalLines.geom").setUniformBlock("Camera", 1) },
 		{"tbnLines", Shader("src/shaders/tbnLines.vert", "src/shaders/tbnLines.frag", "src/shaders/tbnLines.geom").setUniformBlock("Camera", 1)},
-		{"depth", Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1)},
+		{"linearDepth", Shader("src/shaders/linear_depth.vert", "src/shaders/linear_depth.frag").setUniformBlock("Camera", 1)},
 		{"debugTextureQuad", Shader("src/shaders/debugTextureQuad.vert", "src/shaders/debugTextureQuad.frag").Use().setInt("textureUnit", 0)},
 		// post processing
 		{"shader2D", Shader("src/shaders/basic2D.vert", "src/shaders/basic2D.frag").setUniformBlock("Scene", 0)},
@@ -54,6 +54,7 @@ Renderer::Renderer(int width, int height) :
 		{"gBufferGeometry", Shader("src/shaders/gBuffer.vert", "src/shaders/gBuffer.frag").setUniformBlock("Camera", 1)},
 		{"gBufferDLight", Shader("src/shaders/ds_dlight_pass.vert", "src/shaders/ds_dlight_pass.frag").setUniformBlock("Camera", 1).setUniformBlock("Lights", 2).Use().setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2)},
 		{"gBufferPLight", Shader("src/shaders/ds_plight_pass.vert", "src/shaders/ds_plight_pass.frag").setUniformBlock("Camera", 1).Use().setInt("gPosition", 0).setInt("gNormal", 1).setInt("gAlbedoSpec", 2)},
+		{"depth", Shader("src/shaders/depth.vert", "src/shaders/depth.frag").setUniformBlock("Camera", 1)},
 		// drawing
 		{"basic", Shader("src/shaders/basic.vert", "src/shaders/basic.frag").setUniformBlock("Camera", 1)},
 		{"texture", Shader("src/shaders/basic.vert", "src/shaders/texture.frag").setUniformBlock("Camera", 1)},
@@ -82,7 +83,7 @@ Renderer::Renderer(int width, int height) :
 
 void Renderer::preRender(Scene* scene)
 {
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// update uniform block objects for use during shaders
@@ -114,9 +115,12 @@ void Renderer::render(Scene* scene)
 		}
 	}
 
-	this->gBuffer->BindForReading();
-	this->gBuffer->DSDirectionLightPass(this->shaders["gBufferDLight"]);
-	this->gBuffer->DSPointLightPass(this->shaders["gBufferPLight"], scene->getLightManager()->getPointLights());
+	this->gBuffer->DSLightingPass(
+		this->shaders["gBufferDLight"], 
+		this->shaders["gBufferPLight"], 
+		this->shaders["depth"], 
+		scene->getLightManager()->getPointLights()
+	);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -202,7 +206,6 @@ void Renderer::renderToGBuffer(Scene* scene) {
 		it.second->uploadUniforms(this->shaders["gBufferGeometry"]);
 		it.second->Draw(this->shaders["gBufferGeometry"]);
 	}
-	this->gBuffer->DSDirectionLightPass(this->shaders["gBufferDeferred"]);
 }
 
 void Renderer::renderVertexNormalLines(Scene* scene) { 

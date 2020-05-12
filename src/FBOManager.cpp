@@ -273,7 +273,7 @@ void BloomBuffer::Draw(const Shader& shader)
 	checkGLError("BloomBuffer::Draw");
 }
 
-GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height), pLightSphere(new Model(std::make_unique<Icosphere>(1.0f, 2)))
+GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height), pLightSphere(new Model(std::make_unique<Sphere>()))
 {
 	glGenFramebuffers(1, &this->gBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
@@ -307,8 +307,16 @@ GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height), p
 
 	glGenRenderbuffers(1, &this->depthBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, this->depthBuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, this->depthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_STENCIL, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, this->depthBuffer);
+
+	// final color texture.
+	glGenTextures(1, &this->gFinal);
+	glBindTexture(GL_TEXTURE_2D, this->gFinal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, this->gFinal, 0);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Framebuffer not complete!" << std::endl;
@@ -319,65 +327,121 @@ void GBuffer::BindForWriting()
 {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, this->gBuffer);
 
+	std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, drawBuffers.data());
+
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GBuffer::BindForReading()
-{
-	//disable depth testing and depth mask so the lighting pass cannot write to the depth buffer
-	glDepthMask(GL_FALSE);
-	glDisable(GL_DEPTH_TEST);
+void GBuffer::DSLightingPass(const Shader& directionShader, const Shader& pointShader, const Shader& depthShader, std::vector<PointLight*> plights) {
+	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
+	glDrawBuffer(GL_COLOR_ATTACHMENT3);
+	glClear(GL_COLOR_BUFFER_BIT);
 
-	// enable blending so that we can handle directional and point lighting in different passes.
+	// dont want to write to any color buffers.
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_STENCIL_TEST);
+	// stencil pass depends on depth buffer, but should not write to it
+	glDepthMask(GL_FALSE);
+
+
+	for (PointLight* plight : plights) {
+		///////////////////////////////////////////////////////////////////////////////////////////
+		// stencil pass
+		///////////////////////////////////////////////////////////////////////////////////////////
+
+		depthShader.Use();
+
+		// dont want to actualy draw at all
+		glDrawBuffer(GL_NONE);
+		// need stencil to trigger on both faces
+		glDisable(GL_CULL_FACE);
+
+		glClear(GL_STENCIL_BUFFER_BIT);
+		// want stencil func to always be succeed. only using depth here
+		glStencilFunc(GL_ALWAYS, 0, 0);
+
+		glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP);
+		glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP);
+
+		this->pLightSphere->setScale(glm::vec3(plight->getRadius()));
+		this->pLightSphere->setPosition(plight->getPosition());
+		pLightSphere->uploadUniforms(depthShader);
+		this->pLightSphere->Draw(depthShader);
+
+		//disable depth testing and depth mask so the lighting pass cannot write to the depth buffer
+		glEnable(GL_CULL_FACE);
+
+
+		///////////////////////////////////////////////////////////////////////////////////////////
+		// point lighting pass
+		///////////////////////////////////////////////////////////////////////////////////////////
+		glDrawBuffer(GL_COLOR_ATTACHMENT3);
+
+		// dont need depth
+		glDisable(GL_DEPTH_TEST);
+		// enable blending so that we can handle directional and point lighting in different passes.
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
+
+		// cull the back face to allow lighting when view position is in sphere
+		glCullFace(GL_FRONT);
+
+		glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
+
+		pointShader.Use();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, this->gPosition);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, this->gNormal);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, this->gAlbedoSpec);
+
+		//glClear(GL_COLOR_BUFFER_BIT);
+
+		// for each light move the sphere to it's location and set radius its max attenuation distance. then draw the sphere.
+		plight->uploadUniforms(pointShader);
+		this->pLightSphere->setScale(glm::vec3(plight->getRadius()));
+		this->pLightSphere->setPosition(plight->getPosition());
+		pLightSphere->uploadUniforms(pointShader);
+
+		this->pLightSphere->Draw(pointShader);
+
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glCullFace(GL_BACK);
+	}
+
+	glDisable(GL_STENCIL_TEST);
+
+	///////////////////////////////////////////////////////////////////////////////////////////
+	// direction lighting pass
+	///////////////////////////////////////////////////////////////////////////////////////////
+	glDrawBuffer(GL_COLOR_ATTACHMENT3);
+
+	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, this->gPosition);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, this->gNormal);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, this->gAlbedoSpec);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-}
-
-void GBuffer::DSDirectionLightPass(const Shader& shader)
-{
-	shader.Use();
+	directionShader.Use();
 
 	this->drawQuad();
-	checkGLError("FBOManager::Draw -- draw");
-}
 
-void GBuffer::DSPointLightPass(const Shader& shader, std::vector<PointLight*> plights) {
-	// cull the back face to allow lighting when view position is in sphere
-	glCullFace(GL_FRONT);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 
-	shader.Use();
-
-	// for each light move the sphere to it's location and set radius its max attenuation distance. then draw the sphere.
-	for (PointLight* plight : plights) {
-		plight->uploadUniforms(shader);
-		pLightSphere->uploadUniforms(shader);
-
-		this->pLightSphere->setScale(glm::vec3(plight->getRadius()));
-		this->pLightSphere->setPosition(plight->getPosition());
-
-		this->pLightSphere->Draw(shader);
-	}
-
-	glCullFace(GL_BACK);
+	glDepthMask(GL_TRUE);
 }
 
 void GBuffer::copyDepth(GLuint fbo, GLsizei width, GLsizei height) {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, this->gBuffer);
+	glReadBuffer(GL_COLOR_ATTACHMENT3);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-	glBlitFramebuffer(0, 0, this->width, this->height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, this->width, this->height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	checkGLError("GBuffer::copyDepth");
 }

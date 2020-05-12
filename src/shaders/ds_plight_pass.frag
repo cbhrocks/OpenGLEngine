@@ -62,7 +62,7 @@ void main()
     float Specular = texture(gAlbedoSpec, tex_coords).a;
     
     // then calculate lighting as usual
-    vec3 lighting = Albedo * 0.1; // hard-coded ambient component
+    vec3 ambient = Albedo * plight.ambient * plight.color; // hard-coded ambient component
     vec3 viewDir = normalize(camPos - FragPos);
 
 	// diffuse
@@ -76,9 +76,10 @@ void main()
 	float distance = length(plight.position - FragPos);
 	float attenuation = 1.0 / (1.0 + plight.linear * distance + plight.quadratic * distance * distance);
 
+	ambient *= attenuation;
 	diffuse *= attenuation;
 	specular *= attenuation;
-	lighting += diffuse + specular;
+	vec3 lighting = ambient + diffuse + specular;
 
     FragColor = vec4(lighting, 1.0f);
 }
