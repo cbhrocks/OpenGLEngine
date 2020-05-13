@@ -27,9 +27,6 @@
     <ClCompile Include="src\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DrawObj.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -55,6 +52,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\LightManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Icosphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Icosphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,18 +122,18 @@
     <ClInclude Include="src\LightManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Sphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Icosphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\basic.frag">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="src\shaders\basic.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\depth.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\depth.vert">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="src\shaders\light.frag">
@@ -272,12 +278,6 @@
     <None Include="src\shaders\gBuffer.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="src\shaders\deferred_shading.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="src\shaders\deferred_shading.frag">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="src\shaders\gBuffer.vert">
       <Filter>Resource Files</Filter>
     </None>
@@ -287,5 +287,39 @@
     <None Include="src\shaders\directionalShadows.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="src\shaders\pointShadows.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\pointShadows.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\debugTextureQuad.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\debugTextureQuad.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\material.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\material.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\ds_plight_pass.frag" />
+    <None Include="src\shaders\ds_dlight_pass.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\ds_plight_pass.vert" />
+    <None Include="src\shaders\ds_dlight_pass.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\linear_depth.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\linear_depth.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="src\shaders\depth.vert" />
+    <None Include="src\shaders\depth.frag" />
   </ItemGroup>
 </Project>

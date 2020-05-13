@@ -107,7 +107,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\Libraries\glad\src\glad.c" />
     <ClCompile Include="src\camera.cpp" />
-    <ClCompile Include="src\DrawObj.cpp" />
+    <ClCompile Include="src\Icosphere.cpp" />
     <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\LightManager.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -117,6 +117,7 @@
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\ShadowCubeMap.cpp" />
     <ClCompile Include="src\ShadowMap.cpp" />
+    <ClCompile Include="src\Sphere.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
     <ClCompile Include="src\FBOManager.cpp" />
   </ItemGroup>
@@ -125,6 +126,7 @@
     <ClInclude Include="src\counter.h" />
     <ClInclude Include="src\DrawObj.h" />
     <ClInclude Include="src\glHelper.h" />
+    <ClInclude Include="src\Icosphere.h" />
     <ClInclude Include="src\light.h" />
     <ClInclude Include="src\LightManager.h" />
     <ClInclude Include="src\linmath.h" />
@@ -136,6 +138,7 @@
     <ClInclude Include="src\ShadowCubeMap.h" />
     <ClInclude Include="src\ShadowMap.h" />
     <ClInclude Include="src\skybox.h" />
+    <ClInclude Include="src\Sphere.h" />
     <ClInclude Include="src\stb_image.h" />
     <ClInclude Include="src\FBOManager.h" />
     <ClInclude Include="src\TextureManager.h" />
@@ -152,12 +155,18 @@
     <None Include="src\shaders\blur2D.frag" />
     <None Include="src\shaders\BPLightingNorm.frag" />
     <None Include="src\shaders\BPLightingNorm.vert" />
-    <None Include="src\shaders\deferred_shading.frag" />
-    <None Include="src\shaders\deferred_shading.vert" />
+    <None Include="src\shaders\debugTextureQuad.frag" />
+    <None Include="src\shaders\debugTextureQuad.vert" />
     <None Include="src\shaders\depth.frag" />
     <None Include="src\shaders\depth.vert" />
+    <None Include="src\shaders\ds_dlight_pass.frag" />
+    <None Include="src\shaders\ds_dlight_pass.vert" />
+    <None Include="src\shaders\linear_depth.frag" />
+    <None Include="src\shaders\linear_depth.vert" />
     <None Include="src\shaders\directionalShadows.frag" />
     <None Include="src\shaders\directionalShadows.vert" />
+    <None Include="src\shaders\ds_plight_pass.frag" />
+    <None Include="src\shaders\ds_plight_pass.vert" />
     <None Include="src\shaders\edge2D.frag" />
     <None Include="src\shaders\explode.geom" />
     <None Include="src\shaders\explode.vert" />
@@ -173,8 +182,12 @@
     <None Include="src\shaders\highlight.frag" />
     <None Include="src\shaders\inverse2D.frag" />
     <None Include="src\shaders\light.frag" />
+    <None Include="src\shaders\material.frag" />
+    <None Include="src\shaders\material.vert" />
     <None Include="src\shaders\phongLighting.frag" />
     <None Include="src\shaders\lighting.vert" />
+    <None Include="src\shaders\pointShadows.frag" />
+    <None Include="src\shaders\pointShadows.vert" />
     <None Include="src\shaders\vertexNormalLines.frag" />
     <None Include="src\shaders\vertexNormalLines.geom" />
     <None Include="src\shaders\vertexNormalLines.vert" />
