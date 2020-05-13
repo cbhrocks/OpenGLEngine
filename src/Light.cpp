@@ -34,7 +34,7 @@ PointLight::PointLight(
 
 const float PointLight::getRadius() {
 	float lightMax = std::fmaxf(std::fmaxf(this->color.r, this->color.g), this->color.b);
-	float radius = (-this->linear + std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * lightMax))) / (2 * quadratic);
+	float radius = (-this->linear + std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0f / 4.0f) * lightMax))) / (2 * quadratic);
 	return radius;
 }
 
