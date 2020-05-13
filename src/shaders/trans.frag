@@ -1,10 +1,10 @@
 #version 330
 
 struct Material {
-    sampler2D texture_diffuse1;
-    sampler2D texture_specular1;
-	sampler2D texture_normal1;
-	sampler2D texture_height1;
+    sampler2D diffuse;
+    sampler2D specular;
+	sampler2D normal;
+	sampler2D height;
 };
 
 uniform Material material;
@@ -16,7 +16,7 @@ layout (location = 1) out vec4 BrightColor;
 
 void main()
 {
-	vec4 texColor = texture(material.texture_diffuse1, TexCoords);
+	vec4 texColor = texture(material.diffuse, TexCoords);
 	if (texColor.a == 0.0)
 	{
 		discard;

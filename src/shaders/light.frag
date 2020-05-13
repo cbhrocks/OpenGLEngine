@@ -2,9 +2,10 @@
 
 struct Light {
     vec3 position;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    vec3 color;
+    float ambient;
+    float diffuse;
+    float specular;
 };
 
 uniform Light light;
@@ -14,7 +15,10 @@ layout (location = 1) out vec4 BrightColor;
 
 void main()
 {
-    FragColor = vec4(light.ambient + light.diffuse + light.specular, 1.0);
+	vec3 ambient = light.color * light.ambient;
+	vec3 diffuse = light.color * light.diffuse;
+	vec3 specular = light.color * light.specular;
+    FragColor = vec4(ambient + diffuse + specular, 1.0);
 
 	float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
 	if (brightness > 1.0)

@@ -10,69 +10,51 @@
 #include "TextureManager.h"
 #include "FBOManager.h"
 #include "camera.h"
+#include "LightManager.h"
 
 class Scene {
 public:
 	glm::vec3 up;
-	size_t width, height;
-	double currentTime;
-	std::map<std::string, Shader> shaders;
-	bool gammaCorrection;
-	float exposure;
-	Tex2DRenderer tex2DR;
 
 	Scene();
-	void loadObjects();
-	void clearObjects();
 
-	void onFrame();
+	std::map<std::string, Model*> getModels();
+	void setModels(std::map<std::string, Model*> models);
 
-	void uploadSkyboxUniforms(Shader shader);
+	std::vector<std::string> getTransparentModels();
+	std::vector<std::string> getOpaqueModels();
 
-	void draw();
-	void drawShadows();
-	void drawSkybox();
-	void drawModels(Shader shader);
-	void drawModels();
-	void drawHighlight();
+	void setModel(std::string name, Model* model);
+	Model* getModel(std::string);
+	Model* removeModel(std::string);
 
-	void timeStep(double t);
+	LightManager* getLightManager() const;
+	void setLightManager(LightManager* lightManager);
 
 	Camera* getActiveCamera() const;
 	void setActiveCamera(const int &activeCamera);
 	void addCamera(Camera* camera);
+	
+	std::unordered_map<std::string, std::function<void(Scene*)>> getUpdateFunctions() { return this->updateFunctions; }
+	void setUpdateFunctions(std::unordered_map<std::string, std::function<void(Scene*)>> updateFunctions) { this->updateFunctions = updateFunctions; }
+
+	void addUpdateFunction(const std::string& name, std::function<void(Scene*)> func) { this->updateFunctions.insert_or_assign(name, func); }
+	std::function<void(Scene*)> getUpdateFunction(const std::string& name) { return this->updateFunctions.at(name); }
+
+	void setSkybox(Skybox* skybox);
+	Skybox* getSkybox();
 
 	glm::vec3 getUp() const;
 	void setUp(glm::vec3 up);
 
-	size_t getWidth() const;
-	void setWidth(size_t width);
-	size_t getHeight() const;
-	void setHeight(size_t height);
-
-	void setGammaCorrection(bool gamma);
-	bool getGammaCorrection() const;
-
-	void setExposure(float exposure);
-	float getExposure() const;
-
-	void scaleModels(const glm::vec3& scale);
-
-	void initializeShaders();
-
 private:
-	GLuint ubo;
 	Skybox* skybox;
 	LightManager* lightManager;
-	std::vector<Model*> models;
-	std::vector<DrawObject*> drawObjects;
+	//std::vector<Model*> models;
+	std::map<std::string, Model*> models;
+	std::vector<std::string> transparentModels;
+	std::vector<std::string> opaqueModels;
 	std::vector<Camera*> cameras;
+	std::unordered_map<std::string, std::function<void(Scene*)>> updateFunctions;
 	int activeCamera;
-	bool running;
-	Shader lightShader;
-
-	void setup();
-
-	void setupUbo();
-	void updateUbo();
 };

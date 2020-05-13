@@ -17,54 +17,61 @@
 #include <vector>
 
 #include "stb_image.h"
-#include "mesh.h"
+#include "glHelper.h"
 #include "shader.h"
 #include "TextureManager.h"
+#include "DrawObj.h"
+#include "mesh.h"
 
 class Model 
 {
     public:
-        /*  Model Data */
-        std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-        std::vector<Mesh> meshes;
-        std::string directory;
-		glm::vec3 position, scale;
-		Shader shader;
-		bool gammaCorrection;
-
         /*  Functions   */
         // constructor, expects a filepath to a 3D model.
-		Model();
-		Model(std::string const &path, const Shader& shader, const bool& gammaCorrection);
+        // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
+		Model(
+			std::string const path,
+			unsigned int assimp_flags = 0
+		);
+		//constructor expects vertex data, indices, and textures
+		Model(
+			std::vector<std::unique_ptr<IDrawObj>>& meshes
+		);
+
+		Model(
+			std::unique_ptr<IDrawObj> meshes
+		);
 
         // drastd::ws the model, and thus all its meshes
-		void Draw();
+		void Draw(const Shader& shader, GLuint baseUnit = 0);
+		void uploadUniforms(const Shader& shader);
 
-		void Draw(Shader shader);
+		const bool getTransparent() const;
+		Model* setTransparent(bool isTransparent);
 
-		void setPosition(glm::vec3 position);
+		const glm::vec3 getPosition() const;
+		Model* setPosition(glm::vec3 position);
 
-		void setScale(glm::vec3 scale);
+		const glm::vec3 getScale() const;
+		Model* setScale(glm::vec3 scale);
 
-		void uploadUniforms();
-
-		void uploadUniforms(Shader& shader);
-
-		void setShader(const Shader& shader);
-
-		Shader getShader();
+		const glm::vec3 getRotation() const;
+		Model* setRotation(glm::vec3 rotation);
 
     private:
+        std::vector<std::unique_ptr<IDrawObj>> meshes;
+        std::map<std::string, Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+        std::string directory; //the directory that the model is loaded from.
+		glm::vec3 position, scale, rotation; //the world location attributes of the model.
+		bool isTransparent; //whether or not the model has transparent textures.
+
         /*  Functions   */
-        // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-		void loadModel(std::string const &path);
-
         // processes a std::node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-		void processNode(aiNode *node, const aiScene *scene);
+		void processNode(std::string const &path, aiNode *node, const aiScene *scene);
 
-		Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+		void processMesh(std::string const &path, aiMesh *mesh, const aiScene *scene);
 
         // checks all material textures of a given type and loads the textures if they're not loaded yet.
         // the required info is returned as a Texture struct.
-		std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
+		std::vector<GLuint> loadMaterialTextures(const std::string& path, aiMaterial *mat, aiTextureType type);
 };

@@ -9,18 +9,20 @@ uniform sampler2D bloomTex;
 layout (std140) uniform Scene
 {
 	float time;
-	bool gamma;
+	float gamma;
 	float exposure;
+	bool bloom;
 };
 
 out vec4 FragColor;
 
 void main()
 {             
-    const float gamma = 2.2;
     vec3 hdrColor = texture(sceneTex, TexCoords).rgb;      
     vec3 bloomColor = texture(bloomTex, TexCoords).rgb;
-    hdrColor += bloomColor; // additive blending
+	if (bloom){
+		hdrColor += bloomColor; // additive blending
+	}
 
     // tone mapping
     vec3 result = vec3(1.0) - exp(-hdrColor * exposure);

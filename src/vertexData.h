@@ -5,6 +5,22 @@
 #include <vector>
 #include <algorithm>
 
+// A great thing about structs is that their memory layout is sequential for all its items.
+// The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
+// again translates to 3/2 floats which translates to a byte array.
+struct VertexData {
+    // position
+    glm::vec3 Position;
+    // normal
+    glm::vec3 Normal;
+    // texCoords
+    glm::vec2 uv;
+    // tangent
+    glm::vec3 Tangent;
+    // bitangent
+    glm::vec3 Bitangent;
+};
+
 GLfloat const skyboxVertexData[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,
@@ -141,7 +157,8 @@ GLfloat const normalCube[] = {
     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f
 };
 
-GLfloat const normalTextureCube[] = {
+///<summary>Cube vertex data that includes position, texture coords, and normals.</summary>
+GLfloat const cubeVertexData[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
 	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,

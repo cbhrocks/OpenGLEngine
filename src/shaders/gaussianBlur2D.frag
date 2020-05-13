@@ -7,7 +7,7 @@ uniform bool horizontal;
 layout (std140) uniform Scene
 {
 	float time;
-	bool gamma;
+	float gamma;
 	float exposure;
 };
 

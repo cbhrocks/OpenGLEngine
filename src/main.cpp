@@ -17,9 +17,59 @@
 
 #include "renderer.h"
 #include "Scene.h"
+#include "LightManager.h"
 #include "counter.h"
+#include "DrawObj.h"
+#include "Sphere.h"
+#include "Icosphere.h"
 
-using namespace std;
+// opengl function for handling debug output
+void APIENTRY glDebugOutput(GLenum source, 
+                            GLenum type, 
+                            unsigned int id, 
+                            GLenum severity, 
+                            GLsizei length, 
+                            const char *message, 
+                            const void *userParam)
+{
+    // ignore non-significant error/warning codes
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+
+    std::cout << "---------------" << std::endl;
+    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+
+    switch (source)
+    {
+        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+    } std::cout << std::endl;
+
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
+        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+    } std::cout << std::endl;
+    
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+    } std::cout << std::endl;
+    std::cout << std::endl;
+}
 
 typedef struct
 {
@@ -30,7 +80,6 @@ typedef struct
 } Slot;
 
 int keys[1024], mouseX, mouseY;
-GLfloat yaw, pitch;
 bool modKeys[4];
 
 static void error_callback(int error, const char* description)
@@ -123,8 +172,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
         slot->render.toggleWireframeMode();
-    if (key == GLFW_KEY_G && action == GLFW_PRESS)
-        slot->scene->setGammaCorrection(!slot->scene->getGammaCorrection());
+	if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+		if (slot->render.getGammaCorrection() == 1.0f)
+			slot->render.setGammaCorrection(2.2f);
+		else
+			slot->render.setGammaCorrection(1.0f);
+	}
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -135,6 +188,12 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
            //get_button_name(button),
            get_mods_name(mods),
            get_action_name(action));
+
+	switch (button) {
+	case GLFW_MOUSE_BUTTON_1:
+		if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
 }
 
 static void scroll_callback(GLFWwindow* window, double x, double y)
@@ -148,19 +207,19 @@ static void doMovement(Scene* scene) {
     GLfloat cameraSpeed = 0.1f;
 	Camera* camera = scene->getActiveCamera();
     if(keys[GLFW_KEY_W]){
-		camera->setPosition(camera->getPosition() + cameraSpeed * camera->getLook());
+		camera->setPosition(camera->getPosition() + cameraSpeed * camera->getFront());
         //printf("forward\n");
     }
     if(keys[GLFW_KEY_S]){
-		camera->setPosition(camera->getPosition() - cameraSpeed * camera->getLook());
+		camera->setPosition(camera->getPosition() - cameraSpeed * camera->getFront());
         //printf("backward\n");
     }
     if(keys[GLFW_KEY_A]){
-		camera->setPosition(camera->getPosition() - glm::normalize(glm::cross(camera->getLook(), camera->getUp())) * cameraSpeed);
+		camera->setPosition(camera->getPosition() - glm::normalize(glm::cross(camera->getFront(), camera->getUp())) * cameraSpeed);
         //printf("left\n");
     }
     if(keys[GLFW_KEY_D]){
-		camera->setPosition(camera->getPosition() + glm::normalize(glm::cross(camera->getLook(), camera->getUp())) * cameraSpeed);
+		camera->setPosition(camera->getPosition() + glm::normalize(glm::cross(camera->getFront(), camera->getUp())) * cameraSpeed);
         //printf("right\n");
     }
     //if (keys[GLFW_KEY_X] && modKeys[GLFW_MOD_ALT]){
@@ -238,6 +297,7 @@ bool firstMouse = true;
 static void cursor_position_callback(GLFWwindow* window, double x, double y)
 {
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
+	Camera* camera = slot->scene->getActiveCamera();
 
     if (firstMouse){
         mouseX = x;
@@ -248,39 +308,28 @@ static void cursor_position_callback(GLFWwindow* window, double x, double y)
     double xOff = x - mouseX;
     double yOff = mouseY - y;
 
-    yaw += xOff;
-    pitch += yOff;
+    xOff *= 0.4f; //this->MouseSensitivity;
+    yOff *= 0.4f; //this->MouseSensitivity;
+
+    float new_yaw = camera->getYaw() + xOff;
+    float new_pitch = camera->getPitch() + yOff;
 
     printf("%i at %0.3f: Cursor position: %f %f Position offset: %f %f Pitch and Yaw: %f %f\n",
-           slot->id, glfwGetTime(), x, y, xOff, yOff, pitch, yaw);
+           slot->id, glfwGetTime(), x, y, xOff, yOff, new_pitch, new_yaw);
 
     mouseX = x;
     mouseY = y;
 
-    xOff *= 0.1f; //this->MouseSensitivity;
-    yOff *= 0.1f; //this->MouseSensitivity;
-
     // Make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
+    if (new_pitch > 89.0f)
+        new_pitch = 89.0f;
+    if (new_pitch < -89.0f)
+        new_pitch = -89.0f;
 
-    //glm::vec3 camLook = slot->scene.getCameraLook();
-    glm::vec3 newLook;
+	camera->setPitch(new_pitch);
+	camera->setYaw(new_yaw);
 
-    newLook.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    newLook.y = sin(glm::radians(pitch));
-    newLook.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    // Also re-calculate the Right and Up vector
-    // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-    glm::vec3 right = glm::normalize(glm::cross(newLook, slot->scene->getUp()));  
-    glm::vec3 camUp = glm::normalize(glm::cross(right, newLook));
-
-	slot->scene->getActiveCamera()->setLook(glm::normalize(newLook));
-    slot->scene->getActiveCamera()->setUp(camUp);
-
-    printf("new look: %f, %f, %f\n", newLook.x, newLook.y, newLook.z);
+	slot->scene->getActiveCamera()->updateVectors(slot->scene->getUp());
 }
 
 static void cursor_enter_callback(GLFWwindow* window, int entered)
@@ -320,27 +369,23 @@ static void window_position_callback(GLFWwindow* window, int x, int y)
 int main(int argc, char** argv)
 {
     GLFWmonitor* monitor = NULL;
-    int width, height;
+    size_t width, height;
 
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// initialize opengl version
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    //scene.currentRes[0] = RESOLUTION;
-    //scene.currentRes[1] = RESOLUTION;
-
-    //printf("res: %d x %d\n", scene.currentRes[0], scene.currentRes[1]);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
     glfwSetMonitorCallback(monitor_callback);
 
     monitor = glfwGetPrimaryMonitor();
-
     if (false)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -382,25 +427,190 @@ int main(int argc, char** argv)
     glfwMakeContextCurrent(window);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        cout << "Failed to initialize GLAD" << std::endl;
+        std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-    cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << endl;
-    cout << "opengl version: " << glGetString(GL_VERSION) << endl;
+    std::cout << "Loaded OpenGL " << GLVersion.major << "." << GLVersion.minor << std::endl;
+    std::cout << "opengl version: " << glGetString(GL_VERSION) << std::endl;
 
+	// initialize debug output must be after glad has been loaded
+	GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	}
 
     glfwSwapInterval(1);
 
     //initalize scene
 
     Slot slot;// = new Slot;
+	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
+	// Light Shaders
+
+	//GLuint LightsUBSize = BPLightingNorm.getUniformBlockSize("Lights");
+	//GLuint LightsUBSize2 = blinnPhongLighting.getUniformBlockSize("Lights");
+	//GLuint LightsUBSize3 = phongLighting.getUniformBlockSize("Lights");
+	//GLuint SceneUBSize = BPLightingNorm.getUniformBlockSize("Scene");
+	//GLuint CameraUBSize = BPLightingNorm.getUniformBlockSize("Camera");
+	//checkGLError("main -- initializeShaders basic2D");
+	// 2D Shaders
+	checkGLError("main::initializeShaders -- 2D shaders");
+	//checkGLError("main -- initializeShaders basic2D");
+	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
+	//FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
+	//tbm->setup();
     slot.scene = new Scene();
     slot.window = window;
     slot.render = Renderer(width, height);
-    slot.id = 0;
 
-    pitch = 0.0f;
-    yaw = 0.0f;
+	Camera* camera = new Camera(
+		glm::vec3(0, 0, 0),
+		glm::vec3(0, 1, 0),
+		0.0f,
+		-90.0f
+	);
+	slot.scene->addCamera(camera);
+
+	LightManager* lm = new LightManager();
+	DirectionLight* directionLight = new DirectionLight(
+		glm::vec3(1.0f, 1.0f, 1.0f),
+		glm::vec3(0.25f, -1.0f, -0.25f),
+		0.2f,
+		0.5f,
+		1.0f
+	);
+	lm->addDirectionLight(directionLight);
+	ShadowMap* shadowMap = new ShadowMap(
+		glm::vec3(0.0f, 20.0f, 0.0f),
+		directionLight->getDirectionRef(),
+		1080,
+		1080,
+		20,
+		20,
+		0.1f,
+		25.0f
+	);
+	lm->addShadowMap(shadowMap);
+	PointLight* pointLight = new PointLight(
+		glm::vec3(0.0f, 8.0f, 5.0f),
+		glm::vec3(1, 1, 1),
+		0.3f,
+		1.5f,
+		2.5f,
+		1.0f,
+		0.35f,
+		0.44f
+	);
+	lm->addShadowCubeMap(new ShadowCubeMap(
+		pointLight->getPosition(),
+		//glm::vec3(0.0f, 8.0f, 5.0f),
+		1080,
+		1080,
+		0.1f,
+		15.0f
+	));
+	slot.scene->addUpdateFunction("plight-rotate", [](Scene* scene) {
+		PointLight* pl = scene->getLightManager()->getPointLights()[0];
+		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
+	});
+	slot.scene->addUpdateFunction("plight-shadow-follow", [](Scene* scene) {
+		PointLight* pl = scene->getLightManager()->getPointLights()[0];
+		ShadowCubeMap* shadow = scene->getLightManager()->getShadowCubeMaps()[0];
+		shadow->setPosition(pl->getPosition());
+	});
+	lm->addPointLight(pointLight);
+	SpotLight* spotLight = new SpotLight(
+		glm::vec3(0.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(1.0, 1.0, 1.0),
+		0.2f,
+		1.5f,
+		3.0f,
+		1.0f,
+		0.0014f,
+		0.000007f,
+		glm::cos(glm::radians(12.5f)),
+		glm::cos(glm::radians(17.5f))
+	);
+	slot.scene->addUpdateFunction("slight-follow-camera", [](Scene* scene) {
+		SpotLight* sl = scene->getLightManager()->getSpotLights()[0];
+		Camera* camera = scene->getActiveCamera();
+		sl->setPosition(camera->position);
+		sl->setDirection(camera->front);
+	});
+	lm->addSpotLight(spotLight);
+
+	lm->createUniformBlock();
+
+	slot.scene->setLightManager(lm);
+
+	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj"), aiProcess_FlipUVs)));
+	//slot.render.setModelShader("nanosuit", "directionalShadows");
+
+	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
+	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
+	//	->setScale(glm::vec3(2.0f))
+	//);
+
+	//slot.scene->setModel("box2", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
+	//	->setPosition(glm::vec3(2.0, 4, 3.5))
+	//);
+
+	//slot.scene->setModel("grass", (new Model( std::string("objects/test/grass_square/grass_square.obj")))
+	//	->setPosition(glm::vec3( 0, 0.5, 0 ))
+	//	->setRotation(glm::vec3( 90, 0, 0 ))
+	//	->setTransparent(true)
+	//);
+
+	//slot.scene->setModel("window1", (new Model( std::string("objects/test/window/window.obj")))
+	//	->setPosition(glm::vec3(0, 1.0, -3.0))
+	//	->setRotation(glm::vec3(90, 0, 0))
+	//	->setTransparent(true)
+	//);
+
+	//slot.scene->setModel("window2", (new Model( std::string("objects/test/window/window.obj")))
+	//	->setPosition(glm::vec3(0, 1.0, -2.0))
+	//	->setRotation(glm::vec3(90, 0, 0))
+	//	->setTransparent(true)
+	//);
+
+	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
+		->setScale(glm::vec3(10))
+	);
+	slot.render.setModelShader("floor", "directionalShadows");
+
+	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
+		->setPosition(glm::vec3(0, 10, -10))
+		->setScale(glm::vec3(10))
+		->setRotation(glm::vec3(90, 0, 0))
+	);
+	//slot.render.setModelShader("wall", "BPLightingNorm");
+
+	slot.scene->setModel("backpack", (new Model( std::string("objects/test/Backpack/backpack.obj")))
+		->setPosition(glm::vec3(0.0f, 2.0f, 3.0f))
+	);
+	slot.render.setModelShader("backpack", "directionalShadows");
+
+	//std::vector<std::unique_ptr<IDrawObj>> sphereMeshes;
+	//sphereMeshes.push_back(std::make_unique<Sphere>(1, 36, 18, false));
+	//Model* sphere = new Model(sphereMeshes);
+	//sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
+	//slot.scene->setModel("Sphere", sphere);
+	//slot.render.setModelShader("Sphere", "material");
+
+	Model* sphere = new Model(std::make_unique<Icosphere>(1.0f, 2, true));
+	sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
+	slot.scene->setModel("Sphere", sphere);
+	slot.render.setModelShader("Sphere", "material");
+
+	//slot.scene.setFBOManager(fbom)
+	//slot.render.setTBM(tbm);
+	GBuffer* gBuffer = new GBuffer(width, height);
+	slot.render.setGBuffer(gBuffer);
+    slot.id = 0;
 
     //create callbacks
     glfwSetWindowUserPointer(window, &slot);
@@ -435,21 +645,31 @@ int main(int argc, char** argv)
         }
         counter.push(elapsedTime);
 
-		slot.scene->onFrame();
+		slot.render.setTime(currentTime);
 		slot.render.preRender(slot.scene);
-		slot.render.renderTexture(slot.scene);
+		slot.render.render(slot.scene);
+		//slot.render.renderToGBuffer(slot.scene);
         //slot.render.renderHighlight(slot.scene);
+		//slot.render.renderLights(slot.scene);
 		slot.render.postRender(slot.scene);
+		//slot.render.renderVertexNormalLines(slot.scene);
+		//slot.render.renderFaceNormalLines(slot.scene);
+		//slot.render.renderTBNLines(slot.scene);
+		//slot.render.renderDepth(slot.scene);
+		slot.render.renderDebugTexture(gBuffer->getNormalTexture());
 
         glfwSwapBuffers(slot.window);
 
         glfwPollEvents();
         doMovement(slot.scene);
-        //glfwWaitEvents();
-        //render.render(scene);
-        
-        slot.scene->timeStep(currentTime);
+		//Model* nanosuit = slot.scene->getModel("nanosuit");
+		//nanosuit->setRotation(glm::vec3(0.0f, nanosuit->getRotation().x + glfwGetTime() * 10, 0.0f));
+		//printf("nanosuit rotation %f, %f, %f\n", nanosuit->getRotation().x, nanosuit->getRotation().y, nanosuit->getRotation().z);
 
+		for (auto& updateFunction_it : slot.scene->getUpdateFunctions()) {
+			updateFunction_it.second(slot.scene);
+		}
+        
         lastTime = currentTime;
         //break;
     }

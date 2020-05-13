@@ -1,8 +1,7 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#pragma once
 
-#include <glad/glad.h>
 #include <sstream>
+#include <glad/glad.h>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/matrix_inverse.hpp"
@@ -15,109 +14,77 @@
 class Renderer
 {
     public:
-        int toIntRange = 0;
+		Renderer(int width = 1024, int height = 1024);
 
-        Renderer()
-        {
-            initialized = false;
+		// render methods
+		void preRender(Scene* scene);
+		void postRender(Scene* scene);
+		void render(Scene* scene);
+		void renderShadowMaps(Scene* scene);
+		void renderModels(Scene* scene);
+		void renderLights(Scene* scene);
+		void renderSkybox(Scene* scene);
 
-            //view
-            this->width = 640;
-            this->height = 480;
+		// defered rendering
+		void renderToGBuffer(Scene* scene);
 
-            //shader
-        }
+		// debug renders
+		void renderVertexNormalLines(Scene* scene);
+		void renderTBNLines(Scene* scene);
+		void renderVertexFaceLines(Scene* scene);
+		void renderDepth(Scene* scene);
+		void renderDebugTexture(GLuint texture);
 
-        Renderer(int width, int height)
-        {
-            initialized = false;
+		void toggleWireframeMode();
 
-            //view
-            this->width = width;
-            this->height = height;
+		void updateUbo();
 
-            initialize();
-        }
+		// getter and setters
+		FBOManagerI* getTBM() const { return this->tbm; };
+		void setTBM(FBOManagerI* tbm) { this->tbm = tbm; };
 
-        void setRes(int width, int height){
-            glViewport(0, 0, this->width, this->height);
-        }
+		GBuffer* getGBuffer() const { return this->gBuffer; };
+		void setGBuffer(GBuffer* gBuffer) { this->gBuffer = gBuffer; };
 
-		void preRender(Scene* scene)
-		{
-			glStencilMask(0xFF);
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		void setTime(float time) { this->time = time; }
+		float getTime() const { return this->time; }
+
+		void setGammaCorrection(bool gamma) { this->gammaCorrection = gamma; }
+		bool getGammaCorrection() const { return this->gammaCorrection; }
+
+		void setExposure(float exposure) { this->exposure = exposure; }
+		float getExposure() const { return this->exposure; }
+
+		void setBloom(bool bloom) { this->bloom = bloom; }
+		bool getBloom() const { return this->bloom; }
+
+		void setRes(int width, int height) {
+			glViewport(0, 0, this->width, this->height);
+			//this->tbm->setDimensions(width, height);
 		}
 
-		void postRender(Scene* scene)
-		{
-
+		void setModelShader(std::string model, std::string shader) {
+			this->forwardRenderModels.insert_or_assign(model, shader);
 		}
-
-		void renderTexture(Scene* scene)
-		{
-            scene->draw();
-			//scene->drawSkybox();
-		}
-
-		void renderHighlight(Scene* scene)
-		{
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glDisable(GL_DEPTH_TEST);
-
-			scene->drawHighlight();
-
-            checkGLError("render highlight");
-
-			glEnable(GL_DEPTH_TEST);
-		}
-
-        void toggleWireframeMode()
-        {
-            GLint polyMode;
-            glGetIntegerv(GL_POLYGON_MODE, &polyMode);
-
-            if ( polyMode == GL_LINE )
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            if ( polyMode == GL_FILL )
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            if ( polyMode == GL_POINTS )
-                ;//
-        }
 
     private:
-        bool initialized;
+		GLuint ubo;
+		GLuint debugVAO = 0, debugVBO;
+		FBOManagerI* tbm;
+		GBuffer* gBuffer;
+		std::unordered_map<std::string, const Shader> shaders;
 
-        GLuint squareVertexArray;
-
+		///<summary>first: The name of the model in the scene, second: the name of the shader
+		///<para>controls whether or not the model will be ommited from the gBuffer render pass, and then rendered afterwords with the specified shader</para>
+		///</summary>
+		std::unordered_map<std::string, std::string> forwardRenderModels;
         int width, height;
+		float time;
+		float exposure;
+		bool useFBO;
+		bool gammaCorrection;
+		bool bloom;
+		bool shadowsEnabled;
 
-        void initialize()
-        {
-            printf("initializing renderer\n");
-            initialized = true;
-
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-
-            glEnable(GL_DEPTH_TEST);
-			glDepthFunc(GL_LESS);
-
-			glEnable(GL_STENCIL_TEST);
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-			glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
-			//glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
-			//glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_REPLACE, GL_REPLACE);
-
-			//glEnable(GL_FRAMEBUFFER_SRGB);
-
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			glEnable(GL_PROGRAM_POINT_SIZE);
-            checkGLError("Renderer::initialize");
-        }
+		void setupUbo();
 };
-
-#endif

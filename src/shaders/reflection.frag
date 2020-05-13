@@ -8,10 +8,10 @@ layout (std140) uniform Camera
 };
 
 struct Material {
-    sampler2D texture_diffuse1;
-    sampler2D texture_specular1;
-	sampler2D texture_normal1;
-	sampler2D texture_height1;
+    sampler2D diffuse;
+    sampler2D specular;
+	sampler2D normal;
+	sampler2D height;
 };
 
 uniform Material material;
@@ -31,5 +31,5 @@ void main()
 	vec3 I = normalize(fs_in.FragPos - camPos);
 	vec3 R = reflect(I, normalize(fs_in.Normal));
 	//FragColor = texture(texture1, TexCoords);
-	FragColor = mix(vec4(texture(skybox, R).rgb, 1.0), texture(material.texture_diffuse1, fs_in.TexCoords), reflection);
+	FragColor = mix(vec4(texture(skybox, R).rgb, 1.0), texture(material.diffuse, fs_in.TexCoords), reflection);
 }
