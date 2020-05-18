@@ -4,8 +4,10 @@ uniform sampler2D texId;
 
 layout (std140) uniform Scene
 {
+	mat4 projection;
+    vec2 window_size;
 	float time;
-	float gamma;
+	bool gamma;
 };
 
 in vec2 TexCoords;

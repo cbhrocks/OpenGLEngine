@@ -34,7 +34,7 @@ public:
 		Triangle(int i1, int i2, int i3) : i1(i1), i2(i2), i3(i3) {}
 	};
 
-	Icosphere(float radius = 1.0f, int subdivisions = 1, bool smooth = true);
+	Icosphere(std::string name, float radius = 1.0f, int subdivisions = 1, bool smooth = true);
 	~Icosphere() {}
 
 	// attributes

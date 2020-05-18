@@ -116,7 +116,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\Libraries\glad\src\glad.c" />
     <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\dear_imgui\imgui.cpp" />
+    <ClCompile Include="src\dear_imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\dear_imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\dear_imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\debug_control.cpp" />
     <ClCompile Include="src\Icosphere.cpp" />
+    <ClCompile Include="src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\LightManager.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -131,11 +138,20 @@
     <ClCompile Include="src\FBOManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\imgui_impl_glfw.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\counter.h" />
+    <ClInclude Include="src\dear_imgui\imconfig.h" />
+    <ClInclude Include="src\dear_imgui\imgui.h" />
+    <ClInclude Include="src\dear_imgui\imgui_internal.h" />
+    <ClInclude Include="src\dear_imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\dear_imgui\imstb_textedit.h" />
+    <ClInclude Include="src\dear_imgui\imstb_truetype.h" />
     <ClInclude Include="src\DrawObj.h" />
     <ClInclude Include="src\glHelper.h" />
     <ClInclude Include="src\Icosphere.h" />
+    <ClInclude Include="src\imgui_impl_opengl3.h" />
+    <ClInclude Include="src\debug_control.h" />
     <ClInclude Include="src\light.h" />
     <ClInclude Include="src\LightManager.h" />
     <ClInclude Include="src\linmath.h" />
@@ -143,6 +159,7 @@
     <ClInclude Include="src\model.h" />
     <ClInclude Include="src\renderer.h" />
     <ClInclude Include="src\Scene.h" />
+    <ClInclude Include="src\scenes.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\ShadowCubeMap.h" />
     <ClInclude Include="src\ShadowMap.h" />

@@ -79,11 +79,17 @@ public:
 
 class GBuffer {
 public:
-	GBuffer(GLsizei width, GLsizei height);
+	GBuffer(int width, int height);
+
+	void initialize(int width, int height);
+
+	int getWidth() { return this->width; }
+	int getHeight() { return this->height; }
+	void setDimensions(int width, int height);
 
 	GLuint getPositionTexture() { return this->gPosition; }
 	GLuint getNormalTexture() { return this->gNormal; }
-	GLuint gAlbedoSpecTexture() { return this->gAlbedoSpec; }
+	GLuint getAlbedoSpecTexture() { return this->gAlbedoSpec; }
 
 	///<summary>set the gBuffer active so that everything drawn will be drawn into it</summary>
 	void BindForWriting();
@@ -104,15 +110,15 @@ public:
 	///<param name="fbo">The target frame buffer to copy depth into.</param>
 	///<param name="width">The width of the the target frame buffer</param>
 	///<param name="height">The height of the the target frame buffer</param>
-	void copyDepth(GLuint fbo, GLsizei width, GLsizei height);
+	void copyDepth(GLuint fbo, int width, int height);
 
 private:
 	// textures used by gBuffer. gPosition: world space position, gNormal: world space surface normal, gAlbedoSpec: albedo color with specular intensity alpha channel
 	GLuint gPosition, gNormal, gAlbedoSpec, gFinal;
 	GLuint gBuffer; // fbo
 	GLuint depthBuffer; // rbo
-	GLuint quadVBO, quadVAO = 0; // vao for drawing 2d scene
-	GLsizei width, height;
+	GLuint quadVBO = 0, quadVAO = 0; // vao for drawing 2d scene
+	int width, height;
 
 	///<summary>the sphere used to set the boudries for point light shading</summary>
 	Model* pLightSphere;

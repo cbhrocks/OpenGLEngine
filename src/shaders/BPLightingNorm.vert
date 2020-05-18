@@ -42,9 +42,18 @@ layout (std140) uniform Lights
 	DirectionLight dlight[NR_DIRECTION_LIGHTS]; // directional light
 };
 
-layout (std140) uniform Camera
+layout (std140) uniform Scene
 {
 	mat4 projection;
+    vec2 window_size;
+	float time;
+	bool gamma;
+	float exposure;
+	bool bloom;
+};
+
+layout (std140) uniform Camera
+{
 	mat4 view;
 	vec3 camPos;
 };

@@ -8,8 +8,10 @@ uniform sampler2D bloomTex;
 
 layout (std140) uniform Scene
 {
+	mat4 projection;
+	vec2 screen_size;
 	float time;
-	float gamma;
+	bool gamma;
 	float exposure;
 	bool bloom;
 };
@@ -28,6 +30,6 @@ void main()
     vec3 result = vec3(1.0) - exp(-hdrColor * exposure);
 
     // also gamma correct while we're at it       
-    result = pow(result, vec3(1.0 / gamma));
+    result = pow(result, vec3(1.0 / (gamma ? 2.2f : 1.0f)));
     FragColor = vec4(result, 1.0);
 }

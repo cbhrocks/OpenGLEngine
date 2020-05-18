@@ -16,13 +16,8 @@ public:
 	glm::vec3 front;
 	glm::vec3 up;
 	GLuint uboBlock;
-	float farBound;
-	float nearBound;
 	float yaw;
 	float pitch;
-	float width;
-	float height;
-	float fov;
 
 	Camera(
 		glm::vec3 pos,
@@ -30,8 +25,6 @@ public:
 		float pitch,
 		float yaw
 	);
-
-	glm::mat4 getProjectionMatrix() const;
 
 	glm::mat4 getViewMatrix() const;
 

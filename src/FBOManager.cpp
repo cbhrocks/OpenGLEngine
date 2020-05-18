@@ -273,8 +273,12 @@ void BloomBuffer::Draw(const Shader& shader)
 	checkGLError("BloomBuffer::Draw");
 }
 
-GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height), pLightSphere(new Model(std::make_unique<Sphere>()))
+GBuffer::GBuffer(int width, int height): width(width), height(height), pLightSphere(new Model("lightVolume", std::make_unique<Sphere>("lightVolume")))
 {
+	this->initialize(width, height);
+}
+
+void GBuffer::initialize(int width, int height) {
 	glGenFramebuffers(1, &this->gBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
 
@@ -321,6 +325,12 @@ GBuffer::GBuffer(GLsizei width, GLsizei height): width(width), height(height), p
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Framebuffer not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GBuffer::setDimensions(int width, int height) {
+	this->width = width;
+	this->height = height;
+	this->initialize(width, height);
 }
 
 void GBuffer::BindForWriting()
@@ -437,11 +447,11 @@ void GBuffer::DSLightingPass(const Shader& directionShader, const Shader& pointS
 	glDepthMask(GL_TRUE);
 }
 
-void GBuffer::copyDepth(GLuint fbo, GLsizei width, GLsizei height) {
+void GBuffer::copyDepth(GLuint fbo, GLsizei targetWidth, GLsizei targetHeight) {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, this->gBuffer);
 	glReadBuffer(GL_COLOR_ATTACHMENT3);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-	glBlitFramebuffer(0, 0, this->width, this->height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, this->width, this->height, 0, 0, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	checkGLError("GBuffer::copyDepth");
 }

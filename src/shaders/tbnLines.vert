@@ -5,9 +5,18 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 3) in vec3 aTangent;
 layout (location = 4) in vec3 aBitangent;
 
-layout (std140) uniform Camera
+layout (std140) uniform Scene
 {
 	mat4 projection;
+    vec2 window_size;
+	float time;
+	bool gamma;
+	float exposure;
+	bool bloom;
+};
+
+layout (std140) uniform Camera
+{
 	mat4 view;
 	vec3 camPos;
 };

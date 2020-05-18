@@ -15,6 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 #include "renderer.h"
 #include "Scene.h"
 #include "LightManager.h"
@@ -22,6 +23,9 @@
 #include "DrawObj.h"
 #include "Sphere.h"
 #include "Icosphere.h"
+#include "scenes.h"
+#include "debug_control.h"
+
 
 // opengl function for handling debug output
 void APIENTRY glDebugOutput(GLenum source, 
@@ -76,15 +80,16 @@ typedef struct
 	GLFWwindow* window;
 	Renderer render;
 	Scene* scene;
+    DebugControl* debugControl;
     int id;
 } Slot;
 
-int keys[1024], mouseX, mouseY;
+int keys[1024], mouse[24], mouseX, mouseY;
 bool modKeys[4];
 
-static void error_callback(int error, const char* description)
+static void glfw_error_callback(int error, const char* description)
 {
-    fprintf(stderr, "Error: %s\n", description);
+    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 static const char* get_action_name(int action)
@@ -129,6 +134,10 @@ static const char* get_mods_name(int mods)
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    if (ImGui::GetIO().WantCaptureKeyboard) {
+        return;
+    }
+
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
 
     const char* name = glfwGetKeyName(key, scancode);
@@ -182,6 +191,10 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+    if (ImGui::GetIO().WantCaptureMouse) {
+        return;
+    }
+
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
     printf("%i at %0.3f: Mouse button %i (with%s) was %s\n",
            slot->id, glfwGetTime(), button,
@@ -189,15 +202,32 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
            get_mods_name(mods),
            get_action_name(action));
 
-	switch (button) {
-	case GLFW_MOUSE_BUTTON_1:
-		if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	}
+    if (button >= 0 && button < 1024)
+    {
+        if (action == GLFW_PRESS)
+            mouse[button] = GLFW_PRESS;
+        else if (action == GLFW_REPEAT)
+            mouse[button] = GLFW_REPEAT;
+        else if (action == GLFW_RELEASE)
+            mouse[button] = GLFW_RELEASE;
+    }
+
+    switch (button) {
+    case GLFW_MOUSE_BUTTON_MIDDLE:
+        if (action == GLFW_PRESS)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        if (action == GLFW_RELEASE)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        break;
+    }
 }
 
 static void scroll_callback(GLFWwindow* window, double x, double y)
 {
+    if (ImGui::GetIO().WantCaptureMouse) {
+        return;
+    }
+
     Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
     printf("%i at %0.3f: Scroll: %0.3f %0.3f\n",
            slot->id, glfwGetTime(), x, y);
@@ -254,6 +284,7 @@ static void doMovement(Scene* scene) {
     //}
 }
 
+// this function is called when a monitor is connected or disconnected.
 static void monitor_callback(GLFWmonitor* monitor, int event)
 {
     if (event == GLFW_CONNECTED)
@@ -294,42 +325,59 @@ static void window_focus_callback(GLFWwindow* window, int focused)
 }
 
 bool firstMouse = true;
+bool firstMouseMiddlePos = true;
 static void cursor_position_callback(GLFWwindow* window, double x, double y)
 {
-    Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
-	Camera* camera = slot->scene->getActiveCamera();
-
-    if (firstMouse){
-        mouseX = x;
-        mouseY = y;
-        firstMouse = false;
+    if (ImGui::GetIO().WantCaptureMouse) {
+        return;
     }
 
-    double xOff = x - mouseX;
-    double yOff = mouseY - y;
+	if (firstMouse) {
+		mouseX = x;
+		mouseY = y;
+		firstMouse = false;
+	}
 
-    xOff *= 0.4f; //this->MouseSensitivity;
-    yOff *= 0.4f; //this->MouseSensitivity;
+	if (mouse[GLFW_MOUSE_BUTTON_MIDDLE] == GLFW_PRESS) {
+		if (firstMouseMiddlePos) {
+			mouseX = x;
+			mouseY = y;
+			firstMouseMiddlePos = false;
+		}
 
-    float new_yaw = camera->getYaw() + xOff;
-    float new_pitch = camera->getPitch() + yOff;
+		Slot* slot = (Slot*)glfwGetWindowUserPointer(window);
+		Camera* camera = slot->scene->getActiveCamera();
 
-    printf("%i at %0.3f: Cursor position: %f %f Position offset: %f %f Pitch and Yaw: %f %f\n",
-           slot->id, glfwGetTime(), x, y, xOff, yOff, new_pitch, new_yaw);
 
-    mouseX = x;
-    mouseY = y;
+		double xOff = x - mouseX;
+		double yOff = mouseY - y;
 
-    // Make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (new_pitch > 89.0f)
-        new_pitch = 89.0f;
-    if (new_pitch < -89.0f)
-        new_pitch = -89.0f;
+		xOff *= 0.4f; //this->MouseSensitivity;
+		yOff *= 0.4f; //this->MouseSensitivity;
 
-	camera->setPitch(new_pitch);
-	camera->setYaw(new_yaw);
+		float new_yaw = camera->getYaw() + xOff;
+		float new_pitch = camera->getPitch() + yOff;
 
-	slot->scene->getActiveCamera()->updateVectors(slot->scene->getUp());
+		printf("%i at %0.3f: Cursor position: %f %f Position offset: %f %f Pitch and Yaw: %f %f\n",
+			slot->id, glfwGetTime(), x, y, xOff, yOff, new_pitch, new_yaw);
+
+		mouseX = x;
+		mouseY = y;
+
+		// Make sure that when pitch is out of bounds, screen doesn't get flipped
+		if (new_pitch > 89.0f)
+			new_pitch = 89.0f;
+		if (new_pitch < -89.0f)
+			new_pitch = -89.0f;
+
+		camera->setPitch(new_pitch);
+		camera->setYaw(new_yaw);
+
+		slot->scene->getActiveCamera()->updateVectors(slot->scene->getUp());
+	}
+    if (mouse[GLFW_MOUSE_BUTTON_MIDDLE] == GLFW_RELEASE) {
+        firstMouseMiddlePos = true;
+    }
 }
 
 static void cursor_enter_callback(GLFWwindow* window, int entered)
@@ -355,8 +403,6 @@ static void window_size_callback(GLFWwindow* window, int width, int height)
 
     printf("%i at %0.3f: Window size: %i %i\n",
            slot->id, glfwGetTime(), width, height);
-
-    slot->render.setRes(width, height);
 }
 
 static void window_position_callback(GLFWwindow* window, int x, int y)
@@ -366,54 +412,41 @@ static void window_position_callback(GLFWwindow* window, int x, int y)
            slot->id, glfwGetTime(), x, y);
 }
 
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    Slot* slot = (Slot*) glfwGetWindowUserPointer(window);
+    slot->render.setDimensions(width, height);
+}
+
 int main(int argc, char** argv)
 {
-    GLFWmonitor* monitor = NULL;
-    size_t width, height;
-
-    glfwSetErrorCallback(error_callback);
-
+    // initialize glfw
+    glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
+
+    //GLFWmonitor* monitor = NULL;
+
 	// initialize opengl version
+    const char* glsl_version = "#version 330 core";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    glfwSetMonitorCallback(monitor_callback);
+    size_t width, height;
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 
-    monitor = glfwGetPrimaryMonitor();
-    if (false)
-    {
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-    }
-    else
-    {
-        width  = 1024;
-        height = 1024;
-    }
-
-    if (monitor)
-    {
-        printf("Creating full screen window (%ix%i on %s)\n",
-                width, height,
-                glfwGetMonitorName(monitor));
-    }
-    else
-    {
-        printf("Creating windowed mode window (%ix%i)\n",
-                width, height);
-    }
-
-    //Create the window
+	width = 1024;
+	height = 1024;
+	//Create the window
     GLFWwindow* window = glfwCreateWindow(width, height, "Simple example", NULL, NULL);
     if (!window)
     {
@@ -444,167 +477,17 @@ int main(int argc, char** argv)
 
     glfwSwapInterval(1);
 
+
+    // initialize imgui
+
     //initalize scene
 
-    Slot slot;// = new Slot;
-	//FBOManager* fbom = new BloomBuffer(this->getWidth(), this->getHeight(), this->shaders["bloom2D"], this->shaders["gaussianBlur2D"]);
-	// Light Shaders
 
-	//GLuint LightsUBSize = BPLightingNorm.getUniformBlockSize("Lights");
-	//GLuint LightsUBSize2 = blinnPhongLighting.getUniformBlockSize("Lights");
-	//GLuint LightsUBSize3 = phongLighting.getUniformBlockSize("Lights");
-	//GLuint SceneUBSize = BPLightingNorm.getUniformBlockSize("Scene");
-	//GLuint CameraUBSize = BPLightingNorm.getUniformBlockSize("Camera");
-	//checkGLError("main -- initializeShaders basic2D");
-	// 2D Shaders
-	checkGLError("main::initializeShaders -- 2D shaders");
-	//checkGLError("main -- initializeShaders basic2D");
-	//FBOManager* tbm = new HDRBuffer(width, height, &shader2D);
-	//FBOManagerI* tbm = new BloomBuffer(width, height, &bloom2D, &gBlur2D);
-	//tbm->setup();
+    Slot slot;// = new Slot;
     slot.scene = new Scene();
     slot.window = window;
     slot.render = Renderer(width, height);
 
-	Camera* camera = new Camera(
-		glm::vec3(0, 0, 0),
-		glm::vec3(0, 1, 0),
-		0.0f,
-		-90.0f
-	);
-	slot.scene->addCamera(camera);
-
-	LightManager* lm = new LightManager();
-	DirectionLight* directionLight = new DirectionLight(
-		glm::vec3(1.0f, 1.0f, 1.0f),
-		glm::vec3(0.25f, -1.0f, -0.25f),
-		0.2f,
-		0.5f,
-		1.0f
-	);
-	lm->addDirectionLight(directionLight);
-	ShadowMap* shadowMap = new ShadowMap(
-		glm::vec3(0.0f, 20.0f, 0.0f),
-		directionLight->getDirectionRef(),
-		1080,
-		1080,
-		20,
-		20,
-		0.1f,
-		25.0f
-	);
-	lm->addShadowMap(shadowMap);
-	PointLight* pointLight = new PointLight(
-		glm::vec3(0.0f, 8.0f, 5.0f),
-		glm::vec3(1, 1, 1),
-		0.3f,
-		1.5f,
-		2.5f,
-		1.0f,
-		0.35f,
-		0.44f
-	);
-	lm->addShadowCubeMap(new ShadowCubeMap(
-		pointLight->getPosition(),
-		//glm::vec3(0.0f, 8.0f, 5.0f),
-		1080,
-		1080,
-		0.1f,
-		15.0f
-	));
-	slot.scene->addUpdateFunction("plight-rotate", [](Scene* scene) {
-		PointLight* pl = scene->getLightManager()->getPointLights()[0];
-		pl->setPosition(glm::vec4(pl->getPosition(), 1.0f) * glm::rotate(glm::mat4(1.0f), glm::radians(0.25f), glm::vec3(0.0f, 1.0f, 0.0f)));
-	});
-	slot.scene->addUpdateFunction("plight-shadow-follow", [](Scene* scene) {
-		PointLight* pl = scene->getLightManager()->getPointLights()[0];
-		ShadowCubeMap* shadow = scene->getLightManager()->getShadowCubeMaps()[0];
-		shadow->setPosition(pl->getPosition());
-	});
-	lm->addPointLight(pointLight);
-	SpotLight* spotLight = new SpotLight(
-		glm::vec3(0.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f),
-		glm::vec3(1.0, 1.0, 1.0),
-		0.2f,
-		1.5f,
-		3.0f,
-		1.0f,
-		0.0014f,
-		0.000007f,
-		glm::cos(glm::radians(12.5f)),
-		glm::cos(glm::radians(17.5f))
-	);
-	slot.scene->addUpdateFunction("slight-follow-camera", [](Scene* scene) {
-		SpotLight* sl = scene->getLightManager()->getSpotLights()[0];
-		Camera* camera = scene->getActiveCamera();
-		sl->setPosition(camera->position);
-		sl->setDirection(camera->front);
-	});
-	lm->addSpotLight(spotLight);
-
-	lm->createUniformBlock();
-
-	slot.scene->setLightManager(lm);
-
-	slot.scene->setModel("nanosuit", (new Model(std::string("objects/test/nanosuit/nanosuit.obj"), aiProcess_FlipUVs)));
-	//slot.render.setModelShader("nanosuit", "directionalShadows");
-
-	//slot.scene->setModel("box1", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
-	//	->setPosition(glm::vec3(-4.0, 1.5, 3.5))
-	//	->setScale(glm::vec3(2.0f))
-	//);
-
-	//slot.scene->setModel("box2", (new Model(std::string("objects/test/wood_box/wood_box.obj")))
-	//	->setPosition(glm::vec3(2.0, 4, 3.5))
-	//);
-
-	//slot.scene->setModel("grass", (new Model( std::string("objects/test/grass_square/grass_square.obj")))
-	//	->setPosition(glm::vec3( 0, 0.5, 0 ))
-	//	->setRotation(glm::vec3( 90, 0, 0 ))
-	//	->setTransparent(true)
-	//);
-
-	//slot.scene->setModel("window1", (new Model( std::string("objects/test/window/window.obj")))
-	//	->setPosition(glm::vec3(0, 1.0, -3.0))
-	//	->setRotation(glm::vec3(90, 0, 0))
-	//	->setTransparent(true)
-	//);
-
-	//slot.scene->setModel("window2", (new Model( std::string("objects/test/window/window.obj")))
-	//	->setPosition(glm::vec3(0, 1.0, -2.0))
-	//	->setRotation(glm::vec3(90, 0, 0))
-	//	->setTransparent(true)
-	//);
-
-	slot.scene->setModel("floor", (new Model( std::string("objects/test/wood_floor/wood_floor.obj")))
-		->setScale(glm::vec3(10))
-	);
-	slot.render.setModelShader("floor", "directionalShadows");
-
-	slot.scene->setModel("wall", (new Model( std::string("objects/test/brick_wall/brick_wall.obj")))
-		->setPosition(glm::vec3(0, 10, -10))
-		->setScale(glm::vec3(10))
-		->setRotation(glm::vec3(90, 0, 0))
-	);
-	//slot.render.setModelShader("wall", "BPLightingNorm");
-
-	slot.scene->setModel("backpack", (new Model( std::string("objects/test/Backpack/backpack.obj")))
-		->setPosition(glm::vec3(0.0f, 2.0f, 3.0f))
-	);
-	slot.render.setModelShader("backpack", "directionalShadows");
-
-	//std::vector<std::unique_ptr<IDrawObj>> sphereMeshes;
-	//sphereMeshes.push_back(std::make_unique<Sphere>(1, 36, 18, false));
-	//Model* sphere = new Model(sphereMeshes);
-	//sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
-	//slot.scene->setModel("Sphere", sphere);
-	//slot.render.setModelShader("Sphere", "material");
-
-	Model* sphere = new Model(std::make_unique<Icosphere>(1.0f, 2, true));
-	sphere->setPosition(glm::vec3(3.0f, 2.0f, 2.0f));
-	slot.scene->setModel("Sphere", sphere);
-	slot.render.setModelShader("Sphere", "material");
 
 	//slot.scene.setFBOManager(fbom)
 	//slot.render.setTBM(tbm);
@@ -615,6 +498,7 @@ int main(int argc, char** argv)
     //create callbacks
     glfwSetWindowUserPointer(window, &slot);
 
+    glfwSetMonitorCallback(monitor_callback);
     glfwSetKeyCallback(slot.window, key_callback);
     glfwSetWindowRefreshCallback(slot.window, window_refresh_callback);
     glfwSetWindowFocusCallback(slot.window, window_focus_callback);
@@ -625,6 +509,13 @@ int main(int argc, char** argv)
     glfwSetWindowPosCallback(slot.window, window_position_callback);
     glfwSetMouseButtonCallback(slot.window, mouse_button_callback);
     glfwSetScrollCallback(slot.window, scroll_callback);
+    glfwSetFramebufferSizeCallback(slot.window, framebuffer_size_callback);
+
+    // this needs to be below other callbacks. it chains callbacks
+    slot.debugControl = new DebugControl(glsl_version, slot.window, slot.scene, &slot.render);
+
+    // load stuff into the scene
+    setupBasic(slot.scene, &slot.render);
 
     float lastTime = glfwGetTime();
     float lastPrint = lastTime;
@@ -634,6 +525,10 @@ int main(int argc, char** argv)
 
     while (!glfwWindowShouldClose(slot.window))
     {
+        glfwPollEvents();
+
+        slot.debugControl->onFrame();
+
         float currentTime = glfwGetTime();
         float elapsedTime = currentTime - lastTime;
         float sinceLastPrint = currentTime - lastPrint;
@@ -651,20 +546,12 @@ int main(int argc, char** argv)
 		//slot.render.renderToGBuffer(slot.scene);
         //slot.render.renderHighlight(slot.scene);
 		//slot.render.renderLights(slot.scene);
-		slot.render.postRender(slot.scene);
 		//slot.render.renderVertexNormalLines(slot.scene);
 		//slot.render.renderFaceNormalLines(slot.scene);
 		//slot.render.renderTBNLines(slot.scene);
 		//slot.render.renderDepth(slot.scene);
-		slot.render.renderDebugTexture(gBuffer->getNormalTexture());
 
-        glfwSwapBuffers(slot.window);
-
-        glfwPollEvents();
         doMovement(slot.scene);
-		//Model* nanosuit = slot.scene->getModel("nanosuit");
-		//nanosuit->setRotation(glm::vec3(0.0f, nanosuit->getRotation().x + glfwGetTime() * 10, 0.0f));
-		//printf("nanosuit rotation %f, %f, %f\n", nanosuit->getRotation().x, nanosuit->getRotation().y, nanosuit->getRotation().z);
 
 		for (auto& updateFunction_it : slot.scene->getUpdateFunctions()) {
 			updateFunction_it.second(slot.scene);
@@ -672,7 +559,12 @@ int main(int argc, char** argv)
         
         lastTime = currentTime;
         //break;
+        slot.debugControl->render();
+
+        glfwSwapBuffers(slot.window);
     }
+
+    delete slot.debugControl;
 
     glfwDestroyWindow(slot.window);
 

@@ -3,9 +3,10 @@
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
 Model::Model(
+	std::string name,
 	std::string const path,
 	unsigned int assimp_flags
-) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
+) : name(name), position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | assimp_flags);
@@ -20,15 +21,17 @@ Model::Model(
 }
 
 Model::Model(
+	std::string name,
 	std::vector<std::unique_ptr<IDrawObj>>& meshes
-) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
+) : name(name), position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
 	std::move(meshes.begin(), meshes.end(), std::back_inserter(this->meshes));
 }
 
 Model::Model(
+	std::string name,
 	std::unique_ptr<IDrawObj> mesh
-) : position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
+) : name(name), position(glm::vec3(0)), scale(glm::vec3(1)), rotation(glm::vec3(0)), isTransparent(false)
 {
 	this->meshes.push_back(std::move(mesh));
 }
@@ -60,42 +63,13 @@ void Model::uploadUniforms(const Shader& shader)
 	checkGLError("Model::uploadUniforms -- end");
 }
 
-const bool Model::getTransparent() const {
-	return this->isTransparent;
-}
-
-Model* Model::setTransparent(bool isTransparent) {
-	this->isTransparent = isTransparent;
-	return this;
-}
-
-const glm::vec3 Model::getPosition() const {
-	return this->position;
-}
-
-Model* Model::setPosition(glm::vec3 position)
+const std::vector<IDrawObj*> Model::getMeshes()
 {
-	this->position = position;
-	return this;
-}
-
-const glm::vec3 Model::getScale() const {
-	return this->scale;
-}
-
-Model* Model::setScale(glm::vec3 scale)
-{
-	this->scale = scale;
-	return this;
-}
-
-const glm::vec3 Model::getRotation() const {
-	return this->rotation;
-}
-
-Model* Model::setRotation(glm::vec3 rotation) {
-	this->rotation = rotation;
-	return this;
+	std::vector<IDrawObj*> retVec;
+	for (auto& p : this->meshes) {
+		retVec.push_back(p.get());
+	}
+	return retVec;
 }
 
 /*  Functions   */
@@ -123,6 +97,7 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 	// data to fill
 	std::vector<VertexData> vertices;
 	std::vector<GLuint> indices;
+	std::string name;
 
 	// Walk through each of the mesh's vertices
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -174,33 +149,39 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 		}
 	}
 
+	name = mesh->mName.C_Str();
+
 	// process materials
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
 	// load in the coeficients.
-	Material mat;
+	Material* mat = new Material();
 	float shininess, opacity, reflectivity, refractionIndex;
 	aiColor4D ambientColor, diffuseColor, specularColor;
+	aiString mat_name;
+	if (AI_SUCCESS == aiGetMaterialString(material, AI_MATKEY_NAME, &mat_name)) {
+		mat->Name = mat_name.C_Str();
+	}
 	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shininess)) {
-		mat.Shininess = shininess;
+		mat->Shininess = shininess;
 	}
 	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambientColor)) {
-		mat.AmbientColor = glm::vec4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a);
+		mat->AmbientColor = glm::vec4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a);
 	}
 	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor)) {
-		mat.DiffuseColor = glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a);
+		mat->DiffuseColor = glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a);
 	}
 	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specularColor)) {
-		mat.SpecularColor = glm::vec4(specularColor.r, specularColor.g, specularColor.b, specularColor.a);
+		mat->SpecularColor = glm::vec4(specularColor.r, specularColor.g, specularColor.b, specularColor.a);
 	}
 	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_OPACITY, &opacity)) {
-		mat.opacity = opacity;
+		mat->Opacity = opacity;
 	}
 	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_REFLECTIVITY, &reflectivity)) {
-		mat.reflectivity = reflectivity;
+		mat->Reflectivity = reflectivity;
 	}
 	if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_REFRACTI, &refractionIndex)) {
-		mat.refractionIndex = refractionIndex;
+		mat->RefractionIndex = refractionIndex;
 	}
 
 	// we assume a convention for sampler names in the shaders. Each diffuse texture should be named
@@ -212,16 +193,19 @@ void Model::processMesh(std::string const &path, aiMesh *mesh, const aiScene *sc
 	std::map<GLuint, std::string> textures;
 
 	// 1. diffuse maps
-	mat.textureDiffuse = loadMaterialTextures(path, material, aiTextureType_DIFFUSE);
+	mat->textureDiffuse = loadMaterialTextures(path, material, aiTextureType_DIFFUSE);
 	// 2. specular maps
-	mat.textureSpecular = loadMaterialTextures(path, material, aiTextureType_SPECULAR);
+	mat->textureSpecular = loadMaterialTextures(path, material, aiTextureType_SPECULAR);
 	// 3. normal maps
-	mat.textureNormal = loadMaterialTextures(path, material, aiTextureType_HEIGHT);
+	mat->textureNormal = loadMaterialTextures(path, material, aiTextureType_HEIGHT);
 	// 4. height maps
-	mat.textureHeight = loadMaterialTextures(path, material, aiTextureType_AMBIENT);
+	mat->textureHeight = loadMaterialTextures(path, material, aiTextureType_AMBIENT);
 
 	// return a mesh object created from the extracted mesh data
-	meshes.push_back(std::unique_ptr<IDrawObj>((IDrawObj*)new Mesh(vertices, indices, mat)));
+	if (name == "") {
+		name = "mesh_" + this->meshes.size();
+	}
+	meshes.push_back(std::unique_ptr<IDrawObj>((IDrawObj*)new Mesh(vertices, indices, name, mat)));
 }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Dear IMGUI">
+      <UniqueIdentifier>{6a59aa4c-9651-4cb9-9ecc-f57ffa6a1d66}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -61,6 +64,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Icosphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dear_imgui\imgui.cpp">
+      <Filter>Dear IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dear_imgui\imgui_demo.cpp">
+      <Filter>Dear IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dear_imgui\imgui_draw.cpp">
+      <Filter>Dear IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dear_imgui\imgui_widgets.cpp">
+      <Filter>Dear IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_glfw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_opengl3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debug_control.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -126,6 +150,36 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Icosphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dear_imgui\imconfig.h">
+      <Filter>Dear IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dear_imgui\imgui.h">
+      <Filter>Dear IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dear_imgui\imgui_internal.h">
+      <Filter>Dear IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dear_imgui\imstb_rectpack.h">
+      <Filter>Dear IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dear_imgui\imstb_textedit.h">
+      <Filter>Dear IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dear_imgui\imstb_truetype.h">
+      <Filter>Dear IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui_impl_glfw.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui_impl_opengl3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scenes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debug_control.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

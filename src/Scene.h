@@ -24,7 +24,7 @@ public:
 	std::vector<std::string> getTransparentModels();
 	std::vector<std::string> getOpaqueModels();
 
-	void setModel(std::string name, Model* model);
+	void setModel(Model* model);
 	Model* getModel(std::string);
 	Model* removeModel(std::string);
 

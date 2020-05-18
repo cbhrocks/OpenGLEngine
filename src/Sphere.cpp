@@ -1,6 +1,7 @@
 #include "Sphere.h"
 
-Sphere::Sphere(float radius, int sectorCount, int stackCount, bool smooth) {
+Sphere::Sphere(std::string name, float radius, int sectorCount, int stackCount, bool smooth) : IDrawObj(name) {
+	this->getMaterial()->AmbientColor = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 	this->buildSphere(radius, sectorCount, stackCount, smooth);
 }
 
@@ -360,13 +361,13 @@ void Sphere::Draw(const Shader& shader, GLuint baseUnit) {
 		this->genVAO();
 	}
 
-	shader.setVec4("material.ambient", this->material.AmbientColor);
-	shader.setVec4("material.diffuse", this->material.DiffuseColor);
-	shader.setVec4("material.specular", this->material.SpecularColor);
-	shader.setFloat("material.shininess", this->material.Shininess);
-	shader.setFloat("material.opacity", this->material.opacity);
-	shader.setFloat("material.reflectivity", this->material.reflectivity);
-	shader.setFloat("material.refractionIndex", this->material.refractionIndex);
+	shader.setVec4("material.ambient", this->material->AmbientColor);
+	shader.setVec4("material.diffuse", this->material->DiffuseColor);
+	shader.setVec4("material.specular", this->material->SpecularColor);
+	shader.setFloat("material.shininess", this->material->Shininess);
+	shader.setFloat("material.opacity", this->material->Opacity);
+	shader.setFloat("material.reflectivity", this->material->Reflectivity);
+	shader.setFloat("material.refractionIndex", this->material->RefractionIndex);
 
 	glBindVertexArray(VAO);
 	glDrawElements(this->smooth ? GL_TRIANGLE_STRIP : GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

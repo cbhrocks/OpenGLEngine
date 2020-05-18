@@ -44,16 +44,18 @@ layout (std140) uniform Lights
 
 layout (std140) uniform Camera
 {
-	mat4 projection;
 	mat4 view;
 	vec3 camPos;
 };
 
 layout (std140) uniform Scene
 {
+	mat4 projection;
+    vec2 window_size;
 	float time;
 	bool gamma;
 	float exposure;
+	bool bloom;
 };
 
 struct Material {

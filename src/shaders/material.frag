@@ -45,7 +45,6 @@ layout (std140) uniform Lights
 
 layout (std140) uniform Camera
 {
-	mat4 projection;
 	mat4 view;
 	vec3 camPos;
 };
@@ -54,6 +53,10 @@ struct Material {
 	vec4 ambient;
     vec4 diffuse;
     vec4 specular;
+    float shininess;
+    float opacity;
+	float reflectivity;
+	float refractionIndex;
 };
 
 uniform Material material;
@@ -75,7 +78,7 @@ void main()
    
     // get diffuse color for ambient and diffuse
     // final ambient
-    vec3 ambient = dlight[0].color * dlight[0].ambient * material.diffuse.rgb;
+    vec3 ambient = dlight[0].color * dlight[0].ambient * material.ambient.rgb;
 
     // light diffuse
     vec3 lightDir = normalize(-dlight[0].direction);
@@ -86,7 +89,7 @@ void main()
     // light specular 
     vec3 viewDir = normalize(camPos - fs_in.FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
 
 	// object specular
 	// final specular
@@ -95,6 +98,6 @@ void main()
 
 	vec3 lighting = ambient + diffuse + specular;
 
-    FragColor = vec4(diffuse, 1.0);
+    FragColor = vec4(lighting, 1.0);
 }
 

@@ -40,7 +40,7 @@ class Light: public ILight
 		);
         /*  Model Data */
 		const glm::vec3 getColor() const { return this->color; }
-		void getColor(const glm::vec3& color) { this->color = color; }
+		void setColor(const glm::vec3& color) { this->color = color; }
 		const float getAmbient() const { return this->ambient; }
 		void setAmbient(const float& ambient) { this->ambient = ambient; }
 		const float getDiffuse() const { return this->diffuse; }

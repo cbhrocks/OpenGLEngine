@@ -25,13 +25,13 @@ std::vector<std::string> Scene::getTransparentModels() { return this->transparen
 std::vector<std::string> Scene::getOpaqueModels() { return this->opaqueModels; }
 
 Model* Scene::getModel(std::string name) { return this->models[name]; }
-void Scene::setModel(std::string name, Model* model) { 
-	this->models[name] = model; 
+void Scene::setModel(Model* model) { 
+	this->models[model->getName()] = model; 
 	if (model->getTransparent()) {
-		this->transparentModels.push_back(name);
+		this->transparentModels.push_back(model->getName());
 	}
 	else {
-		this->opaqueModels.push_back(name);
+		this->opaqueModels.push_back(model->getName());
 	}
 }
 Model* Scene::removeModel(std::string name) {
