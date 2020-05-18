@@ -18,10 +18,8 @@ class Renderer
 
 		// render methods
 		void preRender(Scene* scene);
-		void postRender(Scene* scene);
 		void render(Scene* scene);
 		void renderShadowMaps(Scene* scene);
-		void renderModels(Scene* scene);
 		void renderLights(Scene* scene);
 		void renderSkybox(Scene* scene);
 
@@ -33,58 +31,67 @@ class Renderer
 		void renderTBNLines(Scene* scene);
 		void renderVertexFaceLines(Scene* scene);
 		void renderDepth(Scene* scene);
-		void renderDebugTexture(GLuint texture);
 
 		void toggleWireframeMode();
 
 		void updateUbo();
 
 		// getter and setters
+		std::unordered_map<std::string, Shader> getShaders() { return this->shaders; }
+		const Shader getShader(std::string name) { return this->shaders.at(name); }
+		std::unordered_map<std::string, std::string> getForwardRenderModels() { return this->modelShaders; }
+		std::string getModelShader(std::string modelName) { return this->modelShaders.count(modelName) ? this->modelShaders.at(modelName) : "Deferred"; }
 		FBOManagerI* getTBM() const { return this->tbm; };
-		void setTBM(FBOManagerI* tbm) { this->tbm = tbm; };
-
 		GBuffer* getGBuffer() const { return this->gBuffer; };
-		void setGBuffer(GBuffer* gBuffer) { this->gBuffer = gBuffer; };
-
-		void setTime(float time) { this->time = time; }
+		float getNearBound() const { return this->nearBound; }
+		float getFarBound() const { return this->farBound; }
+		float getFieldOfView() const { return this->fieldOfView; }
 		float getTime() const { return this->time; }
-
-		void setGammaCorrection(bool gamma) { this->gammaCorrection = gamma; }
+		bool getDrawLights() const { return this->drawLights; }
 		bool getGammaCorrection() const { return this->gammaCorrection; }
-
-		void setExposure(float exposure) { this->exposure = exposure; }
 		float getExposure() const { return this->exposure; }
-
-		void setBloom(bool bloom) { this->bloom = bloom; }
 		bool getBloom() const { return this->bloom; }
 
-		void setRes(int width, int height) {
-			glViewport(0, 0, this->width, this->height);
-			//this->tbm->setDimensions(width, height);
-		}
+		void setShaders(std::unordered_map<std::string, Shader> shaders) { this->shaders = shaders; }
+		void setShader(std::string name, Shader shader) { this->shaders.at(name) = shader; }
+		void setModelShaders(std::unordered_map<std::string, std::string> map) { this->modelShaders = map; }
+		void setModelShader(std::string model, std::string shader) { this->modelShaders.insert_or_assign(model, shader); }
+		void removeModelShader(std::string modelName) { this->modelShaders.erase(modelName); }
+		void setTBM(FBOManagerI* tbm) { this->tbm = tbm; };
+		void setGBuffer(GBuffer* gBuffer) { this->gBuffer = gBuffer; };
+		void setNearBound(float nearBound) { this->nearBound = nearBound; }
+		void setFarBound(float farBound) { this->farBound = farBound; }
+		void setFieldOfView(float fieldOfView) { this->fieldOfView = fieldOfView; }
+		void setTime(float time) { this->time = time; }
+		void setDrawLights(bool drawLights) { this->drawLights = drawLights; }
+		void setGammaCorrection(bool gamma) { this->gammaCorrection = gamma; }
+		void setExposure(float exposure) { this->exposure = exposure; }
+		void setBloom(bool bloom) { this->bloom = bloom; }
+		void setDimensions(int width, int height);
 
-		void setModelShader(std::string model, std::string shader) {
-			this->forwardRenderModels.insert_or_assign(model, shader);
-		}
+		glm::mat4 getProjectionMatrix() const;
 
     private:
 		GLuint ubo;
 		GLuint debugVAO = 0, debugVBO;
 		FBOManagerI* tbm;
 		GBuffer* gBuffer;
-		std::unordered_map<std::string, const Shader> shaders;
+		std::unordered_map<std::string, Shader> shaders;
 
 		///<summary>first: The name of the model in the scene, second: the name of the shader
 		///<para>controls whether or not the model will be ommited from the gBuffer render pass, and then rendered afterwords with the specified shader</para>
 		///</summary>
-		std::unordered_map<std::string, std::string> forwardRenderModels;
+		std::unordered_map<std::string, std::string> modelShaders;
+		float nearBound, farBound, fieldOfView;
         int width, height;
 		float time;
 		float exposure;
+
+		bool drawLights;
+		bool renderShadows;
 		bool useFBO;
 		bool gammaCorrection;
 		bool bloom;
-		bool shadowsEnabled;
 
 		void setupUbo();
 };

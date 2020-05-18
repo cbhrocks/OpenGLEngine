@@ -196,14 +196,29 @@ const GLuint Shader::getUniformBlockSize(const std::string &name) const {
 	glGetActiveUniformBlockiv(this->getId(), uniformBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &uniformBlockSize);
 	return uniformBlockSize;
 }
-//const GLuint Shader::getUniformOffset(const std::string &name) const {
-//	GLuint index = glGetUniformIndices(this->Program, 1, name.c_str());
-//	glGetActiveUniformsiv(prog_id, 1, &index,
-//		GL_UNIFORM_OFFSET, &offset);
-//
-//	glGetActiveUniformsiv(prog_id, 1, &index,
-//		GL_UNIFORM_SIZE, &singleSize);
-//}
+
+char* convert(const std::string& s) {
+	char* pc = new char[s.size() + 1];
+	std::strcpy(pc, s.c_str());
+	return pc;
+};
+
+const GLuint Shader::getUniformOffset(const std::vector<std::string> &names) const {
+	std::vector<char*> charNames;
+	std::transform(names.begin(), names.end(), std::back_inserter(charNames), convert);
+
+	//GLuint* indices = (GLuint*) malloc(names.size() * sizeof(GLuint));
+	std::vector<GLuint> indices(names.size());
+	glGetUniformIndices(this->Program, names.size(), charNames.data(), indices.data());
+
+	std::vector<GLint> offsets(names.size());
+	glGetActiveUniformsiv(this->Program, names.size(), indices.data(), GL_UNIFORM_OFFSET, offsets.data());
+
+	std::vector<GLint> singleSizes(names.size());
+	glGetActiveUniformsiv(this->Program, names.size(), indices.data(), GL_UNIFORM_SIZE, singleSizes.data());
+
+	return offsets[0];
+}
 
 // utility function for checking shader compilation/linking errors.
 // ------------------------------------------------------------------------

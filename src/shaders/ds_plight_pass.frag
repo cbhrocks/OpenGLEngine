@@ -40,16 +40,25 @@ struct DirectionLight {
 
 uniform PointLight plight;
 
-layout (std140) uniform Camera
+layout (std140) uniform Scene
 {
 	mat4 projection;
+    vec2 window_size;
+	float time;
+	bool gamma;
+	float exposure;
+    bool bloom;
+};
+
+layout (std140) uniform Camera
+{
 	mat4 view;
 	vec3 camPos;
 };
 
 vec2 CalcTexCoord()
 {
-	return (gl_FragCoord / 1024.0f).xy;
+	return gl_FragCoord.xy / window_size;
 }
 
 void main()

@@ -6,13 +6,14 @@
 #include "shader.h"
 
 struct Material {
+	std::string Name = "default material";
 	glm::vec4 AmbientColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	glm::vec4 DiffuseColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	glm::vec4 SpecularColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	float Shininess = 0.0f;
-	float opacity = 1.0f;
-	float reflectivity = 0.0f;
-	float refractionIndex = 1.0;
+	float Shininess = 32.0f;
+	float Opacity = 1.0f;
+	float Reflectivity = 0.0f;
+	float RefractionIndex = 1.0;
 	std::vector<GLuint> textureAmbient;
 	std::vector<GLuint> textureDiffuse;
 	std::vector<GLuint> textureSpecular;
@@ -22,9 +23,20 @@ struct Material {
 };
 
 class IDrawObj {
-    public:
-        /*  Mesh Data  */
-        // render the mesh
-		virtual void Draw(const Shader& shader, GLuint baseUnit = 0) = 0;
-		Material material;
+public:
+	IDrawObj(std::string name): name(name), material(new Material()) {}
+	IDrawObj(std::string name, Material* material) : name(name), material(material) {}
+
+	/*  Mesh Data  */
+	// render the mesh
+	virtual void Draw(const Shader& shader, GLuint baseUnit = 0) = 0;
+
+	virtual Material* getMaterial() { return this->material; };
+	virtual void setMaterial(Material* material) { this->material = material; };
+	virtual std::string getName() { return this->name; };
+	virtual void setName(std::string name) { this->name = name; };
+
+protected:
+	std::string name;
+	Material* material;
 };

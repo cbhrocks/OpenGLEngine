@@ -30,7 +30,7 @@ public:
 		// tangent
 	};
 
-	Sphere(float radius = 1.0f, int sectorCount = 36, int stackCount = 18, bool smooth = true);
+	Sphere(std::string name, float radius = 1.0f, int sectorCount = 36, int stackCount = 18, bool smooth = true);
 	~Sphere() {}
 
 	// attributes

@@ -4,7 +4,12 @@ layout (triangle_strip, max_vertices = 3) out;
 
 layout (std140) uniform Scene
 {
+	mat4 projection;
+    vec2 window_size;
 	float time;
+	bool gamma;
+	float exposure;
+	bool bloom;
 };
 
 in VS_OUT {

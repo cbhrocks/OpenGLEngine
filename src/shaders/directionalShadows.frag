@@ -45,7 +45,6 @@ layout (std140) uniform Lights
 
 layout (std140) uniform Camera
 {
-	mat4 projection;
 	mat4 view;
 	vec3 camPos;
 };

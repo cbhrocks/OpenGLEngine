@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 
 #include <string>
+#include <vector>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -45,7 +47,8 @@ class Shader
 		// ------------------------------------------------------------------------
 		const Shader& setUniformBlock(const std::string &name, const GLuint &binding) const;
 		const GLuint getUniformBlockSize(const std::string &name) const;
-		const GLuint Shader::getUniformOffset(const std::string &name) const;
+		//const GLuint Shader::getUniformOffset(const std::string &name) const;
+		const GLuint Shader::getUniformOffset(const std::vector<std::string> &name) const;
 
     private:
         GLuint Program;
